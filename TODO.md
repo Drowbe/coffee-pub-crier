@@ -22,7 +22,6 @@
 - Review and re-enable turn message interception
 
 ## IN PROGRESS
-- Complete GitHub repository setup
 - Set up GitHub Actions for automated releases
 - Create initial release (v0.1.1)
 - Refactor code to use new Blacksmith API
@@ -44,3 +43,4 @@
 - Create basic README structure
 - Set up MIT license
 - Initialize git repository 
+- Complete GitHub repository setup
