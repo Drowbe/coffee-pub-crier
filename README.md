@@ -102,6 +102,30 @@ https://github.com/Drowbe/coffee-pub-crier/releases/latest/download/module.json
 ## Dependencies
 - [Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith) - Required for core functionality
 
+## Module Settings
+
+### Round Announcements
+- **Round Cycling**: Toggle round announcements on/off
+- **Round Card Style**: Choose from multiple styles:
+  - Full Cards: Dark Mode, Green, Red
+  - Simple Cards: Default Foundry
+  - Minimal Cards: Plain or Red
+- **Round Icon**: Customizable icon from Font Awesome selection
+- **Round Sound**: Choose from various sound effects
+- **Round Label**: Customize the round announcement text (default: "Round {round}")
+
+### Turn Announcements
+- **Turn Cycling**: Toggle turn announcements on/off
+- **Turn Card Layout**: Choose between:
+  - Detailed Cards: Full information display
+  - Minimal Cards: Simplified view
+- **Turn Card Style**: Multiple theme options including dark mode and colored variants
+- **Turn Icon**: Customizable icon from Font Awesome selection
+- **Turn Sound**: Choose from various sound effects
+- **Turn Label**: Customize the turn announcement text (default: "{name}")
+
+All settings are configurable through the module settings menu in Foundry VTT's configuration panel.
+
 ## Development
 Want to contribute? Great! Please follow these steps:
 

@@ -12,11 +12,25 @@
 - [ ] Implement combat timer features
 - [ ] Document coffee-pub-blacksmith dependency requirements
 - [ ] Create fallback functionality for missing dependencies
+- [ ] Create detailed wiki documentation
+- [ ] Add configuration examples
+- [ ] Create user guide with screenshots
+- [ ] Document all module settings
+- [ ] Review template loading process
+- [ ] Optimize combat tracking performance
+- [ ] Review memory usage during long combat sessions
+- [ ] Review and re-enable turn message interception
 
 ## In Progress
 - [ ] Complete GitHub repository setup
 - [ ] Set up GitHub Actions for automated releases
 - [ ] Create initial release (v0.1.1)
+- [ ] Refactor code to use new Blacksmith API
+- [ ] Implement hooks for Blacksmith events
+- [ ] Update combat tracking to leverage Blacksmith's combat enhancements
+- [ ] Synchronize turn management with Blacksmith
+- [ ] Add support for Blacksmith's notification system
+- [ ] Integrate with Blacksmith's styling system
 
 ## Testing
 - [ ] Create test suite for core functionality
@@ -28,36 +42,4 @@
 ## Complete
 - [x] Create basic README structure
 - [x] Set up MIT license
-- [x] Initialize git repository
-
-## High Priority
-- [ ] Refactor code to use new Blacksmith API
-- [ ] Implement hooks for Blacksmith events
-- [ ] Update combat tracking to leverage Blacksmith's combat enhancements
-- [ ] Synchronize turn management with Blacksmith
-- [ ] Add support for Blacksmith's notification system
-- [ ] Integrate with Blacksmith's styling system
-
-## Features
-- [ ] Create detailed wiki documentation
-- [ ] Add configuration examples
-- [ ] Create user guide with screenshots
-- [ ] Document all module settings
-
-## Documentation
-- [ ] Review template loading process
-- [ ] Optimize combat tracking performance
-- [ ] Review memory usage during long combat sessions
-
-## Bug Fixes
-- [ ] Review and re-enable turn message interception
-
-## Optimization
-- [ ] Create API for other modules to integrate
-
-## Future Enhancements
-- [ ] Add combat statistics tracking
-- [ ] Implement combat timer features
-
-## Module Dependencies
-- [ ] Create fallback functionality for missing dependencies 
+- [x] Initialize git repository 
