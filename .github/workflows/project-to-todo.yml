@@ -81,11 +81,9 @@ jobs:
                 
                 const status = item.fieldValues.nodes.find(field => field.name)?.name || 'BACKLOG';
                 const section = statusMap[status] || 'BACKLOG';
-                const completed = item.content.state === 'closed';
                 
                 sections[section].push({
-                  title: item.content.title,
-                  completed
+                  title: item.content.title
                 });
               }
               
@@ -96,8 +94,7 @@ jobs:
                 if (tasks.length > 0) {
                   todoContent += `## ${section}\n`;
                   for (const task of tasks) {
-                    const checkbox = task.completed ? '[x]' : '[ ]';
-                    todoContent += `- ${checkbox} ${task.title}\n`;
+                    todoContent += `- ${task.title}\n`;
                   }
                   todoContent += '\n';
                 }

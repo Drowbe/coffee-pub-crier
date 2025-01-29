@@ -98,10 +98,9 @@ jobs:
             for (const section of sections) {
               const [sectionName, ...tasks] = section.split('\n');
               const taskList = tasks
-                .filter(line => line.trim().startsWith('- ['))
+                .filter(line => line.trim().startsWith('-'))
                 .map(line => ({
-                  title: line.replace(/- \[[ x]\] /, '').trim(),
-                  completed: line.includes('- [x]')
+                  title: line.replace(/^-\s+/, '').trim()
                 }));
               
               // Process each task
@@ -121,21 +120,11 @@ jobs:
                       repo: context.repo.repo,
                       title: task.title,
                       body: `Task from ${sectionName} section of TODO.md`,
-                      labels: [sectionName.replace(/\s+/g, '-').toLowerCase()],
-                      state: task.completed ? 'closed' : 'open'
+                      labels: [sectionName.replace(/\s+/g, '-').toLowerCase()]
                     });
                     issueId = issue.node_id;
                   } else {
                     issueId = existingIssue.node_id;
-                    // Update existing issue if needed
-                    if (existingIssue.state !== (task.completed ? 'closed' : 'open')) {
-                      await github.rest.issues.update({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        issue_number: existingIssue.number,
-                        state: task.completed ? 'closed' : 'open'
-                      });
-                    }
                   }
                   
                   try {
