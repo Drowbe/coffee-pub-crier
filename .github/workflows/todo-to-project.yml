@@ -63,8 +63,15 @@ jobs:
               field => field.name === 'Status'
             );
             
-            // Log available status options
-            console.log('Available status options:', statusField.options.map(o => o.name));
+            // Enhanced logging
+            console.log('Project Fields:', projectResult.user.projectV2.fields.nodes.map(f => ({ name: f.name, type: f.__typename })));
+            if (statusField) {
+              console.log('Status Field Options:', statusField.options.map(o => o.name));
+              console.log('Status Field ID:', statusField.id);
+            } else {
+              console.log('No Status field found!');
+              console.log('Available fields:', JSON.stringify(projectResult.user.projectV2.fields.nodes, null, 2));
+            }
             
             // Define status mappings based on your project's actual status options
             const statusMap = {
@@ -73,6 +80,9 @@ jobs:
               'Testing': 'Review',
               'Complete': 'Done'
             };
+            
+            // Log the current mapping
+            console.log('Current Status Mapping:', statusMap);
             
             // Get all existing issues
             const { data: allIssues } = await github.rest.issues.listForRepo({
