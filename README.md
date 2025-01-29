@@ -5,10 +5,32 @@ A Foundry VTT module that enhances combat turn announcements and notifications w
 ![Foundry v12](https://img.shields.io/badge/foundry-v12-green)
 ![Latest Release](https://img.shields.io/github/v/release/Drowbe/coffee-pub-crier)
 ![MIT License](https://img.shields.io/badge/license-MIT-blue)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Drowbe/coffee-pub-crier/release.yml)
+![GitHub all releases](https://img.shields.io/github/downloads/Drowbe/coffee-pub-crier/total)
 
 ## Overview
 
 Coffee Pub Crier enhances your Foundry VTT combat experience with rich visual and audio announcements for combat turns, making battles more engaging and easier to follow.
+
+## Preview
+
+### Combat Turn Cards
+![Combat Turn Card - Blue Theme](product/screen-card-blue.png)
+*Combat turn card with blue theme*
+
+![Combat Turn Card - Death Saving](product/screen-card-storm-deathsaving.png)
+*Combat turn card showing death saving throws*
+
+### Round Announcements
+![Round Announcement](product/screen-round.png)
+*Round transition announcement*
+
+### Module Configuration
+![Card Settings](product/screen-settings-card.png)
+*Extensive card customization options*
+
+![Round Settings](product/screen-settings-round.png)
+*Round announcement settings*
 
 ## Features
 
@@ -75,13 +97,19 @@ https://github.com/Drowbe/coffee-pub-crier/releases/latest/download/module.json
 ## Dependencies
 - [Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith) - Required for core functionality
 
-## Support
+## Development
+Want to contribute? Great! Please follow these steps:
 
-### Bug Reports
-Found a bug? Please [open an issue](https://github.com/Drowbe/coffee-pub-crier/issues) on our GitHub repository.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-### Feature Requests
-Have an idea for a new feature? Feel free to suggest it in our [GitHub issues](https://github.com/Drowbe/coffee-pub-crier/issues).
+## Support & Community
+- Found a bug? Please [open an issue](https://github.com/Drowbe/coffee-pub-crier/issues)
+- Have a feature request? [Submit it here](https://github.com/Drowbe/coffee-pub-crier/issues)
+- Need help? Contact me on Discord: `drowbe`
 
 ## Attribution
 This module is built for [Foundry Virtual Tabletop](https://foundryvtt.com/).
