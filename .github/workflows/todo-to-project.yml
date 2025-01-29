@@ -12,6 +12,7 @@ permissions:
   contents: read
   repository-projects: write
   issues: write
+  project: write
 
 env:
   PROJECT_NUMBER: 2
@@ -34,7 +35,7 @@ jobs:
             const statusMap = {
               'Backlog': 'Todo',
               'In Progress': 'In Progress',
-              'Testing': 'In Review',
+              'Testing': 'Review',
               'Complete': 'Done'
             };
             
@@ -80,8 +81,8 @@ jobs:
                     try {
                       // Get project info
                       const projectQuery = `
-                        query($owner: String!, $number: Int!) {
-                          user(login: $owner) {
+                        query($owner: String!, $repo: String!, $number: Int!) {
+                          repository(owner: $owner, name: $repo) {
                             projectV2(number: $number) {
                               id
                               fields(first: 20) {
@@ -103,10 +104,11 @@ jobs:
                       
                       const projectResult = await github.graphql(projectQuery, {
                         owner: context.repo.owner,
-                        number: process.env.PROJECT_NUMBER
+                        repo: context.repo.repo,
+                        number: parseInt(process.env.PROJECT_NUMBER)
                       });
                       
-                      const project = projectResult.user.projectV2;
+                      const project = projectResult.repository.projectV2;
                       const statusField = project.fields.nodes.find(
                         field => field.name === 'Status'
                       );
@@ -166,6 +168,7 @@ jobs:
                       console.log(`Added issue to project in ${sectionName} status`);
                     } catch (error) {
                       console.error(`Error adding to project: ${error.message}`);
+                      console.error('Full error:', JSON.stringify(error, null, 2));
                     }
                     
                     console.log(`Created issue: ${task.title}`);
@@ -190,6 +193,7 @@ jobs:
                   }
                 } catch (error) {
                   console.error(`Error processing task "${task.title}": ${error.message}`);
+                  console.error('Full error:', JSON.stringify(error, null, 2));
                 }
               }
             }
