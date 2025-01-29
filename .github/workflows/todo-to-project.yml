@@ -120,7 +120,7 @@ jobs:
                       repo: context.repo.repo,
                       title: task.title,
                       body: `Task from ${sectionName} section of TODO.md`,
-                      labels: [sectionName.replace(/\s+/g, '-').toLowerCase()]
+                      labels: ['crier']
                     });
                     issueId = issue.node_id;
                   } else {
