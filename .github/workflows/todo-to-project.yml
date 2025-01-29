@@ -35,11 +35,53 @@ jobs:
               'Backlog': 'Todo',
               'In Progress': 'In Progress',
               'Testing': 'Review',
-              'Complete': 'Done'
+              'Complete': 'Done',
+              'No Status': 'Todo'  // Default for items with no status
             };
             
             // Parse sections and tasks
             const sections = content.split('\n## ').slice(1);
+            
+            // First, get all existing issues to avoid duplicates
+            const { data: allIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              per_page: 100
+            });
+            
+            // Get project info first
+            const projectQuery = `
+              query($owner: String!, $number: Int!) {
+                user(login: $owner) {
+                  projectV2(number: $number) {
+                    id
+                    fields(first: 20) {
+                      nodes {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options {
+                            id
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+            
+            const projectResult = await github.graphql(projectQuery, {
+              owner: context.repo.owner,
+              number: parseInt(process.env.PROJECT_NUMBER)
+            });
+            
+            const projectId = projectResult.user.projectV2.id;
+            const statusField = projectResult.user.projectV2.fields.nodes.find(
+              field => field.name === 'Status'
+            );
             
             for (const section of sections) {
               const [sectionName, ...tasks] = section.split('\n');
@@ -50,20 +92,15 @@ jobs:
                   completed: line.includes('- [x]')
                 }));
               
-              // Create issues for each task
+              // Process each task
               for (const task of taskList) {
                 try {
                   // Check if issue already exists
-                  const { data: existingIssues } = await github.rest.issues.listForRepo({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    state: 'all',
-                    labels: [sectionName]
-                  });
-                  
-                  const existingIssue = existingIssues.find(issue => 
+                  const existingIssue = allIssues.find(issue => 
                     issue.title.toLowerCase() === task.title.toLowerCase()
                   );
+                  
+                  let issueId;
                   
                   if (!existingIssue) {
                     // Create new issue
@@ -75,108 +112,75 @@ jobs:
                       labels: [sectionName.replace(/\s+/g, '-').toLowerCase()],
                       state: task.completed ? 'closed' : 'open'
                     });
-                    
-                    try {
-                      // Get the project ID
-                      const findProject = await github.graphql(`
-                        query($owner: String!, $number: Int!) {
-                          user(login: $owner) {
-                            projectV2(number: $number) {
-                              id
-                              fields(first: 20) {
-                                nodes {
-                                  ... on ProjectV2SingleSelectField {
-                                    id
-                                    name
-                                    options {
-                                      id
-                                      name
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      `, {
+                    issueId = issue.node_id;
+                  } else {
+                    issueId = existingIssue.node_id;
+                    // Update existing issue if needed
+                    if (existingIssue.state !== (task.completed ? 'closed' : 'open')) {
+                      await github.rest.issues.update({
                         owner: context.repo.owner,
-                        number: parseInt(process.env.PROJECT_NUMBER)
+                        repo: context.repo.repo,
+                        issue_number: existingIssue.number,
+                        state: task.completed ? 'closed' : 'open'
                       });
-                      
-                      const projectId = findProject.user.projectV2.id;
-                      const statusField = findProject.user.projectV2.fields.nodes.find(
-                        field => field.name === 'Status'
-                      );
-                      
-                      // Add item to project
-                      const addToProject = await github.graphql(`
-                        mutation($input: AddProjectV2ItemByIdInput!) {
-                          addProjectV2ItemById(input: $input) {
-                            item {
-                              id
-                            }
+                    }
+                  }
+                  
+                  // Add to project if not already there
+                  try {
+                    const addToProjectMutation = `
+                      mutation($input: AddProjectV2ItemByIdInput!) {
+                        addProjectV2ItemById(input: $input) {
+                          item {
+                            id
                           }
-                        }
-                      `, {
-                        input: {
-                          projectId: projectId,
-                          contentId: issue.node_id
-                        }
-                      });
-                      
-                      // Update status if we have the field
-                      if (statusField) {
-                        const statusOption = statusField.options.find(
-                          option => option.name === statusMap[sectionName]
-                        );
-                        
-                        if (statusOption) {
-                          await github.graphql(`
-                            mutation($input: UpdateProjectV2ItemFieldValueInput!) {
-                              updateProjectV2ItemFieldValue(input: $input) {
-                                projectV2Item {
-                                  id
-                                }
-                              }
-                            }
-                          `, {
-                            input: {
-                              projectId: projectId,
-                              itemId: addToProject.addProjectV2ItemById.item.id,
-                              fieldId: statusField.id,
-                              value: {
-                                singleSelectOptionId: statusOption.id
-                              }
-                            }
-                          });
                         }
                       }
+                    `;
+                    
+                    const addResult = await github.graphql(addToProjectMutation, {
+                      input: {
+                        projectId: projectId,
+                        contentId: issueId
+                      }
+                    });
+                    
+                    // Set status
+                    if (statusField) {
+                      const desiredStatus = statusMap[sectionName];
+                      const statusOption = statusField.options.find(
+                        option => option.name === desiredStatus
+                      );
                       
-                      console.log(`Added issue to project in ${sectionName} status`);
-                    } catch (error) {
-                      console.error(`Error adding to project: ${error.message}`);
-                      console.error('Full error:', JSON.stringify(error, null, 2));
+                      if (statusOption) {
+                        const updateStatusMutation = `
+                          mutation($input: UpdateProjectV2ItemFieldValueInput!) {
+                            updateProjectV2ItemFieldValue(input: $input) {
+                              projectV2Item {
+                                id
+                              }
+                            }
+                          }
+                        `;
+                        
+                        await github.graphql(updateStatusMutation, {
+                          input: {
+                            projectId: projectId,
+                            itemId: addResult.addProjectV2ItemById.item.id,
+                            fieldId: statusField.id,
+                            value: {
+                              singleSelectOptionId: statusOption.id
+                            }
+                          }
+                        });
+                      }
                     }
                     
-                    console.log(`Created issue: ${task.title}`);
-                  } else if (existingIssue.state === 'open' && task.completed) {
-                    // Close issue if task is marked as completed
-                    await github.rest.issues.update({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      issue_number: existingIssue.number,
-                      state: 'closed'
-                    });
-                    console.log(`Closed issue: ${task.title}`);
-                  } else if (existingIssue.state === 'closed' && !task.completed) {
-                    // Reopen issue if task is unmarked
-                    await github.rest.issues.update({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      issue_number: existingIssue.number,
-                      state: 'open'
-                    });
-                    console.log(`Reopened issue: ${task.title}`);
+                    console.log(`Processed task: ${task.title}`);
+                  } catch (error) {
+                    if (!error.message.includes('already exists')) {
+                      throw error;
+                    }
                   }
                 } catch (error) {
                   console.error(`Error processing task "${task.title}": ${error.message}`);
