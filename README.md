@@ -15,25 +15,25 @@ Coffee Pub Crier enhances your Foundry VTT combat experience with rich visual an
 ## Preview
 
 ### Combat Turn Cards
-<img src="product/screen-card-blue.png" width="600" alt="Combat Turn Card - Blue Theme">
+<img src="product/screen-card-blue.png" width="400" alt="Combat Turn Card - Blue Theme">
 
 *Combat turn card with blue theme*
 
-<img src="product/screen-card-storm-deathsaving.png" width="600" alt="Combat Turn Card - Death Saving">
+<img src="product/screen-card-storm-deathsaving.png" width="400" alt="Combat Turn Card - Death Saving">
 
 *Combat turn card showing death saving throws*
 
 ### Round Announcements
-<img src="product/screen-round.png" width="600" alt="Round Announcement">
+<img src="product/screen-round.png" width="400" alt="Round Announcement">
 
 *Round transition announcement*
 
 ### Module Configuration
-<img src="product/screen-settings-card.png" width="600" alt="Card Settings">
+<img src="product/screen-settings-card.png" width="400" alt="Card Settings">
 
 *Extensive card customization options*
 
-<img src="product/screen-settings-round.png" width="600" alt="Round Settings">
+<img src="product/screen-settings-round.png" width="400" alt="Round Settings">
 
 *Round announcement settings*
 
