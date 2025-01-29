@@ -1,0 +1,149 @@
+<span style="visibility: hidden">coffeepub-hide-header</span>
+<div id="crier-cards-wrapper-{{turnCardStyle}}" data-actor-id="{{actor.id}}" data-user-id="{{user.id}}" data-token-id="{{token.id}}" >
+	{{#if blnLayoutFull}}
+		<div id="crier-cards-title-{{turnCardStyle}}">
+			{{#unless blnHideTurnIcon}}
+				<i class="fas {{turnIconStyle}}" id="crier-cards-icon-{{turnCardStyle}}"></i>
+			{{/unless}}
+			<h1>{{{label}}}</h1>
+		</div>
+		{{#unless hidePortrait}}
+			<div id="crier-cards-content-{{turnCardStyle}}">
+				{{#if hideBloodyPortrait}}
+					<img class="crier-token-background-{{tokenBackground}} under" style="width: {{tokenScale}}%;" src="{{portrait}}" />
+				{{/if}}				
+				{{#unless hideBloodyPortrait}}
+				<div class="image-stack">
+					<div class="image-stack__item image-stack__item--top">
+						<img class="crier-token-background-{{tokenBackground}} under" style="width: {{tokenScale}}%;" src="{{portrait}}" />
+					</div>
+					{{#unless isNPC}}
+						<div class="image-stack__item image-stack__item--bottom">
+							<img class="over" style="width: {{tokenScale}}%;" src="modules/coffee-pub-crier/images/blood-{{bloodyPortraitNumber}}.webp" />
+						</div>
+					{{/unless}}
+				</div>
+				{{/unless}}
+			</div>
+		{{/unless}}
+		{{#unless hideHealth}}
+			{{#unless isNPC}}
+				{{#unless isDead}}
+					<div id="hp-container-{{turnCardStyle}}">
+						{{#if isHealthy}}
+							<div title="Current Health: {{attributeHP}} - Healthy" id="hp-progress-healthy-{{turnCardStyle}}" style="width:{{attributehpprogress}}%"></div>
+						{{/if}}
+						{{#if isHurt}}
+							<div title="Current Health: {{attributeHP}} - Wounded" id="hp-progress-hurt-{{turnCardStyle}}" style="width:{{attributehpprogress}}%"></div>
+						{{/if}}			
+						{{#if isDying}}
+							<div title="Current Health: {{attributeHP}} - Dying" id="hp-progress-dying-{{turnCardStyle}}" style="width:{{attributehpprogress}}%"></div>
+						{{/if}}
+						{{#if isCritical}}
+							<div title="Current Health: {{attributeHP}} - Critical" id="hp-progress-critical-{{turnCardStyle}}" style="width:{{attributehpprogress}}%"></div>
+						{{/if}}
+						{{#if isDeathSaving}}
+							<div title="Current Health: {{attributeHP}} - Death Saving Throws" class="crier-deathsave-wrapper-{{turnCardStyle}}">
+								<div class="crier-deathsave-wrapper-successes-{{turnCardStyle}}">
+									<span class="crier-deathsuccessdot-{{attributeDEATHSUCCESSdot3}}-{{turnCardStyle}}"></span>
+									<span class="crier-deathsuccessdot-{{attributeDEATHSUCCESSdot2}}-{{turnCardStyle}}"></span>
+									<span class="crier-deathsuccessdot-{{attributeDEATHSUCCESSdot1}}-{{turnCardStyle}}"></span>
+								</div>
+								<div class="crier-deathsave-wrapper-icon-{{turnCardStyle}}"><i class="fas fa-solid fa-skull crier-deathsave-icon-{{turnCardStyle}}"></i></div>
+								<div class="crier-deathsave-wrapper-failures-{{turnCardStyle}}">
+									<span class="crier-deathfailuredot-{{attributeDEATHFAILUREdot1}}-{{turnCardStyle}}"></span>
+									<span class="crier-deathfailuredot-{{attributeDEATHFAILUREdot2}}-{{turnCardStyle}}"></span>
+									<span class="crier-deathfailuredot-{{attributeDEATHFAILUREdot3}}-{{turnCardStyle}}"></span>
+								</div>
+							</div>
+						{{/if}}
+					</div>
+				{{/unless}}
+				{{#if isDead}}
+					<div title="Current Health: {{attributeHP}} - Dead" id="crier-cards-description-{{turnCardStyle}}">
+						<h2><span class="crier-cards-user-{{turnCardStyle}}">{{{label}}} is Dead</span></h2>
+					</div>
+				{{/if}}
+			{{/unless}}
+		{{/unless}}
+		{{#unless hidePlayer}}
+			{{#unless isNPC}}
+				<div id="crier-cards-description-{{turnCardStyle}}">
+					<h2><span class="crier-cards-user-{{turnCardStyle}}">{{player}}</span></h2>
+				</div>
+			{{/unless}}
+		{{/unless}}
+		{{#unless hideAbilities}}
+			{{#unless isNPC}}
+				<div title="Current Abilities" id="ability-container-{{turnCardStyle}}">
+					<div id="ability-child-{{turnCardStyle}}">
+						<div id="ability-title-{{turnCardStyle}}">STR</div>
+						<div id="ability-content-{{turnCardStyle}}">{{abilitySTR}}</div>
+					</div>
+					<div id="ability-child-{{turnCardStyle}}">
+						<div id="ability-title-{{turnCardStyle}}">DEX</div>
+						<div id="ability-content-{{turnCardStyle}}">{{abilityDEX}}</div>
+					</div>
+					<div id="ability-child-{{turnCardStyle}}">
+						<div id="ability-title-{{turnCardStyle}}">CON</div>
+						<div id="ability-content-{{turnCardStyle}}">{{abilityCON}}</div>
+					</div>
+					<div id="ability-child-{{turnCardStyle}}">
+						<div id="ability-title-{{turnCardStyle}}">INT</div>
+						<div id="ability-content-{{turnCardStyle}}">{{abilityINT}}</div>
+					</div>
+					<div id="ability-child-{{turnCardStyle}}">
+						<div id="ability-title-{{turnCardStyle}}">WIS</div>
+						<div id="ability-content-{{turnCardStyle}}">{{abilityWIS}}</div>
+					</div>
+					<div id="ability-child-{{turnCardStyle}}">
+						<div id="ability-title-{{turnCardStyle}}">CHA</div>
+						<div id="ability-content-{{turnCardStyle}}">{{abilityCHA}}</div>
+					</div>
+				</div>
+			{{/unless}}
+		{{/unless}}
+	{{/if}}
+	{{#if blnLayoutSmall}}
+		<div class="grid-container">
+			<div class="grid-child left">
+				<div id="crier-cards-title-{{turnCardStyle}}">
+					{{#unless blnHideTurnIcon}}
+						<i class="fas {{turnIconStyle}}" id="crier-cards-icon-{{turnCardStyle}}"></i>
+					{{/unless}}
+					<h1>{{{label}}}</h1>
+				</div>
+				{{#unless hidePlayer}}
+					<div id="crier-cards-description-{{turnCardStyle}}">
+						<h2><span class="crier-cards-user-{{turnCardStyle}}">{{player}}</span></h2>
+					</div>
+				{{/unless}}
+			</div>		
+			<div class="grid-child right">
+				{{#unless hidePortrait}}
+					<img src="{{portrait}}" />
+				{{/unless}}
+				{{#if hidePortrait}}
+					<img src="icons/svg/combat.svg" />
+				{{/if}}
+			</div>
+		</div>
+	{{/if}}
+	{{#if blnLayoutNone}}
+		<div id="crier-cards-title-{{turnCardStyle}}">
+			{{#unless blnHideTurnIcon}}<i class="fas {{turnIconStyle}}" id="crier-cards-icon-{{turnCardStyle}}"></i>{{/unless}}<h1>{{{label}}}</h1>
+		</div>
+		{{#unless hidePortrait}}
+			<div id="crier-cards-content-{{turnCardStyle}}">
+				<img src="{{portrait}}" />
+			</div>
+		{{/unless}}
+		{{#unless hidePlayer}}
+			<div id="crier-cards-description-{{turnCardStyle}}">
+				<h2><span class="crier-cards-user-{{turnCardStyle}}">{{player}}</span></h2>
+			</div>
+		{{/unless}}
+		
+	{{/if}}
+</div>
+

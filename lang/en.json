@@ -1,0 +1,120 @@
+{
+	"coffee-pub-crier": {
+
+		
+
+		"headingH1Crier-Label": "Introduction",
+		"headingH1Crier-Hint": "Description",
+
+		"headingH2Rounds-Label": "Rounds",
+		"headingH2Rounds-Hint": "Description",
+
+		"headingH3simpleRoundStyle-Label": "Style",
+		"headingH3simpleRoundStyle-Hint": "Description",
+
+		"headingH3simpleRoundSettings-Label": "Settings",
+		"headingH3simpleRoundSettings-Hint": "Description",
+
+		"headingH2turns-Label": "Turns",
+		"headingH2turns-Hint": "Description",
+
+		"headingH3simpleTurnStyle-Label": "Style",
+		"headingH3simpleTurnStyle-Hint": "Description",
+
+		"headingH3simpleTurnSettings-Label": "Settings",
+		"headingH3simpleTurnSettings-Hint": "Description",
+
+		"headingH3simpleTurnElements-Label": "Personalization",
+		"headingH3simpleTurnElements-Hint": "Description",
+
+
+
+
+		"roundCycling-Label": "Display 'New Round' Cards",
+		"roundCycling-Hint": "Display a card as a chat message indicating that a new round has begun.",
+
+		"roundCardStyle-Label": "Card Style",
+		"roundCardStyle-Hint": "The color and the layout of the card to be used when each new round starts.",
+
+		"roundIconStyle-Label": "Icon Style",
+		"roundIconStyle--Hint": "The icon to be used in the round card.",
+
+		"roundSound-Label": "New Round Sound",
+		"roundSound-Hint": "The sound to play at the beginning of each round. Note: if other modules play a sound at the beginning of the round, all sounds will play.",
+
+		"round-Label": "Label Format",
+		"round-Hint": "The format of the round card label. Use {round} where you want the round number to appear. Add additional text as you wish. Note: If you do not include {round} in your lable there will be no round number. Be mindful of how much text you add as the text will wrap as needed.",
+		"roundCycling": "Round {round}",
+
+
+
+		"turnCycling-Label": "Show Combatant Cards",
+		"turnCycling-Hint": "Display a card in the chat window for each combatant on their turn, visible to all. Additional card configurations are below.",
+
+		"turnLayout-Label": "Card Layout",
+		"turnLayout-Hint": "The size and layout of the turn cards. Depending on the layout choice, additional configurations options may or may not be appicable.",		
+
+		"turnCardStyle-Label": "Card Style",
+		"turnCardStyle-Hint": "The color and aesthetics that should be used for the card.",
+
+		"turnIconStyle-Label": "Icon Style",
+		"turnIconStyle-Hint": "The icon to be used in the turn card.",
+
+		"turnSound-Label": "New Turn Sound",
+		"turnSound-Hint": "The sound to play at the beginning of each turn. Note: if other modules play a sound at the beginning of the turn, all sounds will play.",
+
+		"turnCard-Label": "Label",
+		"turnCard-Hint": "The format of the turn card label. Use {name} where you want the combatant's name to appear. Add additional text as you wish. Note: If you do not include {name} in your lable pthe combatant's name will not display. Be mindful of how much text you add as the text will wrap as needed.",	
+		"Turn": "{name}'s turn",
+
+
+
+		"portraitStyle-Label": "Card Image",
+		"portraitStyle-Hint": "The image to show on the turn card. Choose from the token image, the token portrait, or none.",
+
+		"tokenBackground-Label": "Image Background",
+		"tokenBackground-Hint": "Style of background you want behind the token image.",
+
+		"tokenScale-Label": "Image Scale",
+		"tokenScale-Hint": "The size of token or portrait. Scale ranges from 25% to 100%. Default: 100%.",
+
+		"hideBloodyPortrait-Label": "Hide Portrait Blood",
+		"hideBloodyPortrait-Hint": "Do not display a blood splatter overlay on the portrait as the player takes damage. The blood splatter get progressively worse as the combatant takes damage.",
+		
+		"hidePlayer-Label": "Hide Player Name",
+		"hidePlayer-Hint": "Do not include current player name in the turn card.",
+
+		"obfuscateNPCs-Label": "NPC Display",
+		"obfuscateNPCs-Hint": "Obfuscate names of certain combatants. GM will see names as normal with slightly altered turn card.",
+		"ObfuscateNPCsVisibility": {
+			"All": "Show names for everyone",
+			"Owned": "Only show player owned names",
+			"Token": "All token names visible",
+			"Visible": "Show if token is visible to a player",
+			"Any": "Player owned or token name visible" 
+		},
+
+		"hideAbilities-Label": "Hide Abilities",
+		"hideAbilities-Hint": "Do not display str, dex, con, int, wis, and cha in the turn card.",
+
+		"hideHealth-Label": "Hide Health",
+		"hideHealth-Hint": "Do not show the health bar in the turn card.",
+
+		"missedTurn-Label": "Show 'Missed Turn' Card",
+		"missedTurn-Hint": "Display a chat card to the GM regarding potential missed turns.",
+
+		"missedTurnNotification-Label": "Show 'Missed Turn' Notification",
+		"missedTurnNotification-Hint": "Displays notification to the GM abbout potential missed turns.",
+
+		"MissedTurn": "missed a turn?",
+		"UnidentifiedTurn": "???",
+
+		"Compact-Label": "MISC: Compact Messages",
+		"Compact-Hint": "Remove speaker and timestamp from round and turn messages.",
+		"Tests": {
+			"Helpers": "Crier Helpers"
+		}
+
+		
+	}
+}

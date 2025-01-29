@@ -1,0 +1,25 @@
+# Node modules
+node_modules/
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Foundry specific
+foundryconfig.json
+.env
+
+# Build output
+dist/
+build/ 

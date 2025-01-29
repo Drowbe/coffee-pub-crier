@@ -1,0 +1,131 @@
+/* Body */
+h1 {
+    font-family: Tahoma, "Trebuchet MS", sans-serif;
+}
+/* H1 */
+h1 {
+    font-weight:550;
+    font-size: 1.1em;
+    font-style: normal;
+    text-transform: uppercase;
+	display: inline; 
+    margin-top: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+	padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    padding-right: 0px;
+}
+/* H2 */
+h2 {
+	font-weight:400;
+    font-size: 1.0em;
+    margin-top: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+	padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    padding-right: 0px;
+}
+/* H3 */
+h3 {
+	font-weight:400;
+    font-size: 0.85em;
+    margin-top: 10px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+	padding-top: 5px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    padding-right: 0px;
+}
+/* Lists */
+ol,
+ul {
+	font-weight:400;
+    font-size: 1.0em;
+    margin-top: 5px;
+	margin-bottom: 5px;
+	margin-left: 20px;
+	margin-right: 0px;
+	padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    padding-right: 0px;	
+}
+/* List Items */
+li {
+	font-weight:400;
+    font-size: 0.9em;
+    margin-top: 2px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+	padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    padding-right: 0px;	
+}
+/* Paragraph */
+p {
+	font-weight:400;
+    font-size: 1.0em;
+    margin-top: 0px;
+	margin-bottom: 0px;
+	padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    padding-right: 0px;	
+}
+/* Table */
+table {
+    font-size: 0.8em;
+	margin-top: 8px;
+	margin-bottom: 8px;
+	margin-left: 0px;
+	margin-right: 0px;
+}
+/* Table Heading */
+table th {
+    font-size: 1.0em;
+	vertical-align: bottom;
+	padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 8px;
+    padding-right: 8px;	
+}
+/* Table Row */
+table tr {
+    font-size: 1.0em;
+	padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 4px;
+    padding-right: 4px;	
+}
+/* Table Cell */
+table td {
+    font-size: 1.0em;
+	padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 8px;
+    padding-right: 8px;	
+}
+/* Preformatted */
+pre {
+    white-space: pre-wrap;
+	font-size: 0.8em;
+	font-family: var(--font-primary);
+	margin-top: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+	padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 0px;
+    padding-right: 0px;	
+}
