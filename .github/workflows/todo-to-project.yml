@@ -75,10 +75,10 @@ jobs:
             
             // Define status mappings based on your project's actual status options
             const statusMap = {
-              'Backlog': 'Todo',
-              'In Progress': 'In Progress',
-              'Testing': 'Review',
-              'Complete': 'Done'
+              'BACKLOG': 'BACKLOG',
+              'IN PROGRESS': 'IN PROGRESS',
+              'TESTING': 'TESTING',
+              'COMPLETE': 'COMPLETE'
             };
             
             // Log the current mapping
