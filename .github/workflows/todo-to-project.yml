@@ -1,0 +1,81 @@
+name: TODO to Project
+
+on:
+  push:
+    paths:
+      - 'TODO.md'
+    branches:
+      - master
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: read
+  repository-projects: write
+  issues: write
+
+jobs:
+  todo-to-project:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse TODO and Create Issues
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const content = fs.readFileSync('TODO.md', 'utf8');
+            
+            // Parse sections and tasks
+            const sections = content.split('\n## ').slice(1);
+            
+            for (const section of sections) {
+              const [sectionName, ...tasks] = section.split('\n');
+              const taskList = tasks
+                .filter(line => line.trim().startsWith('- [ ]'))
+                .map(line => line.replace('- [ ] ', '').trim());
+              
+              // Create issues for each task
+              for (const task of taskList) {
+                try {
+                  // Check if issue already exists
+                  const { data: existingIssues } = await github.rest.issues.listForRepo({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    state: 'open',
+                    labels: [sectionName]
+                  });
+                  
+                  const exists = existingIssues.some(issue => 
+                    issue.title.toLowerCase() === task.toLowerCase()
+                  );
+                  
+                  if (!exists) {
+                    // Create new issue
+                    const { data: issue } = await github.rest.issues.create({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      title: task,
+                      body: `Task from ${sectionName} section of TODO.md`,
+                      labels: [sectionName.replace(/\s+/g, '-').toLowerCase()]
+                    });
+                    
+                    // Add to project if project ID is set
+                    if (process.env.PROJECT_ID) {
+                      await github.rest.projects.createCard({
+                        project_id: process.env.PROJECT_ID,
+                        content_id: issue.id,
+                        content_type: 'Issue'
+                      });
+                    }
+                    
+                    console.log(`Created issue: ${task}`);
+                  }
+                } catch (error) {
+                  console.error(`Error processing task "${task}": ${error.message}`);
+                }
+              }
+            }
+            
+            console.log('Finished processing TODO.md'); 
