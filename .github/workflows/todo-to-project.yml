@@ -30,27 +30,7 @@ jobs:
             const fs = require('fs');
             const content = fs.readFileSync('TODO.md', 'utf8');
             
-            // Define status mappings
-            const statusMap = {
-              'Backlog': 'Todo',
-              'In Progress': 'In Progress',
-              'Testing': 'Review',
-              'Complete': 'Done',
-              'No Status': 'Todo'  // Default for items with no status
-            };
-            
-            // Parse sections and tasks
-            const sections = content.split('\n## ').slice(1);
-            
-            // First, get all existing issues to avoid duplicates
-            const { data: allIssues } = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'all',
-              per_page: 100
-            });
-            
-            // Get project info first
+            // First, get project info to understand available status options
             const projectQuery = `
               query($owner: String!, $number: Int!) {
                 user(login: $owner) {
@@ -82,6 +62,28 @@ jobs:
             const statusField = projectResult.user.projectV2.fields.nodes.find(
               field => field.name === 'Status'
             );
+            
+            // Log available status options
+            console.log('Available status options:', statusField.options.map(o => o.name));
+            
+            // Define status mappings based on your project's actual status options
+            const statusMap = {
+              'Backlog': 'Todo',
+              'In Progress': 'In Progress',
+              'Testing': 'Review',
+              'Complete': 'Done'
+            };
+            
+            // Get all existing issues
+            const { data: allIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              per_page: 100
+            });
+            
+            // Parse sections and tasks
+            const sections = content.split('\n## ').slice(1);
             
             for (const section of sections) {
               const [sectionName, ...tasks] = section.split('\n');
@@ -126,34 +128,62 @@ jobs:
                     }
                   }
                   
-                  // Add to project if not already there
                   try {
-                    const addToProjectMutation = `
-                      mutation($input: AddProjectV2ItemByIdInput!) {
-                        addProjectV2ItemById(input: $input) {
-                          item {
-                            id
+                    // First, get the item ID if it's already in the project
+                    const itemQuery = `
+                      query($projectId: ID!, $contentId: ID!) {
+                        node(id: $projectId) {
+                          ... on ProjectV2 {
+                            items(first: 1, filter: {contentId: $contentId}) {
+                              nodes {
+                                id
+                              }
+                            }
                           }
                         }
                       }
                     `;
                     
-                    const addResult = await github.graphql(addToProjectMutation, {
-                      input: {
-                        projectId: projectId,
-                        contentId: issueId
-                      }
+                    const itemResult = await github.graphql(itemQuery, {
+                      projectId: projectId,
+                      contentId: issueId
                     });
+                    
+                    let itemId;
+                    
+                    if (itemResult.node.items.nodes.length === 0) {
+                      // Add to project if not already there
+                      const addResult = await github.graphql(`
+                        mutation($input: AddProjectV2ItemByIdInput!) {
+                          addProjectV2ItemById(input: $input) {
+                            item {
+                              id
+                            }
+                          }
+                        }
+                      `, {
+                        input: {
+                          projectId: projectId,
+                          contentId: issueId
+                        }
+                      });
+                      
+                      itemId = addResult.addProjectV2ItemById.item.id;
+                    } else {
+                      itemId = itemResult.node.items.nodes[0].id;
+                    }
                     
                     // Set status
                     if (statusField) {
                       const desiredStatus = statusMap[sectionName];
+                      console.log(`Mapping ${sectionName} to ${desiredStatus}`);
+                      
                       const statusOption = statusField.options.find(
                         option => option.name === desiredStatus
                       );
                       
                       if (statusOption) {
-                        const updateStatusMutation = `
+                        await github.graphql(`
                           mutation($input: UpdateProjectV2ItemFieldValueInput!) {
                             updateProjectV2ItemFieldValue(input: $input) {
                               projectV2Item {
@@ -161,26 +191,25 @@ jobs:
                               }
                             }
                           }
-                        `;
-                        
-                        await github.graphql(updateStatusMutation, {
+                        `, {
                           input: {
                             projectId: projectId,
-                            itemId: addResult.addProjectV2ItemById.item.id,
+                            itemId: itemId,
                             fieldId: statusField.id,
                             value: {
                               singleSelectOptionId: statusOption.id
                             }
                           }
                         });
+                        
+                        console.log(`Set status for "${task.title}" to ${desiredStatus}`);
+                      } else {
+                        console.error(`Could not find status option for ${desiredStatus}`);
                       }
                     }
-                    
-                    console.log(`Processed task: ${task.title}`);
                   } catch (error) {
-                    if (!error.message.includes('already exists')) {
-                      throw error;
-                    }
+                    console.error(`Error updating project item: ${error.message}`);
+                    console.error('Full error:', JSON.stringify(error, null, 2));
                   }
                 } catch (error) {
                   console.error(`Error processing task "${task.title}": ${error.message}`);
