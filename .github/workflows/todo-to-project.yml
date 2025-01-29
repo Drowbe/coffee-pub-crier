@@ -13,6 +13,9 @@ permissions:
   repository-projects: write
   issues: write
 
+env:
+  PROJECT_NUMBER: 2
+
 jobs:
   todo-to-project:
     runs-on: ubuntu-latest
@@ -73,50 +76,67 @@ jobs:
                       state: task.completed ? 'closed' : 'open'
                     });
                     
-                    // Add to project if project ID is set
-                    if (process.env.PROJECT_NUMBER) {
-                      try {
-                        // Get project node ID
-                        const projectQuery = `
-                          query($org: String!, $number: Int!) {
-                            organization(login: $org) {
-                              projectV2(number: $number) {
-                                id
+                    // Add to project
+                    try {
+                      // Get project info
+                      const projectQuery = `
+                        query($owner: String!, $number: Int!) {
+                          user(login: $owner) {
+                            projectV2(number: $number) {
+                              id
+                              fields(first: 20) {
+                                nodes {
+                                  ... on ProjectV2SingleSelectField {
+                                    id
+                                    name
+                                    options {
+                                      id
+                                      name
+                                    }
+                                  }
+                                }
                               }
                             }
                           }
-                        `;
-                        
-                        const projectResult = await github.graphql(projectQuery, {
-                          org: context.repo.owner,
-                          number: parseInt(process.env.PROJECT_NUMBER)
-                        });
-                        
-                        const projectId = projectResult.organization.projectV2.id;
-                        
-                        // Add issue to project
-                        const addToProjectMutation = `
-                          mutation($projectId: ID!, $contentId: ID!) {
-                            addProjectV2ItemById(input: {
-                              projectId: $projectId
-                              contentId: $contentId
-                            }) {
-                              item {
-                                id
-                              }
+                        }
+                      `;
+                      
+                      const projectResult = await github.graphql(projectQuery, {
+                        owner: context.repo.owner,
+                        number: process.env.PROJECT_NUMBER
+                      });
+                      
+                      const project = projectResult.user.projectV2;
+                      const statusField = project.fields.nodes.find(
+                        field => field.name === 'Status'
+                      );
+                      
+                      // Add issue to project
+                      const addToProjectMutation = `
+                        mutation($projectId: ID!, $contentId: ID!) {
+                          addProjectV2ItemById(input: {
+                            projectId: $projectId
+                            contentId: $contentId
+                          }) {
+                            item {
+                              id
                             }
                           }
-                        `;
+                        }
+                      `;
+                      
+                      const addResult = await github.graphql(addToProjectMutation, {
+                        projectId: project.id,
+                        contentId: issue.node_id
+                      });
+                      
+                      // Set status if we have the field
+                      if (statusField) {
+                        const statusOption = statusField.options.find(
+                          option => option.name === statusMap[sectionName]
+                        );
                         
-                        await github.graphql(addToProjectMutation, {
-                          projectId: projectId,
-                          contentId: issue.node_id
-                        });
-                        
-                        // Set status based on section
-                        if (statusMap[sectionName]) {
-                          // Update status field
-                          // Note: You'll need to replace STATUS_FIELD_ID with your actual field ID
+                        if (statusOption) {
                           const updateStatusMutation = `
                             mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
                               updateProjectV2ItemFieldValue(input: {
@@ -134,12 +154,18 @@ jobs:
                             }
                           `;
                           
-                          // You'll need to implement the logic to get the correct optionId for each status
-                          // This varies by project setup
+                          await github.graphql(updateStatusMutation, {
+                            projectId: project.id,
+                            itemId: addResult.addProjectV2ItemById.item.id,
+                            fieldId: statusField.id,
+                            optionId: statusOption.id
+                          });
                         }
-                      } catch (error) {
-                        console.error(`Error adding to project: ${error.message}`);
                       }
+                      
+                      console.log(`Added issue to project in ${sectionName} status`);
+                    } catch (error) {
+                      console.error(`Error adding to project: ${error.message}`);
                     }
                     
                     console.log(`Created issue: ${task.title}`);
