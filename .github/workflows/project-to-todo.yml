@@ -26,10 +26,10 @@ jobs:
             
             // Status mapping (reverse of the other workflow)
             const statusMap = {
-              'Todo': 'Backlog',
-              'In Progress': 'In Progress',
-              'Review': 'Testing',
-              'Done': 'Complete'
+              'BACKLOG': 'BACKLOG',
+              'IN PROGRESS': 'IN PROGRESS',
+              'TESTING': 'TESTING',
+              'COMPLETE': 'COMPLETE'
             };
             
             try {
@@ -69,18 +69,18 @@ jobs:
               
               // Organize items by status
               const sections = {
-                'Backlog': [],
-                'In Progress': [],
-                'Testing': [],
-                'Complete': []
+                'BACKLOG': [],
+                'IN PROGRESS': [],
+                'TESTING': [],
+                'COMPLETE': []
               };
               
               // Process project items
               for (const item of projectResult.user.projectV2.items.nodes) {
                 if (!item.content) continue; // Skip items that aren't issues
                 
-                const status = item.fieldValues.nodes.find(field => field.name)?.name || 'Todo';
-                const section = statusMap[status] || 'Backlog';
+                const status = item.fieldValues.nodes.find(field => field.name)?.name || 'BACKLOG';
+                const section = statusMap[status] || 'BACKLOG';
                 const completed = item.content.state === 'closed';
                 
                 sections[section].push({
