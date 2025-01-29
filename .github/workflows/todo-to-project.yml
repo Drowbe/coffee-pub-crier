@@ -10,12 +10,8 @@ on:
 
 permissions:
   contents: read
-  repository-projects: write
   issues: write
-  project: write
-
-env:
-  PROJECT_NUMBER: 2
+  repository-projects: write
 
 jobs:
   todo-to-project:
@@ -24,9 +20,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Parse TODO and Create Issues
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          PROJECT_NUMBER: 2
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.PAT_TOKEN }}
           script: |
             const fs = require('fs');
             const content = fs.readFileSync('TODO.md', 'utf8');
@@ -77,12 +76,11 @@ jobs:
                       state: task.completed ? 'closed' : 'open'
                     });
                     
-                    // Add to project
                     try {
-                      // Get project info
-                      const projectQuery = `
-                        query($owner: String!, $repo: String!, $number: Int!) {
-                          repository(owner: $owner, name: $repo) {
+                      // Get the project ID
+                      const findProject = await github.graphql(`
+                        query($owner: String!, $number: Int!) {
+                          user(login: $owner) {
                             projectV2(number: $number) {
                               id
                               fields(first: 20) {
@@ -100,67 +98,56 @@ jobs:
                             }
                           }
                         }
-                      `;
-                      
-                      const projectResult = await github.graphql(projectQuery, {
+                      `, {
                         owner: context.repo.owner,
-                        repo: context.repo.repo,
                         number: parseInt(process.env.PROJECT_NUMBER)
                       });
                       
-                      const project = projectResult.repository.projectV2;
-                      const statusField = project.fields.nodes.find(
+                      const projectId = findProject.user.projectV2.id;
+                      const statusField = findProject.user.projectV2.fields.nodes.find(
                         field => field.name === 'Status'
                       );
                       
-                      // Add issue to project
-                      const addToProjectMutation = `
-                        mutation($projectId: ID!, $contentId: ID!) {
-                          addProjectV2ItemById(input: {
-                            projectId: $projectId
-                            contentId: $contentId
-                          }) {
+                      // Add item to project
+                      const addToProject = await github.graphql(`
+                        mutation($input: AddProjectV2ItemByIdInput!) {
+                          addProjectV2ItemById(input: $input) {
                             item {
                               id
                             }
                           }
                         }
-                      `;
-                      
-                      const addResult = await github.graphql(addToProjectMutation, {
-                        projectId: project.id,
-                        contentId: issue.node_id
+                      `, {
+                        input: {
+                          projectId: projectId,
+                          contentId: issue.node_id
+                        }
                       });
                       
-                      // Set status if we have the field
+                      // Update status if we have the field
                       if (statusField) {
                         const statusOption = statusField.options.find(
                           option => option.name === statusMap[sectionName]
                         );
                         
                         if (statusOption) {
-                          const updateStatusMutation = `
-                            mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
-                              updateProjectV2ItemFieldValue(input: {
-                                projectId: $projectId
-                                itemId: $itemId
-                                fieldId: $fieldId
-                                value: { 
-                                  singleSelectOptionId: $optionId
-                                }
-                              }) {
+                          await github.graphql(`
+                            mutation($input: UpdateProjectV2ItemFieldValueInput!) {
+                              updateProjectV2ItemFieldValue(input: $input) {
                                 projectV2Item {
                                   id
                                 }
                               }
                             }
-                          `;
-                          
-                          await github.graphql(updateStatusMutation, {
-                            projectId: project.id,
-                            itemId: addResult.addProjectV2ItemById.item.id,
-                            fieldId: statusField.id,
-                            optionId: statusOption.id
+                          `, {
+                            input: {
+                              projectId: projectId,
+                              itemId: addToProject.addProjectV2ItemById.item.id,
+                              fieldId: statusField.id,
+                              value: {
+                                singleSelectOptionId: statusOption.id
+                              }
+                            }
                           });
                         }
                       }
