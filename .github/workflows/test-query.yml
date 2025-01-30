@@ -1,0 +1,58 @@
+name: Test Issue Query
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+permissions:
+  issues: read
+  repository-projects: read
+
+jobs:
+  test-query:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Issue Query
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const issuesQuery = `
+              query($owner: String!, $repo: String!) {
+                repository(owner: $owner, name: $repo) {
+                  issues(first: 1, states: [OPEN]) {
+                    nodes {
+                      id
+                      number
+                      title
+                      projectItems(first: 10) {
+                        nodes {
+                          project {
+                            title
+                            number
+                          }
+                          fieldValues(first: 10) {
+                            nodes {
+                              ... on ProjectV2ItemFieldSingleSelectValue {
+                                name
+                                field {
+                                  name
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+            
+            const result = await github.graphql(issuesQuery, {
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            
+            console.log('Query Result:', JSON.stringify(result, null, 2)); 
