@@ -10,6 +10,13 @@ USAGE:
    This file will be automatically updated to reflect those changes.
 
 This dual workflow allows for easy planning while maintaining GitHub Issues as the source of truth.
+
+PRIORITY COLORS:
+P0 - Critical/Blocker
+P1 - High Priority
+P2 - Medium Priority
+P3 - Low Priority
+P4 - Documentation/Low Impact
 -->
 
 ## BACKLOG
