@@ -30,7 +30,6 @@
 - Synchronize turn management with Blacksmith
 - Add support for Blacksmith's notification system
 - Integrate with Blacksmith's styling system
-- Create an ISSUES action to add issues to the project
 
 ## TESTING
 - Create test suite for core functionality
@@ -38,10 +37,12 @@
 - Verify compatibility with popular combat modules
 - Test all permission configurations
 - Fix missed turn detection (currently disabled in code)
-- Test new ACTION process TODO to Project
+- Create an ISSUES action to add issues to the project
 
 ## COMPLETE
 - Create basic README structure
 - Set up MIT license
-- Initialize git repository 
+- Initialize git repository
 - Complete GitHub repository setup
+- Test new ACTION process TODO to Project
+
