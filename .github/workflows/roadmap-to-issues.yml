@@ -1,0 +1,119 @@
+name: ROADMAP to ISSUES
+
+on:
+  push:
+    paths:
+      - 'ROADMAP.md'
+    branches:
+      - master
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync-to-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update Issues from ROADMAP.md
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const fs = require('fs');
+            
+            try {
+              // Read and parse ROADMAP.md
+              const content = fs.readFileSync('ROADMAP.md', 'utf8');
+              const sections = {};
+              let currentSection = null;
+              
+              // Parse the markdown content
+              for (const line of content.split('\n')) {
+                if (line.startsWith('## ')) {
+                  currentSection = line.substring(3).trim();
+                  sections[currentSection] = [];
+                } else if (line.startsWith('- ') && currentSection) {
+                  // Parse the line for title, priority, and labels
+                  let title = line.substring(2);
+                  let priority = 'P0';
+                  let labels = ['crier'];
+                  
+                  // Extract priority if present
+                  const priorityMatch = title.match(/\[Priority: (P\d+)\]/);
+                  if (priorityMatch) {
+                    priority = priorityMatch[1];
+                    title = title.replace(/\[Priority: P\d+\]/, '').trim();
+                  }
+                  
+                  // Extract labels if present
+                  const labelMatch = title.match(/\[Label: ([^\]]+)\]/);
+                  if (labelMatch) {
+                    const customLabels = labelMatch[1].split(',').map(l => l.trim());
+                    labels = [...labels, ...customLabels];
+                    title = title.replace(/\[Label: [^\]]+\]/, '').trim();
+                  }
+                  
+                  sections[currentSection].push({
+                    title,
+                    priority,
+                    labels,
+                    state: currentSection === 'CLOSED' ? 'closed' : 'open'
+                  });
+                }
+              }
+              
+              // Get existing issues
+              const { data: existingIssues } = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'all'
+              });
+              
+              // Process each section
+              for (const [sectionName, items] of Object.entries(sections)) {
+                for (const item of items) {
+                  // Check if issue already exists
+                  const existingIssue = existingIssues.find(issue => 
+                    issue.title === item.title
+                  );
+                  
+                  if (existingIssue) {
+                    // Update existing issue
+                    await github.rest.issues.update({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: existingIssue.number,
+                      state: item.state,
+                      labels: item.labels
+                    });
+                    
+                    console.log(`Updated issue: ${item.title}`);
+                  } else {
+                    // Create new issue
+                    await github.rest.issues.create({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      title: item.title,
+                      body: `Priority: ${item.priority}\nCreated from ROADMAP.md`,
+                      labels: item.labels,
+                      state: item.state
+                    });
+                    
+                    console.log(`Created new issue: ${item.title}`);
+                  }
+                }
+              }
+              
+              console.log('Successfully synced ROADMAP.md to issues');
+              
+            } catch (error) {
+              console.error('Error syncing ROADMAP.md to issues:', error);
+              console.error('Full error:', JSON.stringify(error, null, 2));
+              process.exit(1);
+            } 
