@@ -16,7 +16,7 @@
 - Document all module settings [Priority: P0] [Label: crier, documentation]
 - Test compatibility with Foundry VTT v13 [Priority: P0] [Label: crier, compatibility, testing]
 - Fix flickering in notification cards [Priority: P1] [Label: crier, bug, ui]
-- Implement hooks for Blacksmith events [Priority: P1] [Label: crier, integration, blacksmith]
+- Implement hooks for Blacksmith events [Priority: P2] [Label: crier, bibliosoph, scribe, integration, blacksmith, api]
 - Update combat tracking to leverage Blacksmith's combat enhancements [Priority: P1] [Label: crier, integration, blacksmith, combat]
 - Synchronize turn management with Blacksmith [Priority: P1] [Label: crier, integration, blacksmith, combat]
 - Create module settings migration system [Priority: P1] [Label: crier, enhancement, core]
