@@ -43,5 +43,5 @@
 - Test all permission configurations [Priority: P2] [Label: crier, testing, security]
 
 ## CLOSED
-
+- Fix flickering in notification cards [Priority: P1] [Label: crier, bug, ui]
 
