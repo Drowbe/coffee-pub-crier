@@ -29,17 +29,15 @@ jobs:
             
             console.log(`Found ${issues.length} issues to clean up`);
             
-            // Close all issues
+            // Delete all issues
             for (const issue of issues) {
               if (!issue.pull_request) {  // Skip pull requests
-                await github.rest.issues.update({
+                await github.rest.issues.delete({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  issue_number: issue.number,
-                  state: 'closed',
-                  state_reason: 'not_planned'
+                  issue_number: issue.number
                 });
-                console.log(`Closed issue #${issue.number}: ${issue.title}`);
+                console.log(`Deleted issue #${issue.number}: ${issue.title}`);
               }
             }
             
