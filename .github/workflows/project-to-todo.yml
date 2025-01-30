@@ -1,4 +1,4 @@
-name: Project to TODO
+name: PROJECT to TODO
 
 on:
   workflow_dispatch:  # Manual trigger for testing
