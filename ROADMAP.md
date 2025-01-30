@@ -15,8 +15,8 @@
 - Create initial release (v0.1.1) [Priority: P0] [Label: crier, release]
 - Refactor code to use new Blacksmith API [Priority: P0] [Label: crier, integration, blacksmith]
 - Fix missed turn detection [Priority: P0] [Label: crier, bug, combat]
-- Create fallback functionality for missing dependencies [Priority: P1] [Label: crier, enhancement, dependencies]
 - Fix flickering in notification cards [Priority: P1] [Label: crier, bug, ui]
+- Create fallback functionality for missing dependencies [Priority: P1] [Label: crier, enhancement, dependencies]
 - Investigate potential memory leak in combat tracker [Priority: P1] [Label: crier, bug, performance]
 - Update combat tracking to leverage Blacksmith's combat enhancements [Priority: P1] [Label: crier, integration, blacksmith, combat]
 - Synchronize turn management with Blacksmith [Priority: P1] [Label: crier, integration, blacksmith, combat]
@@ -43,5 +43,5 @@
 - Test all permission configurations [Priority: P2] [Label: crier, testing, security]
 
 ## CLOSED
-
+- Fix flickering in notification cards [Priority: P1] [Label: crier, bug, ui]
 
