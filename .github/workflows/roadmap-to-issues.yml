@@ -175,7 +175,7 @@ jobs:
                     number: issueNumber
                   });
                   
-                  const { item } = await github.graphql(addToProjectMutation, {
+                  const projectResult = await github.graphql(addToProjectMutation, {
                     projectId: project.id,
                     contentId: issueResult.repository.issue.id
                   });
@@ -202,7 +202,7 @@ jobs:
                       }
                     `, {
                       projectId: project.id,
-                      itemId: item.id,
+                      itemId: projectResult.addProjectV2ItemById.item.id,
                       fieldId: statusField.id,
                       optionId: statusOption.id
                     });
