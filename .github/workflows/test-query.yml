@@ -11,36 +11,49 @@ jobs:
   test-query:
     runs-on: ubuntu-latest
     steps:
-      - name: Test Issue Query
+      - name: Test Project Query
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
-            const issuesQuery = `
+            const query = `
               query($owner: String!, $repo: String!) {
                 repository(owner: $owner, name: $repo) {
-                  issues(first: 1, states: [OPEN]) {
-                    nodes {
-                      id
-                      number
-                      title
-                      projectItems(first: 10) {
-                        nodes {
-                          project {
-                            title
-                            number
-                          }
-                          fieldValues(first: 10) {
-                            nodes {
-                              ... on ProjectV2ItemFieldSingleSelectValue {
-                                name
-                                field {
+                  projectV2(number: 1) {
+                    title
+                    items(first: 10) {
+                      nodes {
+                        id
+                        fieldValues(first: 10) {
+                          nodes {
+                            ... on ProjectV2ItemFieldSingleSelectValue {
+                              name
+                              field {
+                                ... on ProjectV2SingleSelectField {
                                   name
                                 }
                               }
                             }
+                            ... on ProjectV2ItemFieldTextValue {
+                              text
+                              field {
+                                ... on ProjectV2TextField {
+                                  name
+                                }
+                              }
+                            }
+                          }
+                        }
+                        content {
+                          ... on Issue {
+                            title
+                            number
+                            state
+                          }
+                          ... on DraftIssue {
+                            title
                           }
                         }
                       }
@@ -50,7 +63,7 @@ jobs:
               }
             `;
             
-            const result = await github.graphql(issuesQuery, {
+            const result = await github.graphql(query, {
               owner: context.repo.owner,
               repo: context.repo.repo
             });
