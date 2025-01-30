@@ -1,4 +1,4 @@
-name: ROADMAP to ISSUES (Triggered or Manual)
+name: ROADMAP to ISSUES (Auto or Manual)
 
 on:
   push:
