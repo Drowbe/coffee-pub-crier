@@ -2,6 +2,8 @@ name: Project to TODO
 
 on:
   workflow_dispatch:  # Manual trigger for testing
+  schedule:
+    - cron: '*/15 * * * *'  # Run every 15 minutes
 
 permissions:
   contents: write
