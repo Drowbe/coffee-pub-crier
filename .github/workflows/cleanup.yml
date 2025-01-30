@@ -1,4 +1,4 @@
-name: Cleanup Issues and Project
+name: PURGE Issues and Project
 
 on:
   workflow_dispatch:  # Manual trigger only
