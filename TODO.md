@@ -1,6 +1,17 @@
 # Coffee Pub Crier - Tasks
 
-## BACKLOG
+## TESTING
+- undefined
+
+## COMPLETE
+- Set up GitHub Actions for automated releases
+- Create initial release (v0.1.1)
+- Refactor code to use new Blacksmith API
+- Implement hooks for Blacksmith events
+- Update combat tracking to leverage Blacksmith's combat enhancements
+- Synchronize turn management with Blacksmith
+- Add support for Blacksmith's notification system
+- Integrate with Blacksmith's styling system
 - Test compatibility with Foundry VTT v13
 - Add configurable animation options for turn transitions
 - Implement additional card style templates
@@ -20,29 +31,15 @@
 - Optimize combat tracking performance
 - Review memory usage during long combat sessions
 - Review and re-enable turn message interception
-
-## IN PROGRESS
-- Set up GitHub Actions for automated releases
-- Create initial release (v0.1.1)
-- Refactor code to use new Blacksmith API
-- Implement hooks for Blacksmith events
-- Update combat tracking to leverage Blacksmith's combat enhancements
-- Synchronize turn management with Blacksmith
-- Add support for Blacksmith's notification system
-- Integrate with Blacksmith's styling system
-
-## TESTING
 - Create test suite for core functionality
 - Test with various game systems
 - Verify compatibility with popular combat modules
 - Test all permission configurations
 - Fix missed turn detection (currently disabled in code)
-- Create an ISSUES action to add issues to the project
-
-## COMPLETE
 - Create basic README structure
 - Set up MIT license
 - Initialize git repository
+- Create an ISSUES action to add issues to the project
 - Complete GitHub repository setup
 - Test new ACTION process TODO to Project
 
