@@ -58,6 +58,7 @@ jobs:
               
               const project = projectResult.user.projectV2;
               const statusField = project.fields.nodes.find(field => field.name === 'Status');
+              const priorityField = project.fields.nodes.find(field => field.name === 'Priority');
               
               // Read and parse ROADMAP.md
               const content = fs.readFileSync('ROADMAP.md', 'utf8');
@@ -180,6 +181,8 @@ jobs:
                     contentId: issueResult.repository.issue.id
                   });
                   
+                  const itemId = projectResult.addProjectV2ItemById.item.id;
+                  
                   // Set status
                   const statusOption = statusField.options.find(opt => opt.name === item.status);
                   if (statusOption) {
@@ -202,9 +205,37 @@ jobs:
                       }
                     `, {
                       projectId: project.id,
-                      itemId: projectResult.addProjectV2ItemById.item.id,
+                      itemId: itemId,
                       fieldId: statusField.id,
                       optionId: statusOption.id
+                    });
+                  }
+                  
+                  // Set priority
+                  const priorityOption = priorityField.options.find(opt => opt.name === item.priority);
+                  if (priorityOption) {
+                    await github.graphql(`
+                      mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                        updateProjectV2ItemFieldValue(
+                          input: {
+                            projectId: $projectId
+                            itemId: $itemId
+                            fieldId: $fieldId
+                            value: { 
+                              singleSelectOptionId: $optionId
+                            }
+                          }
+                        ) {
+                          projectV2Item {
+                            id
+                          }
+                        }
+                      }
+                    `, {
+                      projectId: project.id,
+                      itemId: itemId,
+                      fieldId: priorityField.id,
+                      optionId: priorityOption.id
                     });
                   }
                 }
