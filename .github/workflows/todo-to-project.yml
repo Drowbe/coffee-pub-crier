@@ -119,7 +119,7 @@ jobs:
                       owner: context.repo.owner,
                       repo: context.repo.repo,
                       title: task.title,
-                      body: `Feature from Coffee Pub Crier module`,
+                      body: `Task from ${sectionName} section of TODO.md`,
                       labels: ['crier']
                     });
                     issueId = issue.node_id;
