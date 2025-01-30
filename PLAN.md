@@ -1,9 +1,6 @@
 # Coffee Pub Crier - Tasks
 
-## TESTING
-- undefined
-
-## COMPLETE
+## BACKLOG
 - Set up GitHub Actions for automated releases
 - Create initial release (v0.1.1)
 - Refactor code to use new Blacksmith API
@@ -36,10 +33,18 @@
 - Verify compatibility with popular combat modules
 - Test all permission configurations
 - Fix missed turn detection (currently disabled in code)
+- Investigate potential memory leak in combat tracker
+- Fix flickering in notification cards
+
+## IN PROGRESS
+
+## TESTING
+
+## COMPLETE
 - Create basic README structure
 - Set up MIT license
 - Initialize git repository
-- Create an ISSUES action to add issues to the project
 - Complete GitHub repository setup
-- Test new ACTION process TODO to Project
+
+## NOT PLANNED
 
