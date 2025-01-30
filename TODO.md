@@ -30,6 +30,7 @@
 - Synchronize turn management with Blacksmith
 - Add support for Blacksmith's notification system
 - Integrate with Blacksmith's styling system
+- Create an ISSUES action to add issues to the project
 
 ## TESTING
 - Create test suite for core functionality
