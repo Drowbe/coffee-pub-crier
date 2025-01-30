@@ -1,7 +1,6 @@
 # Coffee Pub Crier - ROADMAP
 
 ## BACKLOG
-- Test compatibility with Foundry VTT v13 [Priority: P0] [Label: crier, compatibility, testing]
 - Create initial release (v0.1.1) [Priority: P0] [Label: crier, release]
 - Refactor code to use new Blacksmith API [Priority: P0] [Label: crier, integration, blacksmith]
 - Fix missed turn detection [Priority: P0] [Label: crier, bug, combat]
@@ -17,7 +16,6 @@
 - Document all module settings [Priority: P0] [Label: crier, documentation]
 - Test compatibility with Foundry VTT v13 [Priority: P0] [Label: crier, compatibility, testing]
 - Fix flickering in notification cards [Priority: P1] [Label: crier, bug, ui]
-- Investigate potential memory leak in combat tracker [Priority: P1] [Label: crier, bug, performance]
 - Implement hooks for Blacksmith events [Priority: P1] [Label: crier, integration, blacksmith]
 - Update combat tracking to leverage Blacksmith's combat enhancements [Priority: P1] [Label: crier, integration, blacksmith, combat]
 - Synchronize turn management with Blacksmith [Priority: P1] [Label: crier, integration, blacksmith, combat]
@@ -35,11 +33,9 @@
 
 ## IN PROGRESS
 - Create an ISSUES action to add issues to the project [Priority: P2] [Label: crier, enhancement, automation]
-- Create an ISSUES action to add issues to the project [Priority: P2] [Label: crier, enhancement, automation]
 
 ## TESTING
 - Test Issue for Data Structure Analysis [Priority: P1] [Label: crier, enhancement]
-- Verifying our ROADMAP action is working as expected [Priority: P1] [Label: crier, automation]
 - Create test suite for core functionality [Priority: P1] [Label: crier, testing]
 - Verifying our ROADMAP action is working as expected [Priority: P1] [Label: crier, automation]
 - Test with various game systems [Priority: P2] [Label: crier, compatibility, testing]
