@@ -1,4 +1,4 @@
-name: ISSUES to ROADMAP
+name: ISSUES to ROADMAP (Trigger or Manual)
 
 on:
   issues:
