@@ -1,4 +1,4 @@
-name: PROJECT to TODO
+name: PROJECT to PLAN
 
 on:
   workflow_dispatch:  # Manual trigger for testing
@@ -7,16 +7,15 @@ on:
 
 permissions:
   contents: write
-  issues: read
   repository-projects: read
 
 jobs:
-  update-todo:
+  update-plan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update TODO.md from Project
+      - name: Update PLAN.md from Project
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
           PROJECT_NUMBER: 2
@@ -31,7 +30,8 @@ jobs:
               'BACKLOG': 'BACKLOG',
               'IN PROGRESS': 'IN PROGRESS',
               'TESTING': 'TESTING',
-              'COMPLETE': 'COMPLETE'
+              'COMPLETE': 'COMPLETE',
+              'NOT PLANNED': 'NOT PLANNED'
             };
             
             try {
@@ -44,10 +44,8 @@ jobs:
                         nodes {
                           id
                           content {
-                            ... on Issue {
+                            ... on DraftIssue {
                               title
-                              state
-                              number
                             }
                           }
                           fieldValues(first: 8) {
@@ -74,12 +72,13 @@ jobs:
                 'BACKLOG': [],
                 'IN PROGRESS': [],
                 'TESTING': [],
-                'COMPLETE': []
+                'COMPLETE': [],
+                'NOT PLANNED': []
               };
               
               // Process project items
               for (const item of projectResult.user.projectV2.items.nodes) {
-                if (!item.content) continue; // Skip items that aren't issues
+                if (!item.content) continue; // Skip items without content
                 
                 const status = item.fieldValues.nodes.find(field => field.name)?.name || 'BACKLOG';
                 const section = statusMap[status] || 'BACKLOG';
@@ -89,21 +88,19 @@ jobs:
                 });
               }
               
-              // Generate new TODO.md content
-              let todoContent = '# Coffee Pub Crier - Tasks\n\n';
+              // Generate new PLAN.md content
+              let planContent = '# Coffee Pub Crier - Tasks\n\n';
               
-              for (const [section, tasks] of Object.entries(sections)) {
-                if (tasks.length > 0) {
-                  todoContent += `## ${section}\n`;
-                  for (const task of tasks) {
-                    todoContent += `- ${task.title}\n`;
-                  }
-                  todoContent += '\n';
+              for (const [section, items] of Object.entries(sections)) {
+                planContent += `## ${section}\n`;
+                for (const item of items) {
+                  planContent += `- ${item.title}\n`;
                 }
+                planContent += '\n';
               }
               
               // Write the new content
-              fs.writeFileSync('TODO.md', todoContent);
+              fs.writeFileSync('PLAN.md', planContent);
               
               // Create commit
               const { repo, owner } = context.repo;
@@ -121,7 +118,7 @@ jobs:
               const { data: blob } = await github.rest.git.createBlob({
                 owner,
                 repo,
-                content: todoContent,
+                content: planContent,
                 encoding: 'utf-8',
               });
               
@@ -131,7 +128,7 @@ jobs:
                 repo,
                 base_tree: currentSha,
                 tree: [{
-                  path: 'TODO.md',
+                  path: 'PLAN.md',
                   mode: '100644',
                   type: 'blob',
                   sha: blob.sha,
@@ -142,7 +139,7 @@ jobs:
               const { data: commit } = await github.rest.git.createCommit({
                 owner,
                 repo,
-                message: 'docs: sync TODO.md with project status',
+                message: 'docs: sync PLAN.md with project status',
                 tree: tree.sha,
                 parents: [currentSha],
               });
@@ -155,10 +152,10 @@ jobs:
                 sha: commit.sha,
               });
               
-              console.log('Successfully updated TODO.md');
+              console.log('Successfully updated PLAN.md');
               
             } catch (error) {
-              console.error('Error updating TODO.md:', error);
+              console.error('Error updating PLAN.md:', error);
               console.error('Full error:', JSON.stringify(error, null, 2));
               process.exit(1);
             } 

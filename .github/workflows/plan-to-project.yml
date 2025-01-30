@@ -1,0 +1,210 @@
+name: PLAN to PROJECT
+
+on:
+  push:
+    paths:
+      - 'PLAN.md'
+    branches:
+      - master
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: read
+  repository-projects: write
+
+jobs:
+  sync-to-project:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update Project from PLAN.md
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          PROJECT_NUMBER: 2
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const fs = require('fs');
+            
+            // Status mapping
+            const statusMap = {
+              'BACKLOG': 'BACKLOG',
+              'IN PROGRESS': 'IN PROGRESS',
+              'TESTING': 'TESTING',
+              'COMPLETE': 'COMPLETE',
+              'NOT PLANNED': 'NOT PLANNED'
+            };
+            
+            try {
+              // Read and parse PLAN.md
+              const content = fs.readFileSync('PLAN.md', 'utf8');
+              const sections = {};
+              let currentSection = null;
+              
+              // Parse the markdown content
+              for (const line of content.split('\n')) {
+                if (line.startsWith('## ')) {
+                  currentSection = line.substring(3).trim();
+                  sections[currentSection] = [];
+                } else if (line.startsWith('- ') && currentSection) {
+                  sections[currentSection].push(line.substring(2).trim());
+                }
+              }
+              
+              // Get project data
+              const projectQuery = `
+                query($owner: String!, $number: Int!) {
+                  user(login: $owner) {
+                    projectV2(number: $number) {
+                      id
+                      fields(first: 20) {
+                        nodes {
+                          ... on ProjectV2SingleSelectField {
+                            id
+                            name
+                            options {
+                              id
+                              name
+                            }
+                          }
+                        }
+                      }
+                      items(first: 100) {
+                        nodes {
+                          id
+                          fieldValues(first: 8) {
+                            nodes {
+                              ... on ProjectV2ItemFieldSingleSelectValue {
+                                name
+                              }
+                            }
+                          }
+                          content {
+                            ... on DraftIssue {
+                              title
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+              
+              const projectResult = await github.graphql(projectQuery, {
+                owner: context.repo.owner,
+                number: parseInt(process.env.PROJECT_NUMBER)
+              });
+              
+              const project = projectResult.user.projectV2;
+              const statusField = project.fields.nodes.find(field => field.options);
+              
+              if (!statusField) {
+                throw new Error('Status field not found in project');
+              }
+              
+              // Create a map of existing items
+              const existingItems = new Map();
+              for (const item of project.items.nodes) {
+                if (item.content) {
+                  existingItems.set(item.content.title, {
+                    id: item.id,
+                    status: item.fieldValues.nodes.find(field => field.name)?.name
+                  });
+                }
+              }
+              
+              // Process each section
+              for (const [sectionName, items] of Object.entries(sections)) {
+                const targetStatus = statusMap[sectionName];
+                if (!targetStatus) continue;
+                
+                const statusOption = statusField.options.find(opt => opt.name === targetStatus);
+                if (!statusOption) continue;
+                
+                for (const title of items) {
+                  const existing = existingItems.get(title);
+                  
+                  if (existing) {
+                    // Update status if different
+                    if (existing.status !== targetStatus) {
+                      await github.graphql(`
+                        mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                          updateProjectV2ItemFieldValue(
+                            input: {
+                              projectId: $projectId
+                              itemId: $itemId
+                              fieldId: $fieldId
+                              value: { 
+                                singleSelectOptionId: $optionId
+                              }
+                            }
+                          ) {
+                            projectV2Item {
+                              id
+                            }
+                          }
+                        }
+                      `, {
+                        projectId: project.id,
+                        itemId: existing.id,
+                        fieldId: statusField.id,
+                        optionId: statusOption.id
+                      });
+                    }
+                  } else {
+                    // Create new draft issue
+                    const addItemMutation = `
+                      mutation($input: CreateProjectV2DraftIssueInput!) {
+                        createProjectV2DraftIssue(input: $input) {
+                          projectItem {
+                            id
+                          }
+                        }
+                      }
+                    `;
+                    
+                    const { createProjectV2DraftIssue: { projectItem } } = await github.graphql(addItemMutation, {
+                      input: {
+                        projectId: project.id,
+                        title: title,
+                      }
+                    });
+                    
+                    // Set status
+                    await github.graphql(`
+                      mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                        updateProjectV2ItemFieldValue(
+                          input: {
+                            projectId: $projectId
+                            itemId: $itemId
+                            fieldId: $fieldId
+                            value: { 
+                              singleSelectOptionId: $optionId
+                            }
+                          }
+                        ) {
+                          projectV2Item {
+                            id
+                          }
+                        }
+                      }
+                    `, {
+                      projectId: project.id,
+                      itemId: projectItem.id,
+                      fieldId: statusField.id,
+                      optionId: statusOption.id
+                    });
+                  }
+                }
+              }
+              
+              console.log('Successfully synced PLAN.md to project');
+              
+            } catch (error) {
+              console.error('Error syncing PLAN.md to project:', error);
+              console.error('Full error:', JSON.stringify(error, null, 2));
+              process.exit(1);
+            } 
