@@ -2,11 +2,11 @@
 
 ## BACKLOG
 - undefined
+- Create an ISSUES action to add issues to the project
 
 ## IN PROGRESS
 
 ## TESTING
 
 ## COMPLETE
-- Create an ISSUES action to add issues to the project
 
