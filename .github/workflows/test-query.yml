@@ -28,18 +28,17 @@ jobs:
                         id
                         fieldValues(first: 10) {
                           nodes {
-                            ... on ProjectV2ItemFieldSingleSelectValue {
-                              name
+                            ... on ProjectV2ItemFieldValue {
                               field {
-                                ... on ProjectV2SingleSelectField {
+                                ... on ProjectV2Field {
                                   name
                                 }
                               }
                             }
-                            ... on ProjectV2ItemFieldTextValue {
-                              text
+                            ... on ProjectV2ItemFieldSingleSelectValue {
+                              name
                               field {
-                                ... on ProjectV2TextField {
+                                ... on ProjectV2SingleSelectField {
                                   name
                                 }
                               }
