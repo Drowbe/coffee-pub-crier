@@ -37,6 +37,7 @@ jobs:
                         id
                         title
                         state
+                        number
                         labels(first: 10) {
                           nodes {
                             name
@@ -71,10 +72,10 @@ jobs:
               
               // Organize issues by status
               const sections = {
-                'BACKLOG': [],
-                'IN PROGRESS': [],
-                'TESTING': [],
-                'CLOSED': []
+                'BACKLOG': new Map(),
+                'IN PROGRESS': new Map(),
+                'TESTING': new Map(),
+                'CLOSED': new Map()
               };
               
               for (const issue of issuesResult.repository.issues.nodes) {
@@ -103,23 +104,32 @@ jobs:
                 // Create the issue line
                 const issueLine = `- ${issue.title} [Priority: ${priority}] [Label: ${labelString}]`;
                 
-                // Add to appropriate section
-                sections[status].push(issueLine);
+                // Use Map to ensure uniqueness by title
+                sections[status].set(issue.title, {
+                  line: issueLine,
+                  priority,
+                  number: issue.number
+                });
               }
               
               // Create the new ROADMAP.md content
               let content = '# Coffee Pub Crier - ROADMAP\n\n';
               
               // Add each section with sorted issues
-              for (const [section, issues] of Object.entries(sections)) {
+              for (const [section, issuesMap] of Object.entries(sections)) {
                 content += `## ${section}\n`;
-                // Sort issues by priority (P0 -> P4)
-                issues.sort((a, b) => {
-                  const priorityA = a.match(/\[Priority: (P\d+)\]/)[1];
-                  const priorityB = b.match(/\[Priority: (P\d+)\]/)[1];
-                  return priorityA.localeCompare(priorityB);
-                });
-                content += issues.join('\n') + '\n\n';
+                // Convert Map to array and sort by priority then issue number
+                const sortedIssues = Array.from(issuesMap.values())
+                  .sort((a, b) => {
+                    // First sort by priority
+                    const priorityCompare = a.priority.localeCompare(b.priority);
+                    if (priorityCompare !== 0) return priorityCompare;
+                    // Then by issue number for stable ordering
+                    return a.number - b.number;
+                  })
+                  .map(issue => issue.line);
+                
+                content += sortedIssues.join('\n') + '\n\n';
               }
               
               // Write the new content to ROADMAP.md
