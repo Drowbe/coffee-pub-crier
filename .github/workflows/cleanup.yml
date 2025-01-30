@@ -19,38 +19,43 @@ jobs:
         with:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
-            // First, get all issues
-            const { data: issues } = await github.rest.issues.listForRepo({
+            // First, get all issues with their node IDs
+            const issuesQuery = `
+              query($owner: String!, $repo: String!) {
+                repository(owner: $owner, name: $repo) {
+                  issues(first: 100, states: [OPEN, CLOSED]) {
+                    nodes {
+                      id
+                      number
+                      title
+                    }
+                  }
+                }
+              }
+            `;
+            
+            const issuesResult = await github.graphql(issuesQuery, {
               owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'all',
-              per_page: 100
+              repo: context.repo.repo
             });
             
-            console.log(`Found ${issues.length} issues to clean up`);
+            const issues = issuesResult.repository.issues.nodes;
+            console.log(`Found ${issues.length} issues to delete`);
             
-            // Lock and close all issues
-            for (const issue of issues) {
-              if (!issue.pull_request) {  // Skip pull requests
-                // Close the issue
-                await github.rest.issues.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  state: 'closed',
-                  state_reason: 'not_planned'
-                });
-                
-                // Lock the issue
-                await github.rest.issues.lock({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  lock_reason: 'resolved'
-                });
-                
-                console.log(`Closed and locked issue #${issue.number}: ${issue.title}`);
+            // Delete all issues using GraphQL
+            const deleteIssueMutation = `
+              mutation($id: ID!) {
+                deleteIssue(input: {issueId: $id}) {
+                  clientMutationId
+                }
               }
+            `;
+            
+            for (const issue of issues) {
+              await github.graphql(deleteIssueMutation, {
+                id: issue.id
+              });
+              console.log(`Deleted issue #${issue.number}: ${issue.title}`);
             }
             
             // Now clean up project items
