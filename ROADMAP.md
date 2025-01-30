@@ -1,4 +1,4 @@
-# Coffee Pub Crier - Issues
+# Coffee Pub Crier - ROADMAP
 
 ## BACKLOG
 - Fix flickering in notification cards
@@ -10,5 +10,4 @@
 
 ## TESTING
 
-## COMPLETE
-
+## CLOSED 
