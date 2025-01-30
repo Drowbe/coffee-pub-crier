@@ -1,4 +1,4 @@
-name: ROADMAP to ISSUES
+name: ROADMAP to ISSUES (Triggered or Manual)
 
 on:
   push:
@@ -28,6 +28,9 @@ jobs:
           script: |
             const fs = require('fs');
             
+            // Add delay function to prevent rate limiting
+            const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+            
             try {
               // Get project data first
               const projectQuery = `
@@ -55,6 +58,9 @@ jobs:
               const projectResult = await github.graphql(projectQuery, {
                 owner: context.repo.owner
               });
+              
+              // Add delay after project query
+              await delay(1000);
               
               const project = projectResult.user.projectV2;
               const statusField = project.fields.nodes.find(field => field.name === 'Status');
@@ -108,6 +114,9 @@ jobs:
                 state: 'all'
               });
               
+              // Add delay after getting issues
+              await delay(1000);
+              
               // Process each section
               for (const [sectionName, items] of Object.entries(sections)) {
                 for (const item of items) {
@@ -145,6 +154,9 @@ jobs:
                     console.log(`Created new issue: ${item.title}`);
                   }
                   
+                  // Add delay after issue operation
+                  await delay(2000);
+                  
                   // Add to project and set status
                   const addToProjectMutation = `
                     mutation($projectId: ID!, $contentId: ID!) {
@@ -176,10 +188,16 @@ jobs:
                     number: issueNumber
                   });
                   
+                  // Add delay after getting issue ID
+                  await delay(1000);
+                  
                   const projectResult = await github.graphql(addToProjectMutation, {
                     projectId: project.id,
                     contentId: issueResult.repository.issue.id
                   });
+                  
+                  // Add delay after adding to project
+                  await delay(1000);
                   
                   const itemId = projectResult.addProjectV2ItemById.item.id;
                   
@@ -209,6 +227,9 @@ jobs:
                       fieldId: statusField.id,
                       optionId: statusOption.id
                     });
+                    
+                    // Add delay after setting status
+                    await delay(1000);
                   }
                   
                   // Set priority
@@ -237,6 +258,9 @@ jobs:
                       fieldId: priorityField.id,
                       optionId: priorityOption.id
                     });
+                    
+                    // Add delay after setting priority
+                    await delay(1000);
                   }
                 }
               }
