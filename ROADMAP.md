@@ -15,8 +15,7 @@
 - Create initial release (v0.1.1) [Priority: P0] [Label: crier, release]
 - Refactor code to use new Blacksmith API [Priority: P0] [Label: crier, integration, blacksmith]
 - Fix missed turn detection [Priority: P0] [Label: crier, bug, combat]
-- Implement hooks for Blacksmith events [Priority: P0] [Label: crier, integration, blacksmith, api, scribe, bibliosoph]
-- Update combat tracking to leverage Blacksmith's combat enhancements [Priority: P1] [Label: crier, integration, blacksmith, combat]
+- Update combat tracking to leverage Blacksmith's combat enhancements [Priority: P0] [Label: crier, integration, blacksmith, combat]
 - Synchronize turn management with Blacksmith [Priority: P1] [Label: crier, integration, blacksmith, combat]
 - Create module settings migration system [Priority: P1] [Label: crier, enhancement, core]
 - Review and re-enable turn message interception [Priority: P1] [Label: crier, bug, combat]
@@ -30,6 +29,7 @@
 - Integrate with Blacksmith's styling system [Priority: P2] [Label: crier, ui, integration, blacksmith]
 - Add configurable animation options for turn transitions [Priority: P2] [Label: crier, enhancement, ui]
 - Review template loading process [Priority: P2] [Label: crier, optimization]
+- Implement hooks for Blacksmith events [Priority: P2] [Label: crier, integration, blacksmith, api, scribe, bibliosoph]
 
 ## IN PROGRESS
 - Create an ISSUES action to add issues to the project [Priority: P2] [Label: crier, enhancement, automation]
