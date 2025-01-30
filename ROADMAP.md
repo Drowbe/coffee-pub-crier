@@ -1,7 +1,6 @@
 # Coffee Pub Crier - ROADMAP
 
 ## BACKLOG
-- Fix missed turn detection [Priority: P0] [Label: crier, bug, combat]
 - Add support for custom sound effects upload [Priority: P0] [Label: crier, enhancement, audio]
 - Add support for additional languages [Priority: P0] [Label: crier, enhancement, i18n]
 - Create API for other modules to integrate [Priority: P0] [Label: crier, enhancement, api]
@@ -14,6 +13,7 @@
 - Test compatibility with Foundry VTT v13 [Priority: P0] [Label: crier, compatibility, testing]
 - Create initial release (v0.1.1) [Priority: P0] [Label: crier, release]
 - Refactor code to use new Blacksmith API [Priority: P0] [Label: crier, integration, blacksmith]
+- Fix missed turn detection [Priority: P0] [Label: crier, bug, combat]
 - Fix flickering in notification cards [Priority: P1] [Label: crier, bug, ui]
 - Implement hooks for Blacksmith events [Priority: P1] [Label: crier, integration, blacksmith]
 - Update combat tracking to leverage Blacksmith's combat enhancements [Priority: P1] [Label: crier, integration, blacksmith, combat]
