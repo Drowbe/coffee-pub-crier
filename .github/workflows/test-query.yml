@@ -11,7 +11,7 @@ jobs:
   test-query:
     runs-on: ubuntu-latest
     steps:
-      - name: Test Project Query
+      - name: Get All Issues
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         uses: actions/github-script@v7
@@ -21,47 +21,32 @@ jobs:
             const query = `
               query($owner: String!, $repo: String!) {
                 repository(owner: $owner, name: $repo) {
-                  projectV2(number: 2) {
-                    title
-                    items(first: 10) {
-                      nodes {
-                        id
-                        fieldValues(first: 10) {
-                          nodes {
-                            ... on ProjectV2ItemFieldSingleSelectValue {
-                              name
-                              field {
-                                ... on ProjectV2SingleSelectField {
-                                  name
-                                }
-                              }
-                            }
-                            ... on ProjectV2ItemFieldDateValue {
-                              date
-                              field {
-                                ... on ProjectV2Field {
-                                  name
-                                }
-                              }
-                            }
-                            ... on ProjectV2ItemFieldTextValue {
-                              text
-                              field {
-                                ... on ProjectV2Field {
-                                  name
-                                }
-                              }
-                            }
-                          }
+                  issues(first: 100, states: [OPEN, CLOSED]) {
+                    nodes {
+                      id
+                      title
+                      state
+                      labels(first: 10) {
+                        nodes {
+                          name
                         }
-                        content {
-                          ... on Issue {
+                      }
+                      projectItems(first: 10) {
+                        nodes {
+                          project {
                             title
-                            number
-                            state
                           }
-                          ... on DraftIssue {
-                            title
+                          fieldValues(first: 10) {
+                            nodes {
+                              ... on ProjectV2ItemFieldSingleSelectValue {
+                                name
+                                field {
+                                  ... on ProjectV2SingleSelectField {
+                                    name
+                                  }
+                                }
+                              }
+                            }
                           }
                         }
                       }
@@ -76,4 +61,4 @@ jobs:
               repo: context.repo.repo
             });
             
-            console.log('Query Result:', JSON.stringify(result, null, 2)); 
+            console.log('All Issues:', JSON.stringify(result, null, 2)); 
