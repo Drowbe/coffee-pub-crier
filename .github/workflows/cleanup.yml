@@ -29,15 +29,27 @@ jobs:
             
             console.log(`Found ${issues.length} issues to clean up`);
             
-            // Delete all issues
+            // Lock and close all issues
             for (const issue of issues) {
               if (!issue.pull_request) {  // Skip pull requests
-                await github.rest.issues.delete({
+                // Close the issue
+                await github.rest.issues.update({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  issue_number: issue.number
+                  issue_number: issue.number,
+                  state: 'closed',
+                  state_reason: 'not_planned'
                 });
-                console.log(`Deleted issue #${issue.number}: ${issue.title}`);
+                
+                // Lock the issue
+                await github.rest.issues.lock({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  lock_reason: 'resolved'
+                });
+                
+                console.log(`Closed and locked issue #${issue.number}: ${issue.title}`);
               }
             }
             
