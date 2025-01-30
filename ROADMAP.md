@@ -8,5 +8,6 @@
 - Create an ISSUES action to add issues to the project [Priority: P2] [Label: crier, enhancement, automation]
 
 ## TESTING
+- Verifying our ROADMAP action is working as expected [Priority: P1] [Label: crier, automation]
 
 ## CLOSED 
