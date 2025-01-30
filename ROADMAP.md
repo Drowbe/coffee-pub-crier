@@ -35,9 +35,9 @@
 - Create an ISSUES action to add issues to the project [Priority: P2] [Label: crier, enhancement, automation]
 
 ## TESTING
-- Test Issue for Data Structure Analysis [Priority: P1] [Label: crier, enhancement]
 - Create test suite for core functionality [Priority: P1] [Label: crier, testing]
 - Verifying our ROADMAP action is working as expected [Priority: P1] [Label: crier, automation]
+- Test Issue for Data Structure Analysis [Priority: P1] [Label: crier, enhancement]
 - Test with various game systems [Priority: P2] [Label: crier, compatibility, testing]
 - Verify compatibility with popular combat modules [Priority: P2] [Label: crier, compatibility, testing]
 - Test all permission configurations [Priority: P2] [Label: crier, testing, security]
