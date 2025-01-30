@@ -1,8 +1,8 @@
 # Coffee Pub Crier - Issues
 
 ## BACKLOG
-- undefined
-- Create an ISSUES action to add issues to the project
+- Investigate potential memory leak in combat tracker
+- Fix flickering in notification cards
 
 ## IN PROGRESS
 
@@ -10,3 +10,4 @@
 
 ## COMPLETE
 
+## NOT PLANNED
