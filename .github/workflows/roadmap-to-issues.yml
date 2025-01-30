@@ -11,6 +11,7 @@ on:
 permissions:
   contents: read
   issues: write
+  repository-projects: write
 
 jobs:
   sync-to-issues:
@@ -28,6 +29,36 @@ jobs:
             const fs = require('fs');
             
             try {
+              // Get project data first
+              const projectQuery = `
+                query($owner: String!) {
+                  user(login: $owner) {
+                    projectV2(number: 2) {
+                      id
+                      fields(first: 20) {
+                        nodes {
+                          ... on ProjectV2SingleSelectField {
+                            id
+                            name
+                            options {
+                              id
+                              name
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+              
+              const projectResult = await github.graphql(projectQuery, {
+                owner: context.repo.owner
+              });
+              
+              const project = projectResult.user.projectV2;
+              const statusField = project.fields.nodes.find(field => field.name === 'Status');
+              
               // Read and parse ROADMAP.md
               const content = fs.readFileSync('ROADMAP.md', 'utf8');
               const sections = {};
@@ -63,7 +94,8 @@ jobs:
                     title,
                     priority,
                     labels,
-                    state: currentSection === 'CLOSED' ? 'closed' : 'open'
+                    state: currentSection === 'CLOSED' ? 'closed' : 'open',
+                    status: currentSection
                   });
                 }
               }
@@ -78,6 +110,8 @@ jobs:
               // Process each section
               for (const [sectionName, items] of Object.entries(sections)) {
                 for (const item of items) {
+                  let issueNumber;
+                  
                   // Check if issue already exists
                   const existingIssue = existingIssues.find(issue => 
                     issue.title === item.title
@@ -93,10 +127,11 @@ jobs:
                       labels: item.labels
                     });
                     
+                    issueNumber = existingIssue.number;
                     console.log(`Updated issue: ${item.title}`);
                   } else {
                     // Create new issue
-                    await github.rest.issues.create({
+                    const { data: newIssue } = await github.rest.issues.create({
                       owner: context.repo.owner,
                       repo: context.repo.repo,
                       title: item.title,
@@ -105,12 +140,77 @@ jobs:
                       state: item.state
                     });
                     
+                    issueNumber = newIssue.number;
                     console.log(`Created new issue: ${item.title}`);
+                  }
+                  
+                  // Add to project and set status
+                  const addToProjectMutation = `
+                    mutation($projectId: ID!, $contentId: ID!) {
+                      addProjectV2ItemById(input: {
+                        projectId: $projectId
+                        contentId: $contentId
+                      }) {
+                        item {
+                          id
+                        }
+                      }
+                    }
+                  `;
+                  
+                  // Get issue node ID
+                  const issueQuery = `
+                    query($owner: String!, $repo: String!, $number: Int!) {
+                      repository(owner: $owner, name: $repo) {
+                        issue(number: $number) {
+                          id
+                        }
+                      }
+                    }
+                  `;
+                  
+                  const issueResult = await github.graphql(issueQuery, {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    number: issueNumber
+                  });
+                  
+                  const { item } = await github.graphql(addToProjectMutation, {
+                    projectId: project.id,
+                    contentId: issueResult.repository.issue.id
+                  });
+                  
+                  // Set status
+                  const statusOption = statusField.options.find(opt => opt.name === item.status);
+                  if (statusOption) {
+                    await github.graphql(`
+                      mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                        updateProjectV2ItemFieldValue(
+                          input: {
+                            projectId: $projectId
+                            itemId: $itemId
+                            fieldId: $fieldId
+                            value: { 
+                              singleSelectOptionId: $optionId
+                            }
+                          }
+                        ) {
+                          projectV2Item {
+                            id
+                          }
+                        }
+                      }
+                    `, {
+                      projectId: project.id,
+                      itemId: item.id,
+                      fieldId: statusField.id,
+                      optionId: statusOption.id
+                    });
                   }
                 }
               }
               
-              console.log('Successfully synced ROADMAP.md to issues');
+              console.log('Successfully synced ROADMAP.md to issues and project');
               
             } catch (error) {
               console.error('Error syncing ROADMAP.md to issues:', error);
