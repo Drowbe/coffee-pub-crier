@@ -1,26 +1,6 @@
 # Coffee Pub Crier - ROADMAP
 
-<!--
-USAGE:
-1. To add new items: Add them here in the appropriate section using the format:
-   - Your new task title [Priority: P0-P4] [Label: crier, label1, label2]
-   They will be automatically created as GitHub Issues.
-
-2. To modify existing items: Edit them in GitHub Issues instead of here.
-   This file will be automatically updated to reflect those changes.
-
-This dual workflow allows for easy planning while maintaining GitHub Issues as the source of truth.
-
-PRIORITIES:
-P0 - Critical/Blocker
-P1 - High Priority
-P2 - Medium Priority
-P3 - Low Priority
-P4 - Low Priority/Low Impact
--->
-
 ## BACKLOG
-- Implement additional card style templates [Priority: P0] [Label: crier, enhancement, ui]
 - Add support for custom sound effects upload [Priority: P0] [Label: crier, enhancement, audio]
 - Add support for additional languages [Priority: P0] [Label: crier, enhancement, i18n]
 - Create API for other modules to integrate [Priority: P0] [Label: crier, enhancement, api]
@@ -34,8 +14,8 @@ P4 - Low Priority/Low Impact
 - Create initial release (v0.1.1) [Priority: P0] [Label: crier, release]
 - Refactor code to use new Blacksmith API [Priority: P0] [Label: crier, integration, blacksmith]
 - Fix missed turn detection [Priority: P0] [Label: crier, bug, combat]
+- Implement additional card style templates [Priority: P0] [Label: crier, enhancement, ui]
 - Fix flickering in notification cards [Priority: P1] [Label: crier, bug, ui]
-- Create fallback functionality for missing dependencies [Priority: P1] [Label: crier, enhancement, dependencies]
 - Investigate potential memory leak in combat tracker [Priority: P1] [Label: crier, bug, performance]
 - Update combat tracking to leverage Blacksmith's combat enhancements [Priority: P1] [Label: crier, integration, blacksmith, combat]
 - Synchronize turn management with Blacksmith [Priority: P1] [Label: crier, integration, blacksmith, combat]
@@ -44,11 +24,12 @@ P4 - Low Priority/Low Impact
 - Optimize combat tracking performance [Priority: P1] [Label: crier, optimization, performance]
 - Review memory usage during long combat sessions [Priority: P1] [Label: crier, optimization, performance]
 - Document coffee-pub-blacksmith dependency requirements [Priority: P1] [Label: crier, documentation, dependencies]
+- Create fallback functionality for missing dependencies [Priority: P1] [Label: crier, enhancement, dependencies]
+- Implement hooks for Blacksmith events [Priority: P2] [Label: crier, integration, blacksmith, api, scribe, bibliosoph]
 - Add support for Blacksmith's notification system [Priority: P2] [Label: crier, ui, integration, blacksmith]
 - Integrate with Blacksmith's styling system [Priority: P2] [Label: crier, ui, integration, blacksmith]
 - Add configurable animation options for turn transitions [Priority: P2] [Label: crier, enhancement, ui]
 - Review template loading process [Priority: P2] [Label: crier, optimization]
-- Implement hooks for Blacksmith events [Priority: P2] [Label: crier, integration, blacksmith, api, scribe, bibliosoph]
 
 ## IN PROGRESS
 - Create an ISSUES action to add issues to the project [Priority: P2] [Label: crier, enhancement, automation]
