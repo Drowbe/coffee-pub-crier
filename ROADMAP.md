@@ -1,7 +1,6 @@
 # Coffee Pub Crier - ROADMAP
 
 ## BACKLOG
-- Add support for custom sound effects upload [Priority: P0] [Label: crier, enhancement, audio]
 - Add support for additional languages [Priority: P0] [Label: crier, enhancement, i18n]
 - Create API for other modules to integrate [Priority: P0] [Label: crier, enhancement, api]
 - Add combat statistics tracking [Priority: P0] [Label: crier, enhancement, combat]
