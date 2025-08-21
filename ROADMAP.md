@@ -1,9 +1,6 @@
 # Coffee Pub Crier - ROADMAP
 
 ## BACKLOG
-- Add combat statistics tracking [Priority: P0] [Label: crier, enhancement, combat]
-- Implement combat timer features [Priority: P0] [Label: crier, enhancement, combat]
-- Create detailed wiki documentation [Priority: P0] [Label: crier, documentation]
 - Add configuration examples [Priority: P0] [Label: crier, documentation]
 - Create user guide with screenshots [Priority: P0] [Label: crier, documentation]
 - Document all module settings [Priority: P0] [Label: crier, documentation]
