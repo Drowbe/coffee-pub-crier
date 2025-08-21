@@ -5,7 +5,6 @@
 - Refactor code to use new Blacksmith API [Priority: P0] [Label: crier, integration, blacksmith]
 - Fix missed turn detection [Priority: P0] [Label: crier, bug, combat]
 - Implement additional card style templates [Priority: P0] [Label: crier, enhancement, ui]
-- Investigate potential memory leak in combat tracker [Priority: P1] [Label: crier, bug, performance]
 - Update combat tracking to leverage Blacksmith's combat enhancements [Priority: P1] [Label: crier, integration, blacksmith, combat]
 - Synchronize turn management with Blacksmith [Priority: P1] [Label: crier, integration, blacksmith, combat]
 - Create module settings migration system [Priority: P1] [Label: crier, enhancement, core]
@@ -21,12 +20,12 @@
 - Review template loading process [Priority: P2] [Label: crier, optimization]
 
 ## IN PROGRESS
-- Create an ISSUES action to add issues to the project [Priority: P2] [Label: crier, enhancement, automation]
+
 
 ## TESTING
 - Verifying our ROADMAP action is working as expected [Priority: P1] [Label: crier, automation]
 - Test Issue for Data Structure Analysis [Priority: P1] [Label: crier, enhancement]
 
 ## CLOSED
-- Fix flickering in notification cards [Priority: P1] [Label: crier, bug, ui]
+
 
