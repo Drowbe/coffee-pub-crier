@@ -1,8 +1,6 @@
 # Coffee Pub Crier - ROADMAP
 
 ## BACKLOG
-- Create user guide with screenshots [Priority: P0] [Label: crier, documentation]
-- Document all module settings [Priority: P0] [Label: crier, documentation]
 - Test compatibility with Foundry VTT v13 [Priority: P0] [Label: crier, compatibility, testing]
 - Create initial release (v0.1.1) [Priority: P0] [Label: crier, release]
 - Refactor code to use new Blacksmith API [Priority: P0] [Label: crier, integration, blacksmith]
@@ -27,10 +25,8 @@
 - Create an ISSUES action to add issues to the project [Priority: P2] [Label: crier, enhancement, automation]
 
 ## TESTING
-- Create test suite for core functionality [Priority: P1] [Label: crier, testing]
 - Verifying our ROADMAP action is working as expected [Priority: P1] [Label: crier, automation]
 - Test Issue for Data Structure Analysis [Priority: P1] [Label: crier, enhancement]
-- Test with various game systems [Priority: P2] [Label: crier, compatibility, testing]
 - Verify compatibility with popular combat modules [Priority: P2] [Label: crier, compatibility, testing]
 - Test all permission configurations [Priority: P2] [Label: crier, testing, security]
 
