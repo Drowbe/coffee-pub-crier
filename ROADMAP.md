@@ -2,9 +2,6 @@
 
 ## BACKLOG
 - Implement additional card style templates [Priority: P0] [Label: crier, enhancement, ui]
-- Synchronize turn management with Blacksmith [Priority: P1] [Label: crier, integration, blacksmith, combat]
-- Create module settings migration system [Priority: P1] [Label: crier, enhancement, core]
-- Review and re-enable turn message interception [Priority: P1] [Label: crier, bug, combat]
 - Optimize combat tracking performance [Priority: P1] [Label: crier, optimization, performance]
 - Review memory usage during long combat sessions [Priority: P1] [Label: crier, optimization, performance]
 - Document coffee-pub-blacksmith dependency requirements [Priority: P1] [Label: crier, documentation, dependencies]
