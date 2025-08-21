@@ -1,7 +1,6 @@
 # Coffee Pub Crier - ROADMAP
 
 ## BACKLOG
-- Test compatibility with Foundry VTT v13 [Priority: P0] [Label: crier, compatibility, testing]
 - Create initial release (v0.1.1) [Priority: P0] [Label: crier, release]
 - Refactor code to use new Blacksmith API [Priority: P0] [Label: crier, integration, blacksmith]
 - Fix missed turn detection [Priority: P0] [Label: crier, bug, combat]
@@ -27,8 +26,6 @@
 ## TESTING
 - Verifying our ROADMAP action is working as expected [Priority: P1] [Label: crier, automation]
 - Test Issue for Data Structure Analysis [Priority: P1] [Label: crier, enhancement]
-- Verify compatibility with popular combat modules [Priority: P2] [Label: crier, compatibility, testing]
-- Test all permission configurations [Priority: P2] [Label: crier, testing, security]
 
 ## CLOSED
 - Fix flickering in notification cards [Priority: P1] [Label: crier, bug, ui]
