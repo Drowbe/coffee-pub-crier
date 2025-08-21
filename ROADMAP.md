@@ -15,7 +15,6 @@
 - Refactor code to use new Blacksmith API [Priority: P0] [Label: crier, integration, blacksmith]
 - Fix missed turn detection [Priority: P0] [Label: crier, bug, combat]
 - Implement additional card style templates [Priority: P0] [Label: crier, enhancement, ui]
-- Fix flickering in notification cards [Priority: P1] [Label: crier, bug, ui]
 - Investigate potential memory leak in combat tracker [Priority: P1] [Label: crier, bug, performance]
 - Update combat tracking to leverage Blacksmith's combat enhancements [Priority: P1] [Label: crier, integration, blacksmith, combat]
 - Synchronize turn management with Blacksmith [Priority: P1] [Label: crier, integration, blacksmith, combat]
