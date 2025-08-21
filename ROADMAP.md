@@ -23,7 +23,6 @@
 
 
 ## TESTING
-- Verifying our ROADMAP action is working as expected [Priority: P1] [Label: crier, automation]
 - Test Issue for Data Structure Analysis [Priority: P1] [Label: crier, enhancement]
 
 ## CLOSED
