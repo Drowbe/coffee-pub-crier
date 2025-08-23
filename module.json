@@ -5,7 +5,7 @@
   "version": "12.1.0",
 
   "manifest": "https://github.com/Drowbe/coffee-pub-crier/releases/latest/download/module.json",
-  "download": "https://github.com/Drowbe/coffee-pub-crier/releases/download/v12.1.0/module.zip",
+  "download": "https://github.com/Drowbe/coffee-pub-crier/releases/latest/download/coffee-pub-crier.zip",
   "url": "https://github.com/Drowbe/coffee-pub-crier",
   "bugs": "https://github.com/Drowbe/coffee-pub-crier/issues",
   "readme": "README.md",
