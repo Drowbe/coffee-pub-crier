@@ -8,15 +8,9 @@ import { wrapNumber, getDocData, getDefaultPermission, getProtoToken, getUsers, 
 // -- Import MODULE variables --
 import { MODULE_TITLE, MODULE_ID, CRIER  } from './const.js';
 
-// *** BEGIN: GLOBAL IMPORTS ***
-// *** These should be the same across all modules
-// -- Import the shared GLOBAL variables --
-import { COFFEEPUB, MODULE_AUTHOR } from './global.js';
-// -- Load the shared GLOBAL functions --
-import { registerBlacksmithUpdatedHook, resetModuleSettings, getOpenAIReplyAsHtml} from './global.js';
-// -- Global utilities --
-import { postConsoleAndNotification, rollCoffeePubDice, playSound, getActorId, getTokenImage, getPortraitImage, getTokenId, objectToString, stringToObject,trimString, generateFormattedDate, toSentenceCase, convertSecondsToString} from './global.js';
-// *** END: GLOBAL IMPORTS ***
+// *** BEGIN: BLACKSMITH API INTEGRATION ***
+// *** All utilities now come from Blacksmith API ***
+// *** END: BLACKSMITH API INTEGRATION ***
 
 // -- Import special page variables --
 
@@ -72,6 +66,125 @@ function getSettingSafely(settingKey, defaultValue = null) {
     }
 }
 
+// Helper function to resolve sound file paths from Blacksmith
+function resolveSoundPath(soundName) {
+    if (!soundName || soundName === 'none') return null;
+    
+    // Check if it's already a full path
+    if (soundName.startsWith('modules/') || soundName.startsWith('sounds/')) {
+        return soundName;
+    }
+    
+    // Try to resolve through Blacksmith
+    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+    if (blacksmith?.BLACKSMITH?.arrSoundChoices) {
+        const soundChoice = blacksmith.BLACKSMITH.arrSoundChoices[soundName];
+        if (soundChoice) {
+            return soundChoice;
+        }
+    }
+    
+    // Fallback to module sounds
+    if (soundName === 'gong') return 'modules/coffee-pub-crier/sounds/gong.mp3';
+    if (soundName === 'bell') return 'modules/coffee-pub-crier/sounds/bell.mp3';
+    if (soundName === 'notification') return 'modules/coffee-pub-crier/sounds/notification.mp3';
+    if (soundName === 'battlecry') return 'modules/coffee-pub-crier/sounds/battlecry.mp3';
+    if (soundName === 'charm') return 'modules/coffee-pub-crier/sounds/charm.mp3';
+    if (soundName === 'synth') return 'modules/coffee-pub-crier/sounds/synth.mp3';
+    if (soundName === 'arrow') return 'modules/coffee-pub-crier/sounds/arrow.mp3';
+    if (soundName === 'greataxe') return 'modules/coffee-pub-crier/sounds/greataxe.mp3';
+    
+    // Return the original name if we can't resolve it
+    return soundName;
+}
+
+// Blacksmith utility function wrappers
+function getBlacksmithUtils() {
+    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+    return blacksmith?.utils || null;
+}
+
+// Wrapper functions for Blacksmith utilities
+function postConsoleAndNotification(message, data = "", isError = false, isDebug = false, isNotification = false) {
+    const utils = getBlacksmithUtils();
+    if (utils?.postConsoleAndNotification) {
+        return utils.postConsoleAndNotification(message, data, isError, isDebug, isNotification);
+    }
+    // Fallback to console logging
+    if (isError) {
+        console.error(`❌ ${message}`, data);
+    } else if (isDebug) {
+        console.log(`🔧 ${message}`, data);
+    } else {
+        console.log(`ℹ️ ${message}`, data);
+    }
+}
+
+function getActorId(name) {
+    const utils = getBlacksmithUtils();
+    if (utils?.getActorId) {
+        return utils.getActorId(name);
+    }
+    // Fallback implementation
+    const actor = game.actors.getName(name);
+    return actor?.id || null;
+}
+
+function getTokenId(name) {
+    const utils = getBlacksmithUtils();
+    if (utils?.getTokenId) {
+        return utils.getTokenId(name);
+    }
+    // Fallback implementation
+    const token = game.scenes.active?.tokens.find(t => t.name === name);
+    return token?.id || null;
+}
+
+function getTokenImage(tokenDoc) {
+    const utils = getBlacksmithUtils();
+    if (utils?.getTokenImage) {
+        return utils.getTokenImage(tokenDoc);
+    }
+    // Fallback implementation
+    return tokenDoc?.texture?.src || tokenDoc?.img || "icons/svg/mystery-man.svg";
+}
+
+function getPortraitImage(actor) {
+    const utils = getBlacksmithUtils();
+    if (utils?.getPortraitImage) {
+        return utils.getPortraitImage(actor);
+    }
+    // Fallback implementation
+    return actor?.img || actor?.prototypeToken?.texture?.src || "icons/svg/mystery-man.svg";
+}
+
+function playSound(sound, volume = 0.7) {
+    const utils = getBlacksmithUtils();
+    if (utils?.playSound) {
+        return utils.playSound(sound, volume);
+    }
+    // Fallback implementation using Foundry's AudioHelper
+    if (sound === 'none') return;
+    try {
+        foundry.audio.AudioHelper.play({
+            src: sound,
+            volume: Math.max(0, Math.min(1, volume)),
+            autoplay: true,
+            loop: false
+        }, true);
+    } catch (error) {
+        console.error(`Failed to play sound: ${sound}`, error);
+    }
+}
+
+// Register Blacksmith updated hook
+function registerBlacksmithUpdatedHook() {
+    Hooks.on("blacksmithUpdated", (newBlacksmith) => {
+        // This function is now handled by the main blacksmithUpdated hook below
+        // Keeping this for compatibility but it's not actively used
+    });
+}
+
 // REQUIRED: Module registration and basic setup
 Hooks.once('init', async () => {
     try {
@@ -115,7 +228,13 @@ Hooks.once('ready', async () => {
         
         // Register the Blacksmith hook and settings now that game object is available
         registerBlacksmithUpdatedHook();
-        registerSettings();
+        
+        // Only register settings once during initialization
+        if (!window.crierSettingsRegistered) {
+            registerSettings();
+            window.crierSettingsRegistered = true;
+            console.log('✅ Coffee Pub Crier: Initial settings registration completed');
+        }
         
         console.log('✅ Coffee Pub Crier: Module initialized successfully with Blacksmith');
         // PostConsoleAndNotification("Blacksmith Integration", "Module initialized successfully", false, false, false);
@@ -129,9 +248,12 @@ Hooks.on('blacksmithUpdated', async () => {
     try {
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         if (blacksmith?.utils) {
-            // Re-register settings with updated choice arrays
-            registerSettings();
-            console.log('✅ Coffee Pub Crier: Settings updated from Blacksmith');
+            // Only re-register settings if this is the first update or if we have new data
+            if (!window.crierSettingsRegistered || blacksmith.BLACKSMITH?.arrThemeChoices?.length > 0) {
+                registerSettings();
+                window.crierSettingsRegistered = true;
+                console.log('✅ Coffee Pub Crier: Settings updated from Blacksmith');
+            }
         }
     } catch (error) {
         console.error('❌ Coffee Pub Crier: Failed to update from Blacksmith:', error);
@@ -166,6 +288,13 @@ function testBlacksmithIntegration() {
     // Test safe settings access
     const testValue = getSettingSafely('testSetting', 'default');
     console.log('  - Safe settings test:', testValue === 'default' ? '✅ Working' : '❌ Failed');
+    
+    // Test sound resolution
+    const testSound = resolveSoundPath('gong');
+    console.log('  - Sound resolution test:', testSound ? `✅ ${testSound}` : '❌ Failed');
+    
+    // Test settings registration status
+    console.log('  - Settings registered:', window.crierSettingsRegistered ? '✅ Yes' : '❌ No');
     
     return true;
 }
@@ -466,9 +595,12 @@ function createNewRoundCard(combat) {
             [MODULE_ID]: { roundCycling: true, round: combat.round, combat: combat.id }
         },
     };
-    // Play Round sound
-    	const strSound = getSettingSafely(CRIER.roundSound, 'gong');
-    playSound(strSound);
+        // Play Round sound
+    const strSound = getSettingSafely(CRIER.roundSound, 'gong');
+    const resolvedSound = resolveSoundPath(strSound);
+    if (resolvedSound) {
+        playSound(resolvedSound);
+    }
     // Return the message
 
     return msgData;
@@ -835,9 +967,12 @@ function processTurn(combat, _update, context, userId) {
         msgs.push(...turnMsgs);
     }
 
-    // Play Turn sound
-    	const strSound = getSettingSafely(CRIER.turnSound, 'gong');
-    playSound(strSound);
+        // Play Turn sound
+    const strSound = getSettingSafely(CRIER.turnSound, 'gong');
+    const resolvedSound = resolveSoundPath(strSound);
+    if (resolvedSound) {
+        playSound(resolvedSound);
+    }
 
     // Send the message
     if (msgs.length) ChatMessage.create(msgs);

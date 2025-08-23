@@ -4,10 +4,8 @@
 
 // Grab the module data
 import { MODULE_TITLE, MODULE_ID, CRIER  } from './const.js';
-// -- Import the shared GLOBAL variables --
-import { COFFEEPUB, MODULE_AUTHOR } from './global.js';
-// -- Load the shared GLOBAL functions --
-import { registerBlacksmithUpdatedHook, postConsoleAndNotification, getActorId, resetModuleSettings} from './global.js';
+// -- Blacksmith API Integration --
+// All utilities now come from Blacksmith API
 // -- Import special page variables --
 // None.
 
@@ -32,20 +30,24 @@ export const registerSettings = () => {
             return;
         }
 
+        console.log('🔧 Coffee Pub Crier: Starting settings registration...');
+        console.log('🔧 Blacksmith available:', !!blacksmith);
+        console.log('🔧 BLACKSMITH object:', blacksmith.BLACKSMITH);
+
         // -------------------------------------------------------------- 
         // Register settings...
-        postConsoleAndNotification("Registering Settings...", "", false, false, false) 
+        // postConsoleAndNotification("Registering Settings...", "", false, false, false) 
         
         // Debug: Post the variables from Blacksmith
         if (blacksmith.BLACKSMITH) {
-            postConsoleAndNotification("Variables in Settings. BLACKSMITH.strDefaultCardTheme: ", blacksmith.BLACKSMITH.strDefaultCardTheme, false, true, false);
-            postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrThemeChoices: ", blacksmith.BLACKSMITH.arrThemeChoices, false, true, false);
-            postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrMacroChoices: ", blacksmith.BLACKSMITH.arrMacroChoices, false, true, false);
-            postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrTableChoices: ", blacksmith.BLACKSMITH.arrTableChoices, false, true, false);
-            postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrBackgroundImageChoices: ", blacksmith.BLACKSMITH.arrBackgroundImageChoices, false, true, false);
-            postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrIconChoices: ", blacksmith.BLACKSMITH.arrIconChoices, false, true, false);
-            postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrSoundChoices: ", blacksmith.BLACKSMITH.arrSoundChoices, false, true, false);
-            postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrCompendiumChoices: ", blacksmith.BLACKSMITH.arrCompendiumChoices, false, true, false);
+            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.strDefaultCardTheme: ", blacksmith.BLACKSMITH.strDefaultCardTheme, false, true, false);
+            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrThemeChoices: ", blacksmith.BLACKSMITH.arrThemeChoices, false, true, false);
+            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrMacroChoices: ", blacksmith.BLACKSMITH.arrMacroChoices, false, true, false);
+            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrTableChoices: ", blacksmith.BLACKSMITH.arrTableChoices, false, true, false);
+            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrBackgroundImageChoices: ", blacksmith.BLACKSMITH.arrBackgroundImageChoices, false, true, false);
+            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrIconChoices: ", blacksmith.BLACKSMITH.arrIconChoices, false, true, false);
+            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrSoundChoices: ", blacksmith.BLACKSMITH.arrSoundChoices, false, true, false);
+            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrCompendiumChoices: ", blacksmith.BLACKSMITH.arrCompendiumChoices, false, true, false);
         }
 
 		// -- TITLE --
@@ -118,7 +120,7 @@ export const registerSettings = () => {
 			config: true,
 			type: String,
 			default: 'fa-chess-queen',
-			choices: blacksmith.BLACKSMITH?.arrIconChoices || COFFEEPUB.arrICONCHOICES,
+			choices: blacksmith.BLACKSMITH?.arrIconChoices || {},
 		});
 
 		// -- ROUND SETTINGS --
@@ -141,7 +143,7 @@ export const registerSettings = () => {
 			config: true,
 			type: String,
 			default: 'gong',
-			choices: blacksmith.BLACKSMITH?.arrSoundChoices || COFFEEPUB.arrSOUNDCHOICES,
+			choices: blacksmith.BLACKSMITH?.arrSoundChoices || {},
 		});
 		// -- Round Label --
 		game.settings.register(MODULE_ID, CRIER.roundLabel, {
@@ -209,7 +211,7 @@ export const registerSettings = () => {
 			config: true,
 			type: String,
 			default: blacksmith.BLACKSMITH?.strDefaultCardTheme || 'cardsdark',
-			choices: blacksmith.BLACKSMITH?.arrThemeChoices || COFFEEPUB.arrTHEMECHOICES,
+			choices: blacksmith.BLACKSMITH?.arrThemeChoices || {},
 		});
 		// -- Turn Card Color --
 		game.settings.register(MODULE_ID, CRIER.turnIconStyle, {
@@ -219,7 +221,7 @@ export const registerSettings = () => {
 			config: true,
 			type: String,
 			default: 'fa-shield',
-			choices: blacksmith.BLACKSMITH?.arrIconChoices || COFFEEPUB.arrICONCHOICES,
+			choices: blacksmith.BLACKSMITH?.arrIconChoices || {},
 		});
 
 		// -- TURN STYLE --
@@ -242,7 +244,7 @@ export const registerSettings = () => {
 			config: true,
 			type: String,
 			default: 'gong',
-			choices: blacksmith.BLACKSMITH?.arrSoundChoices || COFFEEPUB.arrSOUNDCHOICES,
+			choices: blacksmith.BLACKSMITH?.arrSoundChoices || {},
 		});
 		// -- Turn Card Label --
 		game.settings.register(MODULE_ID, CRIER.turnLabel, {
@@ -278,7 +280,7 @@ export const registerSettings = () => {
 			type: String,
 			config: true,
 			scope: 'world',
-			choices: blacksmith.BLACKSMITH?.arrBackgroundImageChoices || COFFEEPUB.arrBACKGROUNDIMAGECHOICES,
+			choices: blacksmith.BLACKSMITH?.arrBackgroundImageChoices || {},
 			default: 'dirt',
 		});
 		// -- Image Scale --
@@ -394,5 +396,8 @@ export const registerSettings = () => {
 		});
 
         // -------------------------------------------------------------- 
+        
+        console.log('✅ Coffee Pub Crier: Settings registration completed successfully');
+        console.log('🔧 Total settings registered:', Object.keys(CRIER).length);
 	});
 };

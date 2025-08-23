@@ -129,6 +129,36 @@ The module now follows the standard Blacksmith integration pattern:
 2. `scripts/settings.js` - Dynamic choice arrays and Blacksmith integration
 3. `BLACKSMITH_INTEGRATION_SUMMARY.md` - This documentation
 
+## Migration from global.js to Blacksmith API
+
+### **Completed Migration**
+- ✅ **Removed all global.js imports** - No more dependencies on the old system
+- ✅ **Migrated utility functions** - All functions now use Blacksmith API with fallbacks
+- ✅ **Eliminated COFFEEPUB references** - Settings now use Blacksmith choice arrays exclusively
+- ✅ **Self-contained module** - Module now works independently of global.js
+
+### **Functions Migrated**
+- **`postConsoleAndNotification`** → `blacksmith.utils.postConsoleAndNotification` with console fallback
+- **`getActorId`** → `blacksmith.utils.getActorId` with Foundry fallback
+- **`getTokenId`** → `blacksmith.utils.getTokenId` with Foundry fallback
+- **`getTokenImage`** → `blacksmith.utils.getTokenImage` with Foundry fallback
+- **`getPortraitImage`** → `blacksmith.utils.getPortraitImage` with Foundry fallback
+- **`playSound`** → `blacksmith.utils.playSound` with Foundry AudioHelper fallback
+- **`registerBlacksmithUpdatedHook`** → Local implementation
+
+### **Benefits of Migration**
+1. **No More Conflicts** - Single source of truth for all utilities
+2. **Better Performance** - Direct API access without import overhead
+3. **Easier Maintenance** - All code in one place, no external dependencies
+4. **Future-Proof** - Ready for Blacksmith API updates
+5. **Cleaner Code** - Removed legacy fallback systems
+
+### **Fallback Strategy**
+- **Primary**: Use Blacksmith API when available
+- **Secondary**: Use Foundry native methods as fallbacks
+- **Tertiary**: Console logging for debugging
+- **Result**: Module works with or without Blacksmith, but optimized for it
+
 ## Bug Fixes Applied
 
 ### 1. **Fixed "Cannot read properties of undefined" Error**
