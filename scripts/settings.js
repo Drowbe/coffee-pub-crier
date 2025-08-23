@@ -101,15 +101,11 @@ export const registerSettings = () => {
 			type: String,
 			default: blacksmith.BLACKSMITH?.strDefaultCardTheme || 'cardsgreen',
 			choices: blacksmith.BLACKSMITH?.arrThemeChoices || {
-				'cardsdark': 'Full Cards: Dark Mode', 
-				'cardsgreen': 'Full Cards: Green', 
-				'cardsred': 'Full Cards: Red', 
-				'cardssimple': 'Simple Cards: Default Foundry', 
-				'cardsminimalplain': 'Minimal Cards: Plain'
+				'error': 'Failed to load themes - check Blacksmith module'
 			}
 		});
 		
-		console.log('🔧 Round Card Style registered with choices:', blacksmith.BLACKSMITH?.arrThemeChoices || 'fallback');
+		console.log('🔧 Round Card Style registered with choices:', blacksmith.BLACKSMITH?.arrThemeChoices ? `${Object.keys(blacksmith.BLACKSMITH.arrThemeChoices).length} themes` : 'error fallback');
 		// -- Round Icon --
 		game.settings.register(MODULE_ID, CRIER.roundIconStyle, {
 			name: MODULE_ID + '.roundIconStyle-Label',
@@ -118,10 +114,12 @@ export const registerSettings = () => {
 			config: true,
 			type: String,
 			default: 'fa-chess-queen',
-			choices: blacksmith.BLACKSMITH?.arrIconChoices || {},
+			choices: blacksmith.BLACKSMITH?.arrIconChoices || {
+				'error': 'Failed to load icons - check Blacksmith module'
+			},
 		});
 		
-		console.log('🔧 Round Icon Style registered with choices:', blacksmith.BLACKSMITH?.arrIconChoices || 'empty');
+		console.log('🔧 Round Icon Style registered with choices:', blacksmith.BLACKSMITH?.arrIconChoices ? `${Object.keys(blacksmith.BLACKSMITH.arrIconChoices).length} icons` : 'error fallback');
 
 		// -- ROUND SETTINGS --
 		// ------------------------------------------------------------
@@ -143,7 +141,9 @@ export const registerSettings = () => {
 			config: true,
 			type: String,
 			default: 'gong',
-			choices: blacksmith.BLACKSMITH?.arrSoundChoices || {},
+			choices: blacksmith.BLACKSMITH?.arrSoundChoices || {
+				'error': 'Failed to load sounds - check Blacksmith module'
+			},
 		});
 		// -- Round Label --
 		game.settings.register(MODULE_ID, CRIER.roundLabel, {
@@ -211,7 +211,9 @@ export const registerSettings = () => {
 			config: true,
 			type: String,
 			default: blacksmith.BLACKSMITH?.strDefaultCardTheme || 'cardsdark',
-			choices: blacksmith.BLACKSMITH?.arrThemeChoices || {},
+			choices: blacksmith.BLACKSMITH?.arrThemeChoices || {
+				'error': 'Failed to load themes - check Blacksmith module'
+			},
 		});
 		// -- Turn Card Color --
 		game.settings.register(MODULE_ID, CRIER.turnIconStyle, {
@@ -221,7 +223,9 @@ export const registerSettings = () => {
 			config: true,
 			type: String,
 			default: 'fa-shield',
-			choices: blacksmith.BLACKSMITH?.arrIconChoices || {},
+			choices: blacksmith.BLACKSMITH?.arrIconChoices || {
+				'error': 'Failed to load icons - check Blacksmith module'
+			},
 		});
 
 		// -- TURN STYLE --
@@ -244,7 +248,9 @@ export const registerSettings = () => {
 			config: true,
 			type: String,
 			default: 'gong',
-			choices: blacksmith.BLACKSMITH?.arrSoundChoices || {},
+			choices: blacksmith.BLACKSMITH?.arrSoundChoices || {
+				'error': 'Failed to load sounds - check Blacksmith module'
+			},
 		});
 		// -- Turn Card Label --
 		game.settings.register(MODULE_ID, CRIER.turnLabel, {
@@ -280,7 +286,9 @@ export const registerSettings = () => {
 			type: String,
 			config: true,
 			scope: 'world',
-			choices: blacksmith.BLACKSMITH?.arrBackgroundImageChoices || {},
+			choices: blacksmith.BLACKSMITH?.arrBackgroundImageChoices || {
+				'error': 'Failed to load backgrounds - check Blacksmith module'
+			},
 			default: 'dirt',
 		});
 		// -- Image Scale --

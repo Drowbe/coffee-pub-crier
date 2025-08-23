@@ -256,14 +256,14 @@ Hooks.on('blacksmithUpdated', async () => {
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         if (blacksmith?.utils) {
             console.log('🔄 Coffee Pub Crier: Blacksmith updated, checking data...');
-            console.log('🔄 Theme choices available:', blacksmith.BLACKSMITH?.arrThemeChoices?.length || 0);
-            console.log('🔄 Icon choices available:', blacksmith.BLACKSMITH?.arrIconChoices?.length || 0);
-            console.log('🔄 Sound choices available:', blacksmith.BLACKSMITH?.arrSoundChoices?.length || 0);
+            console.log('🔄 Theme choices available:', Object.keys(blacksmith.BLACKSMITH?.arrThemeChoices || {}).length);
+            console.log('🔄 Icon choices available:', Object.keys(blacksmith.BLACKSMITH?.arrIconChoices || {}).length);
+            console.log('🔄 Sound choices available:', Object.keys(blacksmith.BLACKSMITH?.arrSoundChoices || {}).length);
             
             // Only re-register settings if this is the first update or if we have new data
             if (!window.crierSettingsRegistered || 
-                (blacksmith.BLACKSMITH?.arrThemeChoices?.length > 0 && 
-                 blacksmith.BLACKSMITH?.arrIconChoices?.length > 0)) {
+                (Object.keys(blacksmith.BLACKSMITH?.arrThemeChoices || {}).length > 0 && 
+                 Object.keys(blacksmith.BLACKSMITH?.arrIconChoices || {}).length > 0)) {
                 
                 console.log('🔄 Coffee Pub Crier: Re-registering settings with updated data...');
                 registerSettings();
@@ -297,11 +297,25 @@ function testBlacksmithIntegration() {
     }
     
     console.log('✅ Blacksmith Integration Test Results:');
-    console.log('  - Module registered:', blacksmith.isModuleRegistered('coffee-pub-crier'));
-    console.log('  - Theme choices:', blacksmith.BLACKSMITH.arrThemeChoices?.length || 0, 'available');
-    console.log('  - Sound choices:', blacksmith.BLACKSMITH.arrSoundChoices?.length || 0, 'available');
-    console.log('  - Icon choices:', blacksmith.BLACKSMITH.arrIconChoices?.length || 0, 'available');
+    console.log('  - Module ID:', 'coffee-pub-crier');
     console.log('  - Default theme:', blacksmith.BLACKSMITH.strDefaultCardTheme);
+    
+    // Test all available choice arrays
+    console.log('📋 Available Choice Arrays:');
+    console.log('  - Theme choices:', Object.keys(blacksmith.BLACKSMITH.arrThemeChoices || {}).length, 'available');
+    console.log('    Content:', blacksmith.BLACKSMITH.arrThemeChoices);
+    console.log('  - Sound choices:', Object.keys(blacksmith.BLACKSMITH.arrSoundChoices || {}).length, 'available');
+    console.log('    Content:', blacksmith.BLACKSMITH.arrSoundChoices);
+    console.log('  - Icon choices:', Object.keys(blacksmith.BLACKSMITH.arrIconChoices || {}).length, 'available');
+    console.log('    Content:', blacksmith.BLACKSMITH.arrIconChoices);
+    console.log('  - Background Image choices:', Object.keys(blacksmith.BLACKSMITH.arrBackgroundImageChoices || {}).length, 'available');
+    console.log('    Content:', blacksmith.BLACKSMITH.arrBackgroundImageChoices);
+    console.log('  - Macro choices:', Object.keys(blacksmith.BLACKSMITH.arrMacroChoices || {}).length, 'available');
+    console.log('    Content:', blacksmith.BLACKSMITH.arrMacroChoices);
+    console.log('  - Table choices:', Object.keys(blacksmith.BLACKSMITH.arrTableChoices || {}).length, 'available');
+    console.log('    Content:', blacksmith.BLACKSMITH.arrTableChoices);
+    console.log('  - Compendium choices:', Object.keys(blacksmith.BLACKSMITH.arrCompendiumChoices || {}).length, 'available');
+    console.log('    Content:', blacksmith.BLACKSMITH.arrCompendiumChoices);
     
     // Test safe settings access
     const testValue = getSettingSafely('testSetting', 'default');
