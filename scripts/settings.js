@@ -22,33 +22,29 @@ import { MODULE_TITLE, MODULE_ID, CRIER  } from './const.js';
 // ================================================================== 
   
 export const registerSettings = () => {
-	Hooks.once('ready', async() => {
-        // Get Blacksmith API
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        if (!blacksmith?.utils?.getSettingSafely) {
-            console.error("Blacksmith API not ready for settings registration!");
-            return;
-        }
+    // Get Blacksmith API
+    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
+    if (!blacksmith?.utils?.getSettingSafely) {
+        console.error("Blacksmith API not ready for settings registration!");
+        return;
+    }
 
-        console.log('🔧 Coffee Pub Crier: Starting settings registration...');
-        console.log('🔧 Blacksmith available:', !!blacksmith);
-        console.log('🔧 BLACKSMITH object:', blacksmith.BLACKSMITH);
+    console.log('🔧 Coffee Pub Crier: Starting settings registration...');
+    console.log('🔧 Blacksmith available:', !!blacksmith);
+    console.log('🔧 BLACKSMITH object:', blacksmith.BLACKSMITH);
 
-        // -------------------------------------------------------------- 
-        // Register settings...
-        // postConsoleAndNotification("Registering Settings...", "", false, false, false) 
-        
-        // Debug: Post the variables from Blacksmith
-        if (blacksmith.BLACKSMITH) {
-            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.strDefaultCardTheme: ", blacksmith.BLACKSMITH.strDefaultCardTheme, false, true, false);
-            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrThemeChoices: ", blacksmith.BLACKSMITH.arrThemeChoices, false, true, false);
-            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrMacroChoices: ", blacksmith.BLACKSMITH.arrMacroChoices, false, true, false);
-            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrTableChoices: ", blacksmith.BLACKSMITH.arrTableChoices, false, true, false);
-            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrBackgroundImageChoices: ", blacksmith.BLACKSMITH.arrBackgroundImageChoices, false, true, false);
-            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrIconChoices: ", blacksmith.BLACKSMITH.arrIconChoices, false, true, false);
-            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrSoundChoices: ", blacksmith.BLACKSMITH.arrSoundChoices, false, true, false);
-            // postConsoleAndNotification("Variables in Settings. BLACKSMITH.arrCompendiumChoices: ", blacksmith.BLACKSMITH.arrCompendiumChoices, false, true, false);
-        }
+    // -------------------------------------------------------------- 
+    // Register settings...
+    console.log('🔧 Coffee Pub Crier: Registering settings...');
+    
+    // Debug: Log the variables from Blacksmith
+    if (blacksmith.BLACKSMITH) {
+        console.log('🔧 BLACKSMITH.strDefaultCardTheme:', blacksmith.BLACKSMITH.strDefaultCardTheme);
+        console.log('🔧 BLACKSMITH.arrThemeChoices:', blacksmith.BLACKSMITH.arrThemeChoices);
+        console.log('🔧 BLACKSMITH.arrIconChoices:', blacksmith.BLACKSMITH.arrIconChoices);
+        console.log('🔧 BLACKSMITH.arrSoundChoices:', blacksmith.BLACKSMITH.arrSoundChoices);
+        console.log('🔧 BLACKSMITH.arrBackgroundImageChoices:', blacksmith.BLACKSMITH.arrBackgroundImageChoices);
+    }
 
 		// -- TITLE --
 		// ------------------------------------------------------------
@@ -112,6 +108,8 @@ export const registerSettings = () => {
 				'cardsminimalplain': 'Minimal Cards: Plain'
 			}
 		});
+		
+		console.log('🔧 Round Card Style registered with choices:', blacksmith.BLACKSMITH?.arrThemeChoices || 'fallback');
 		// -- Round Icon --
 		game.settings.register(MODULE_ID, CRIER.roundIconStyle, {
 			name: MODULE_ID + '.roundIconStyle-Label',
@@ -122,6 +120,8 @@ export const registerSettings = () => {
 			default: 'fa-chess-queen',
 			choices: blacksmith.BLACKSMITH?.arrIconChoices || {},
 		});
+		
+		console.log('🔧 Round Icon Style registered with choices:', blacksmith.BLACKSMITH?.arrIconChoices || 'empty');
 
 		// -- ROUND SETTINGS --
 		// ------------------------------------------------------------
@@ -399,5 +399,9 @@ export const registerSettings = () => {
         
         console.log('✅ Coffee Pub Crier: Settings registration completed successfully');
         console.log('🔧 Total settings registered:', Object.keys(CRIER).length);
-	});
+        
+        // Verify settings were actually registered
+        const registeredSettings = Array.from(game.settings.settings).filter(s => s[1].module === MODULE_ID);
+        console.log('🔧 FoundryVTT registered settings count:', registeredSettings.length);
+        console.log('🔧 Registered setting keys:', registeredSettings.map(s => s[1].key));
 };

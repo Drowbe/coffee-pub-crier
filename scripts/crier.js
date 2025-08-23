@@ -224,17 +224,24 @@ Hooks.once('ready', async () => {
         // Make testing function available globally for GMs
         if (game.user.isGM) {
             window.testCrierBlacksmith = testBlacksmithIntegration;
+            window.forceRegisterCrierSettings = () => {
+                console.log('🔧 Manually forcing settings registration...');
+                registerSettings();
+                window.crierSettingsRegistered = true;
+            };
         }
         
         // Register the Blacksmith hook and settings now that game object is available
         registerBlacksmithUpdatedHook();
         
-        // Only register settings once during initialization
-        if (!window.crierSettingsRegistered) {
-            registerSettings();
-            window.crierSettingsRegistered = true;
-            console.log('✅ Coffee Pub Crier: Initial settings registration completed');
-        }
+        // Wait a bit for Blacksmith to populate its data, then register settings
+        setTimeout(() => {
+            if (!window.crierSettingsRegistered) {
+                registerSettings();
+                window.crierSettingsRegistered = true;
+                console.log('✅ Coffee Pub Crier: Initial settings registration completed');
+            }
+        }, 1000); // Wait 1 second for Blacksmith to populate data
         
         console.log('✅ Coffee Pub Crier: Module initialized successfully with Blacksmith');
         // PostConsoleAndNotification("Blacksmith Integration", "Module initialized successfully", false, false, false);
@@ -248,11 +255,22 @@ Hooks.on('blacksmithUpdated', async () => {
     try {
         const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
         if (blacksmith?.utils) {
+            console.log('🔄 Coffee Pub Crier: Blacksmith updated, checking data...');
+            console.log('🔄 Theme choices available:', blacksmith.BLACKSMITH?.arrThemeChoices?.length || 0);
+            console.log('🔄 Icon choices available:', blacksmith.BLACKSMITH?.arrIconChoices?.length || 0);
+            console.log('🔄 Sound choices available:', blacksmith.BLACKSMITH?.arrSoundChoices?.length || 0);
+            
             // Only re-register settings if this is the first update or if we have new data
-            if (!window.crierSettingsRegistered || blacksmith.BLACKSMITH?.arrThemeChoices?.length > 0) {
+            if (!window.crierSettingsRegistered || 
+                (blacksmith.BLACKSMITH?.arrThemeChoices?.length > 0 && 
+                 blacksmith.BLACKSMITH?.arrIconChoices?.length > 0)) {
+                
+                console.log('🔄 Coffee Pub Crier: Re-registering settings with updated data...');
                 registerSettings();
                 window.crierSettingsRegistered = true;
                 console.log('✅ Coffee Pub Crier: Settings updated from Blacksmith');
+            } else {
+                console.log('🔄 Coffee Pub Crier: Blacksmith updated but no new data, skipping settings re-registration');
             }
         }
     } catch (error) {
