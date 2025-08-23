@@ -8,9 +8,11 @@ A Foundry VTT module that enhances combat turn announcements and notifications w
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Drowbe/coffee-pub-crier/release.yml)
 ![GitHub all releases](https://img.shields.io/github/downloads/Drowbe/coffee-pub-crier/total)
 
+> **⚠️ Note:** This module is currently designed for Foundry VTT v12. Foundry VTT v13 compatibility is in development and will be available in a future release.
+
 ## Overview
 
-Coffee Pub Crier enhances your Foundry VTT combat experience with rich visual and audio announcements for combat turns, making battles more engaging and easier to follow.
+Coffee Pub Crier enhances your Foundry VTT combat experience with rich visual and audio announcements for combat turns, making battles more engaging and easier to follow. **Now fully integrated with Coffee Pub Blacksmith for enhanced customization and shared resources across the Coffee Pub ecosystem.**
 
 ## Preview
 
@@ -61,15 +63,16 @@ Coffee Pub Crier enhances your Foundry VTT combat experience with rich visual an
 - Turn order management
 
 ### Customization Options
-- Configurable card styles for turns and rounds
-- Custom icon selections
+- Configurable card styles for turns and rounds with dynamic theme loading from Blacksmith
+- Custom icon selections from comprehensive Font Awesome library
 - Toggle visibility of:
   - Player names
   - Ability scores
   - Health status
   - Bloody portraits (damage indicators)
 - NPC name obfuscation options
-- Customizable sound effects
+- Customizable sound effects from extensive audio library
+- Dynamic background texture options
 
 ### Health Status Visualization
 - Dynamic health status indicators:
@@ -100,18 +103,18 @@ https://github.com/Drowbe/coffee-pub-crier/releases/latest/download/module.json
 ```
 
 ## Dependencies
-- [Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith) - Required for core functionality
+- [Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith) - **Required** for core functionality and enhanced customization options
 
 ## Module Settings
 
 ### Round Announcements
 - **Round Cycling**: Toggle round announcements on/off
-- **Round Card Style**: Choose from multiple styles:
-  - Full Cards: Dark Mode, Green, Red
+- **Round Card Style**: Choose from multiple styles dynamically loaded from Blacksmith:
+  - Full Cards: Dark Mode, Green, Red, Blue Velvet, Brown Earth, and more
   - Simple Cards: Default Foundry
-  - Minimal Cards: Plain or Red
-- **Round Icon**: Customizable icon from Font Awesome selection
-- **Round Sound**: Choose from various sound effects
+  - Minimal Cards: Plain variants
+- **Round Icon**: Customizable icon from comprehensive Font Awesome selection
+- **Round Sound**: Choose from extensive sound effect library
 - **Round Label**: Customize the round announcement text (default: "Round {round}")
 
 ### Turn Announcements
@@ -119,26 +122,41 @@ https://github.com/Drowbe/coffee-pub-crier/releases/latest/download/module.json
 - **Turn Card Layout**: Choose between:
   - Detailed Cards: Full information display
   - Minimal Cards: Simplified view
-- **Turn Card Style**: Multiple theme options including dark mode and colored variants
-- **Turn Icon**: Customizable icon from Font Awesome selection
-- **Turn Sound**: Choose from various sound effects
+- **Turn Card Style**: Multiple theme options dynamically loaded from Blacksmith including dark mode and colored variants
+- **Turn Icon**: Customizable icon from comprehensive Font Awesome selection
+- **Turn Sound**: Choose from extensive sound effect library
 - **Turn Label**: Customize the turn announcement text (default: "{name}")
 
-All settings are configurable through the module settings menu in Foundry VTT's configuration panel.
+All settings are configurable through the module settings menu in Foundry VTT's configuration panel. **Settings automatically update in real-time when new themes, icons, sounds, and backgrounds are added to the Coffee Pub Blacksmith module.**
 
-## Development
-Want to contribute? Great! Please follow these steps:
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## Coffee Pub Ecosystem
+
+This module is part of the larger Coffee Pub ecosystem for Foundry VTT. Other available modules include:
+
+### Coffee Pup Ecosystem
+
+- **[Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith)** - Central hub module providing shared utilities, themes, and inter-module communication
+- **[Coffee Pub Bibliosoph](https://github.com/Drowbe/coffee-pub-bibliosoph)** - Enhanced library and compendium management
+- **[Coffee Pub Monarch](https://github.com/Drowbe/coffee-pub-monarch)** - Advanced campaign and world management tools
+- **[Coffee Pub Scribe](https://github.com/Drowbe/coffee-pub-scribe)** - Enhanced journal and documentation features
+- **[Coffee Pub Squire](https://github.com/Drowbe/coffee-pub-squire)** - Comprehensive Utility Tray for Character, Party, Juornals, Quests, and Codex
+
+All Coffee Pub modules are designed to work together seamlessly, sharing resources and providing a unified experience.
+
+### Other Modules
+
+- **[Coffee Pub Bubo](https://github.com/Drowbe/coffee-pub-bubo)** - Our first Built-in AI Chatbot.
+- **[Coffee Pub Lib](https://github.com/Drowbe/coffee-pub-lib)** -Required for Bubo. For now.
+
+
+
 
 ## Support & Community
 - Found a bug? Please [open an issue](https://github.com/Drowbe/coffee-pub-crier/issues)
 - Have a feature request? [Submit it here](https://github.com/Drowbe/coffee-pub-crier/issues)
 - Need help? Contact me on Discord: `drowbe`
+- Support Coffee Pub development on [Patreon](https://www.patreon.com/c/CoffeePub)
 
 ## Attribution
 This module is built for [Foundry Virtual Tabletop](https://foundryvtt.com/).
