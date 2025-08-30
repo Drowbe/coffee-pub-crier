@@ -9,9 +9,9 @@ import { wrapNumber, getDocData, getDefaultPermission, getProtoToken, getUsers, 
 import { MODULE, CRIER  } from './const.js';
 
 // === BEGIN: BLACKSMITH API REGISTRATION ===
-// Blacksmoth API is available as global objects
-// Register your module with Blacksmith
-Hooks.once('init', async () => {
+import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
+// Register your module with Blacksmith (use 'ready' instead of 'init')
+Hooks.once('ready', async () => {
     try {
         // Get the module manager
         const moduleManager = BlacksmithModuleManager;
