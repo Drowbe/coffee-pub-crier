@@ -88,7 +88,7 @@
     "requires": [
         {
           "id": "coffee-pub-blacksmith",
-          "type": "module",
+          "type": "library",
           "manifest": "https://github.com/Drowbe/coffee-pub-blacksmith/releases/latest/download/module.json"
         }
     ],

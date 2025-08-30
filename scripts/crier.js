@@ -6,11 +6,28 @@
 import { wrapNumber, getDocData, getDefaultPermission, getProtoToken, getUsers, getPermissionLevels } from './common.js';
 
 // -- Import MODULE variables --
-import { MODULE_TITLE, MODULE_ID, CRIER  } from './const.js';
+import { MODULE, CRIER  } from './const.js';
 
-// *** BEGIN: BLACKSMITH API INTEGRATION ***
-// *** All utilities now come from Blacksmith API ***
-// *** END: BLACKSMITH API INTEGRATION ***
+// === BEGIN: BLACKSMITH API REGISTRATION ===
+// Blacksmoth API is available as global objects
+// Register your module with Blacksmith
+Hooks.once('init', async () => {
+    try {
+        // Get the module manager
+        const moduleManager = BlacksmithModuleManager;
+        // Register your module
+        moduleManager.registerModule(MODULE.ID, {
+            name: MODULE.NAME,
+            version: MODULE.VERSION
+        });
+        // Log success
+        console.log('✅ Module ' + MODULE.NAME + ' registered with Blacksmith successfully');
+    } catch (error) {
+        console.error('❌ Failed to register ' + MODULE.NAME + ' with Blacksmith:', error);
+    }
+});
+// === END: BLACKSMITH API REGISTRATION ===
+
 
 // -- Import special page variables --
 
@@ -19,8 +36,8 @@ import { registerSettings } from './settings.js';
 
 // -- Set Page variables --
 // Grab the Templates
-const turn_template_file = `modules/${MODULE_ID}/templates/turns.hbs`,
-	round_template_file = `modules/${MODULE_ID}/templates/rounds.hbs`;
+const turn_template_file = `modules/${MODULE.ID}/templates/turns.hbs`,
+	round_template_file = `modules/${MODULE.ID}/templates/rounds.hbs`;
 
 let turnTemplate, roundTemplate;
 // Set the last combatant
@@ -31,43 +48,28 @@ const lastCombatant = {
 };
 
 // ================================================================== 
-// ===== BLACKSMITH INTEGRATION =====================================
+// ===== NEW BLACKSMITH INTEGRATION =================================
 // ================================================================== 
 
-// Helper function to safely access settings using Blacksmith
-function getSettingSafely(settingKey, defaultValue = null) {
-    // Check if game object is available
-    if (typeof game === 'undefined' || !game.settings) {
-        return defaultValue;
-    }
-    
-    // Check if MODULE_ID is available
-    if (typeof MODULE_ID === 'undefined') {
-        console.warn('MODULE_ID not available for setting:', settingKey);
-        return defaultValue;
-    }
-    
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    if (blacksmith?.utils?.getSettingSafely) {
-        try {
-            return blacksmith.utils.getSettingSafely(MODULE_ID, settingKey, defaultValue);
-        } catch (error) {
-            console.warn(`Blacksmith getSettingSafely failed for ${settingKey}:`, error);
-            // Fall through to direct access
-        }
-    }
-    
-    // Fallback to direct access if Blacksmith isn't available
+// Helper function to safely access settings using new Blacksmith API
+async function getSettingSafely(settingKey, defaultValue = null) {
     try {
-        return game.settings.get(MODULE_ID, settingKey) ?? defaultValue;
+        const blacksmithUtils = await BlacksmithAPI.getUtils();
+        return blacksmithUtils.getSettingSafely(MODULE.ID, settingKey, defaultValue);
     } catch (error) {
-        console.warn(`Failed to get setting ${settingKey}:`, error);
-        return defaultValue;
+        console.warn(`Blacksmith getSettingSafely failed for ${settingKey}:`, error);
+        // Fallback to direct access if Blacksmith isn't available
+        try {
+            return game.settings.get(MODULE.ID, settingKey) ?? defaultValue;
+        } catch (fallbackError) {
+            console.warn(`Failed to get setting ${settingKey}:`, fallbackError);
+            return defaultValue;
+        }
     }
 }
 
 // Helper function to resolve sound file paths from Blacksmith
-function resolveSoundPath(soundName) {
+async function resolveSoundPath(soundName) {
     if (!soundName || soundName === 'none') return null;
     
     // Check if it's already a full path
@@ -75,13 +77,18 @@ function resolveSoundPath(soundName) {
         return soundName;
     }
     
-    // Try to resolve through Blacksmith
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    if (blacksmith?.BLACKSMITH?.arrSoundChoices) {
-        const soundChoice = blacksmith.BLACKSMITH.arrSoundChoices[soundName];
-        if (soundChoice) {
-            return soundChoice;
+    try {
+        // Try to resolve through Blacksmith
+        const blacksmithUtils = await BlacksmithAPI.getUtils();
+        const blacksmith = await BlacksmithAPI.getModuleManager();
+        if (blacksmith?.BLACKSMITH?.arrSoundChoices) {
+            const soundChoice = blacksmith.BLACKSMITH.arrSoundChoices[soundName];
+            if (soundChoice) {
+                return soundChoice;
+            }
         }
+    } catch (error) {
+        console.warn('Failed to resolve sound through Blacksmith:', error);
     }
     
     // Fallback to module sounds
@@ -98,18 +105,27 @@ function resolveSoundPath(soundName) {
     return soundName;
 }
 
-// Blacksmith utility function wrappers
-function getBlacksmithUtils() {
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    return blacksmith?.utils || null;
+// Blacksmith utility function wrappers using new API
+async function getBlacksmithUtils() {
+    try {
+        return await BlacksmithAPI.getUtils();
+    } catch (error) {
+        console.warn('Failed to get Blacksmith utils:', error);
+        return null;
+    }
 }
 
 // Wrapper functions for Blacksmith utilities
-function postConsoleAndNotification(message, data = "", isError = false, isDebug = false, isNotification = false) {
-    const utils = getBlacksmithUtils();
-    if (utils?.postConsoleAndNotification) {
-        return utils.postConsoleAndNotification(message, data, isError, isDebug, isNotification);
+async function postConsoleAndNotification(message, data = "", isError = false, isDebug = false, isNotification = false) {
+    try {
+        const utils = await getBlacksmithUtils();
+        if (utils?.postConsoleAndNotification) {
+            return utils.postConsoleAndNotification(message, data, isError, isDebug, isNotification);
+        }
+    } catch (error) {
+        console.warn('Blacksmith postConsoleAndNotification failed:', error);
     }
+    
     // Fallback to console logging
     if (isError) {
         console.error(`❌ ${message}`, data);
@@ -120,49 +136,74 @@ function postConsoleAndNotification(message, data = "", isError = false, isDebug
     }
 }
 
-function getActorId(name) {
-    const utils = getBlacksmithUtils();
-    if (utils?.getActorId) {
-        return utils.getActorId(name);
+async function getActorId(name) {
+    try {
+        const utils = await getBlacksmithUtils();
+        if (utils?.getActorId) {
+            return utils.getActorId(name);
+        }
+    } catch (error) {
+        console.warn('Blacksmith getActorId failed:', error);
     }
+    
     // Fallback implementation
     const actor = game.actors.getName(name);
     return actor?.id || null;
 }
 
-function getTokenId(name) {
-    const utils = getBlacksmithUtils();
-    if (utils?.getTokenId) {
-        return utils.getTokenId(name);
+async function getTokenId(name) {
+    try {
+        const utils = await getBlacksmithUtils();
+        if (utils?.getTokenId) {
+            return utils.getTokenId(name);
+        }
+    } catch (error) {
+        console.warn('Blacksmith getTokenId failed:', error);
     }
+    
     // Fallback implementation
     const token = game.scenes.active?.tokens.find(t => t.name === name);
     return token?.id || null;
 }
 
-function getTokenImage(tokenDoc) {
-    const utils = getBlacksmithUtils();
-    if (utils?.getTokenImage) {
-        return utils.getTokenImage(tokenDoc);
+async function getTokenImage(tokenDoc) {
+    try {
+        const utils = await getBlacksmithUtils();
+        if (utils?.getTokenImage) {
+            return utils.getTokenImage(tokenDoc);
+        }
+    } catch (error) {
+        console.warn('Blacksmith getTokenImage failed:', error);
     }
+    
     // Fallback implementation
     return tokenDoc?.texture?.src || tokenDoc?.img || "icons/svg/mystery-man.svg";
 }
 
-function getPortraitImage(actor) {
-    const utils = getBlacksmithUtils();
-    if (utils?.getPortraitImage) {
-        return utils.getPortraitImage(actor);
+async function getPortraitImage(actor) {
+    try {
+        const utils = await getBlacksmithUtils();
+        if (utils?.getPortraitImage) {
+            return utils.getPortraitImage(actor);
+        }
+    } catch (error) {
+        console.warn('Blacksmith getPortraitImage failed:', error);
     }
+    
     // Fallback implementation
     return actor?.img || actor?.prototypeToken?.texture?.src || "icons/svg/mystery-man.svg";
 }
 
-function playSound(sound, volume = 0.7) {
-    const utils = getBlacksmithUtils();
-    if (utils?.playSound) {
-        return utils.playSound(sound, volume);
+async function playSound(sound, volume = 0.7) {
+    try {
+        const utils = await getBlacksmithUtils();
+        if (utils?.playSound) {
+            return utils.playSound(sound, volume);
+        }
+    } catch (error) {
+        console.warn('Blacksmith playSound failed:', error);
     }
+    
     // Fallback implementation using Foundry's AudioHelper
     if (sound === 'none') return;
     try {
@@ -177,42 +218,13 @@ function playSound(sound, volume = 0.7) {
     }
 }
 
-// Register Blacksmith updated hook
-function registerBlacksmithUpdatedHook() {
-    Hooks.on("blacksmithUpdated", (newBlacksmith) => {
-        // This function is now handled by the main blacksmithUpdated hook below
-        // Keeping this for compatibility but it's not actively used
-    });
-}
 
-// REQUIRED: Module registration and basic setup
-Hooks.once('init', async () => {
-    try {
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        if (!blacksmith?.registerModule) {
-            console.error("Required dependency 'coffee-pub-blacksmith' not found!");
-            return;
-        }
-        
-        blacksmith.registerModule('coffee-pub-crier', {
-            name: 'CRIER',
-            version: '12.1.0'
-        });
-        
-        console.log('✅ Coffee Pub Crier: Module registered with Blacksmith successfully');
-    } catch (error) {
-        console.error('❌ Coffee Pub Crier: Failed to register with Blacksmith:', error);
-    }
-});
 
 // REQUIRED: Access Blacksmith API and initialize your module
 Hooks.once('ready', async () => {
     try {
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        if (!blacksmith?.utils?.getSettingSafely) {
-            console.error("❌ Coffee Pub Crier: Blacksmith API not ready!");
-            return;
-        }
+        // Wait for Blacksmith to be ready
+        await BlacksmithAPI.waitForReady();
         
         // Initialize templates
         getTemplate(turn_template_file).then(t => turnTemplate = t);
@@ -224,111 +236,41 @@ Hooks.once('ready', async () => {
         // Make testing function available globally for GMs
         if (game.user.isGM) {
             window.testCrierBlacksmith = testBlacksmithIntegration;
-            window.forceRegisterCrierSettings = () => {
-                console.log('🔧 Manually forcing settings registration...');
-                registerSettings();
-                window.crierSettingsRegistered = true;
-            };
         }
         
-        // Register the Blacksmith hook and settings now that game object is available
-        registerBlacksmithUpdatedHook();
+        // Register settings now that Blacksmith is ready
+        registerSettings();
         
-        // Wait a bit for Blacksmith to populate its data, then register settings
-        setTimeout(() => {
-            if (!window.crierSettingsRegistered) {
-                registerSettings();
-                window.crierSettingsRegistered = true;
-                console.log('✅ Coffee Pub Crier: Initial settings registration completed');
-            }
-        }, 1000); // Wait 1 second for Blacksmith to populate data
-        
-        console.log('✅ Coffee Pub Crier: Module initialized successfully with Blacksmith');
-        // PostConsoleAndNotification("Blacksmith Integration", "Module initialized successfully", false, false, false);
+        console.log('✅ Coffee Pub Crier: Module initialized successfully with new Blacksmith API');
     } catch (error) {
         console.error('❌ Coffee Pub Crier: Failed to initialize with Blacksmith:', error);
     }
 });
 
-// REQUIRED: Listen for Blacksmith updates
-Hooks.on('blacksmithUpdated', async () => {
-    try {
-        const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-        if (blacksmith?.utils) {
-            console.log('🔄 Coffee Pub Crier: Blacksmith updated, checking data...');
-            console.log('🔄 Theme choices available:', Object.keys(blacksmith.BLACKSMITH?.arrThemeChoices || {}).length);
-            console.log('🔄 Icon choices available:', Object.keys(blacksmith.BLACKSMITH?.arrIconChoices || {}).length);
-            console.log('🔄 Sound choices available:', Object.keys(blacksmith.BLACKSMITH?.arrSoundChoices || {}).length);
-            
-            // Only re-register settings if this is the first update or if we have new data
-            if (!window.crierSettingsRegistered || 
-                (Object.keys(blacksmith.BLACKSMITH?.arrThemeChoices || {}).length > 0 && 
-                 Object.keys(blacksmith.BLACKSMITH?.arrIconChoices || {}).length > 0)) {
-                
-                console.log('🔄 Coffee Pub Crier: Re-registering settings with updated data...');
-                registerSettings();
-                window.crierSettingsRegistered = true;
-                console.log('✅ Coffee Pub Crier: Settings updated from Blacksmith');
-            } else {
-                console.log('🔄 Coffee Pub Crier: Blacksmith updated but no new data, skipping settings re-registration');
-            }
-        }
-    } catch (error) {
-        console.error('❌ Coffee Pub Crier: Failed to update from Blacksmith:', error);
-    }
-});
-
 // Testing function for Blacksmith integration
-function testBlacksmithIntegration() {
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    if (!blacksmith) {
-        console.error('❌ Blacksmith not found');
+async function testBlacksmithIntegration() {
+    try {
+        const blacksmithModuleManager = await BlacksmithAPI.getModuleManager();
+        const blacksmithUtils = await BlacksmithAPI.getUtils();
+        
+        console.log('✅ New Blacksmith API Integration Test Results:');
+        console.log('  - Module ID:', 'coffee-pub-crier');
+        console.log('  - Module Manager available:', !!blacksmithModuleManager);
+        console.log('  - Utils available:', !!blacksmithUtils);
+        
+        // Test settings access
+        const testValue = await getSettingSafely('testSetting', 'default');
+        console.log('  - Safe settings test:', testValue === 'default' ? '✅ Working' : '❌ Failed');
+        
+        // Test sound resolution
+        const testSound = await resolveSoundPath('gong');
+        console.log('  - Sound resolution test:', testSound ? `✅ ${testSound}` : '❌ Failed');
+        
+        return true;
+    } catch (error) {
+        console.error('❌ New Blacksmith API test failed:', error);
         return false;
     }
-    
-    if (!blacksmith.utils?.getSettingSafely) {
-        console.error('❌ Blacksmith API not ready');
-        return false;
-    }
-    
-    if (!blacksmith.BLACKSMITH) {
-        console.error('❌ BLACKSMITH object not available');
-        return false;
-    }
-    
-    console.log('✅ Blacksmith Integration Test Results:');
-    console.log('  - Module ID:', 'coffee-pub-crier');
-    console.log('  - Default theme:', blacksmith.BLACKSMITH.strDefaultCardTheme);
-    
-    // Test all available choice arrays
-    console.log('📋 Available Choice Arrays:');
-    console.log('  - Theme choices:', Object.keys(blacksmith.BLACKSMITH.arrThemeChoices || {}).length, 'available');
-    console.log('    Content:', blacksmith.BLACKSMITH.arrThemeChoices);
-    console.log('  - Sound choices:', Object.keys(blacksmith.BLACKSMITH.arrSoundChoices || {}).length, 'available');
-    console.log('    Content:', blacksmith.BLACKSMITH.arrSoundChoices);
-    console.log('  - Icon choices:', Object.keys(blacksmith.BLACKSMITH.arrIconChoices || {}).length, 'available');
-    console.log('    Content:', blacksmith.BLACKSMITH.arrIconChoices);
-    console.log('  - Background Image choices:', Object.keys(blacksmith.BLACKSMITH.arrBackgroundImageChoices || {}).length, 'available');
-    console.log('    Content:', blacksmith.BLACKSMITH.arrBackgroundImageChoices);
-    console.log('  - Macro choices:', Object.keys(blacksmith.BLACKSMITH.arrMacroChoices || {}).length, 'available');
-    console.log('    Content:', blacksmith.BLACKSMITH.arrMacroChoices);
-    console.log('  - Table choices:', Object.keys(blacksmith.BLACKSMITH.arrTableChoices || {}).length, 'available');
-    console.log('    Content:', blacksmith.BLACKSMITH.arrTableChoices);
-    console.log('  - Compendium choices:', Object.keys(blacksmith.BLACKSMITH.arrCompendiumChoices || {}).length, 'available');
-    console.log('    Content:', blacksmith.BLACKSMITH.arrCompendiumChoices);
-    
-    // Test safe settings access
-    const testValue = getSettingSafely('testSetting', 'default');
-    console.log('  - Safe settings test:', testValue === 'default' ? '✅ Working' : '❌ Failed');
-    
-    // Test sound resolution
-    const testSound = resolveSoundPath('gong');
-    console.log('  - Sound resolution test:', testSound ? `✅ ${testSound}` : '❌ Failed');
-    
-    // Test settings registration status
-    console.log('  - Settings registered:', window.crierSettingsRegistered ? '✅ Yes' : '❌ No');
-    
-    return true;
 }
 
 // Note: Testing function will be made available globally in the ready hook
@@ -337,7 +279,7 @@ function testBlacksmithIntegration() {
 // ===== REGISTER COMMON ============================================
 // ================================================================== 
 
-// Note: Settings and hooks will be registered in the ready hook when game object is available
+// Note: Settings and hooks will be registered in the ready hook when Blacksmith is ready
 
 // ================================================================== 
 // ===== FUNCTIONS ==================================================
@@ -370,7 +312,7 @@ function hideContent(content) {
 
 // DEBUG: I TURNED THIS OFF DUE TO A BUG BEFORE A GAME!!!!!
 function interceptNewTurnMessage(cm, html, main) {
-	// const compact = game.settings.get(MODULE_ID, CRIER.compact);
+	// const compact = game.settings.get(MODULE.ID, CRIER.compact);
 	// //const compact = true;
 	// if (compact) main.classList.add('compact');
 }
@@ -479,7 +421,7 @@ function updateLastCombatantFromMsg(cm, flags) {
 function chatMessageEvent(cm, [html], _options) {
 	const isGM = game.user.isGM;
 	const cmd = getDocData(cm);
-	const flags = cmd.flags?.[MODULE_ID];
+	const flags = cmd.flags?.[MODULE.ID];
 
 	if (!flags) {
 		if (isGM && cmd.speaker?.token === lastCombatant.tokenId)
@@ -507,9 +449,9 @@ function chatMessageEvent(cm, [html], _options) {
 
 	main?.querySelector('.whisper-to')?.remove();
 	// De-obfuscate name for GM
-	if (isGM && cm.getFlag(MODULE_ID, 'obfuscated')) {
-		const combatId = cm.getFlag(MODULE_ID, 'combat'),
-			combatantId = cm.getFlag(MODULE_ID, 'combatant'),
+	if (isGM && cm.getFlag(MODULE.ID, 'obfuscated')) {
+		const combatId = cm.getFlag(MODULE.ID, 'combat'),
+			combatantId = cm.getFlag(MODULE.ID, 'combatant'),
 			combat = game.combats.get(combatId),
 			combatant = combat?.combatants.get(combatantId);
 		if (combatant?.token) {
@@ -527,7 +469,7 @@ function chatMessageEvent(cm, [html], _options) {
 let lastReported = {};
 
 /* ----- MISSED TURN ----- */
-function createMissedTurnCard(data, context) {
+async function createMissedTurnCard(data, context) {
     if (data.last?.spoke || data.last == null) return; // They spoke, nothing more to do.
     const preUpdate = context.crier;
     if (preUpdate?.combat === game.combats.active.id) {
@@ -546,7 +488,7 @@ function createMissedTurnCard(data, context) {
         alias = last.name;
     // Notify of MISSED TURN if the setting is enabled.
     const strMissedTurnPlayer = data.last.combatant.name;
-    	if (getSettingSafely(CRIER.missedTurnNotification, false)) {
+    	if (await getSettingSafely(CRIER.missedTurnNotification, false)) {
         ui.notifications.info("Did " + strMissedTurnPlayer + " miss their turn?", {permanent: false, console: false});
     }
     const msgData = {
@@ -555,7 +497,7 @@ function createMissedTurnCard(data, context) {
         whisper: [...game.users.filter(u => u.isGM)],
         speaker: { scene, actor, token, alias },
         flags: {
-            [MODULE_ID]: { missedTurn: true, token, actor, combatant: last.combatant.id }
+            [MODULE.ID]: { missedTurn: true, token, actor, combatant: last.combatant.id }
         },
         user: game.user.id,
     };
@@ -566,12 +508,12 @@ function createMissedTurnCard(data, context) {
 // ** GENERATE CARDS
 // ************************************
 
-function generateCards(info, context) {
+async function generateCards(info, context) {
 	
 	// Noitify of MISSED TURN if the setting is enabled.
 	const msgs = [];
-	if (getSettingSafely(CRIER.missedKey, true)) {
-		const msg = createMissedTurnCard(info, context);
+	if (await getSettingSafely(CRIER.missedKey, true)) {
+		const msg = await createMissedTurnCard(info, context);
 		if (msg) msgs.push(msg);
 	}
 
@@ -589,7 +531,7 @@ function generateCards(info, context) {
 		rollMode: defaultVisible ? 'publicroll' : 'gmroll',
 		whisper: defaultVisible ? [] : getUsers(info.actor, minPerm),
 		flags: {
-			[MODULE_ID]: {
+			[MODULE.ID]: {
 				turnAnnounce: true,
 				token: info.token?.id,
 				round: info.round,
@@ -613,9 +555,9 @@ function generateCards(info, context) {
 // ************************************
 // ** CREATE NEW ROUND CARD
 // ************************************
-function createNewRoundCard(combat) {
+async function createNewRoundCard(combat) {
     const speaker = ChatMessage.getSpeaker('GM');
-    	const override = getSettingSafely(CRIER.roundLabel, 'Round {round}');
+    	    const override = await getSettingSafely(CRIER.roundLabel, 'Round {round}');
     const data = { combat };
     if (override) data.message = override.replace('{round}', combat.round);
     else data.message = game.i18n.format('coffee-pub-crier.RoundCycling', { round: combat.round });
@@ -624,14 +566,14 @@ function createNewRoundCard(combat) {
         speaker,
         rollMode: 'publicroll',
         flags: {
-            [MODULE_ID]: { roundCycling: true, round: combat.round, combat: combat.id }
+            [MODULE.ID]: { roundCycling: true, round: combat.round, combat: combat.id }
         },
     };
         // Play Round sound
-    const strSound = getSettingSafely(CRIER.roundSound, 'gong');
-    const resolvedSound = resolveSoundPath(strSound);
+    const strSound = await getSettingSafely(CRIER.roundSound, 'gong');
+    const resolvedSound = await resolveSoundPath(strSound);
     if (resolvedSound) {
-        playSound(resolvedSound);
+        await playSound(resolvedSound);
     }
     // Return the message
 
@@ -644,7 +586,7 @@ function createNewRoundCard(combat) {
 /**
  * @param {Combat} combat
  */
-function postNewRound(combat, context) {
+async function postNewRound(combat, context) {
     // Initialize the custom property if it doesn't exist
     if (combat.crierLastRoundNumber === undefined) {
         combat.crierLastRoundNumber = 0;
@@ -664,11 +606,11 @@ function postNewRound(combat, context) {
  * @param {Combat} combat
  * @param {String} userId
  */
-function postNewTurnCard(combat, context) {
+async function postNewTurnCard(combat, context) {
     // Only continue with first GM in the list
     // if (!game.user.isGM || game.users.filter(o => o.isGM && o.active).sort((a, b) => b.role - a.role)[0].id !== game.user.id) return;
     // Exit the function if they have enabled skipping turn cards
-    	const blnShowTurnCards = getSettingSafely(CRIER.turnCycling, true);
+    	const blnShowTurnCards = await getSettingSafely(CRIER.turnCycling, true);
     if (blnShowTurnCards !== true) return;
 
     const cData = getDocData(combat.combatant);
@@ -711,29 +653,29 @@ function postNewTurnCard(combat, context) {
 
     // Pull style settings from settings and set stuff
     info.name = info.token?.name ?? combatant.name;
-    		info.turnLayout = getSettingSafely(CRIER.turnLayout, 'full');
-		info.turnIconStyle = getSettingSafely(CRIER.turnIconStyle, 'fa-shield');
-		info.turnCardStyle = getSettingSafely(CRIER.turnCardStyle, 'cardsdark');
-		info.roundIconStyle = getSettingSafely(CRIER.roundIconStyle, 'fa-chess-queen');
-		info.roundCardStyle = getSettingSafely(CRIER.roundCardStyle, 'cardsgreen');
-		info.portraitStyle = getSettingSafely(CRIER.portraitStyle, 'portrait');
-		info.tokenBackground = getSettingSafely(CRIER.tokenBackground, 'dirt');
-		info.tokenScale = getSettingSafely(CRIER.tokenScale, 100);
+    		info.turnLayout = await getSettingSafely(CRIER.turnLayout, 'full');
+		info.turnIconStyle = await getSettingSafely(CRIER.turnIconStyle, 'fa-shield');
+		info.turnCardStyle = await getSettingSafely(CRIER.turnCardStyle, 'cardsdark');
+		info.roundIconStyle = await getSettingSafely(CRIER.roundIconStyle, 'fa-chess-queen');
+		info.roundCardStyle = await getSettingSafely(CRIER.roundCardStyle, 'cardsgreen');
+		info.portraitStyle = await getSettingSafely(CRIER.portraitStyle, 'portrait');
+		info.tokenBackground = await getSettingSafely(CRIER.tokenBackground, 'dirt');
+		info.tokenScale = await getSettingSafely(CRIER.tokenScale, 100);
     //	Hide the player name if needed
-    if (getSettingSafely(CRIER.hidePlayer, false))
+    if (await getSettingSafely(CRIER.hidePlayer, false))
         info.hidePlayer = true;
     // Hide abilities if needed
-    if (getSettingSafely(CRIER.hideAbilities, false))
+    if (await getSettingSafely(CRIER.hideAbilities, false))
         info.hideAbilities = true;	
     // Hide Health if needed
-    if (getSettingSafely(CRIER.hideHealth, false))
+    if (await getSettingSafely(CRIER.hideHealth, false))
     info.hideHealth = true;	
     // Hide Bloody Portrait if needed
-    if (getSettingSafely(CRIER.hideBloodyPortrait, false))
+    if (await getSettingSafely(CRIER.hideBloodyPortrait, false))
         info.hideBloodyPortrait = true;	
     // GET THE IDs
-    const strTokenId = getTokenId(info.name);
-    const strActorId = getActorId(info.name);
+    const strTokenId = await getTokenId(info.name);
+    const strActorId = await getActorId(info.name);
     // Set the view of the turn icon
     info.blnHideTurnIcon = false;
     if (info.turnIconStyle == "none") {
@@ -767,47 +709,47 @@ function postNewTurnCard(combat, context) {
             
             // Try to get token image
             if (tokenDoc) {
-                portraitImg = getTokenImage(tokenDoc);
+                portraitImg = await getTokenImage(tokenDoc);
             }
             
             // Fallback to proto token if needed
             if (!portraitImg && info.actor) {
                 const protoToken = getProtoToken(info.actor);
                 if (protoToken) {
-                    portraitImg = getTokenImage(protoToken);
+                    portraitImg = await getTokenImage(protoToken);
                 }
             }
             
             // Final fallback
             info.portrait = portraitImg || "icons/svg/mystery-man.svg";
 
-            postConsoleAndNotification("Turn Card Image TOKEN IF NOT ACTOR?. info.portrait:", info.portrait, false, true, false);
+            await postConsoleAndNotification("Turn Card Image TOKEN IF NOT ACTOR?. info.portrait:", info.portrait, false, true, false);
         } else {
             const actorPortrait = game.actors.get(strActorId);
-            info.portrait = actorPortrait ? getPortraitImage(actorPortrait) : "icons/svg/mystery-man.svg";
+            info.portrait = actorPortrait ? await getPortraitImage(actorPortrait) : "icons/svg/mystery-man.svg";
 
-            postConsoleAndNotification("Turn Card Image PORTRAIT. info.portrait:", info.portrait, false, true, false);
+            await postConsoleAndNotification("Turn Card Image PORTRAIT. info.portrait:", info.portrait, false, true, false);
         }
     } else if (info.portraitStyle == "token") {
         let tokenImg = null;
         
         // Try to get token image
         if (tokenDoc) {
-            tokenImg = getTokenImage(tokenDoc);
+            tokenImg = await getTokenImage(tokenDoc);
         }
         
         // Fallback to proto token if needed
         if (!tokenImg && info.actor) {
             const protoToken = getProtoToken(info.actor);
             if (protoToken) {
-                tokenImg = getTokenImage(protoToken);
+                tokenImg = await getTokenImage(protoToken);
             }
         }
         
         // Final fallback
         info.portrait = tokenImg || "icons/svg/mystery-man.svg";
 
-        postConsoleAndNotification("Turn Card Image TOKEN. info.portrait:", info.portrait, false, true, false);
+        await postConsoleAndNotification("Turn Card Image TOKEN. info.portrait:", info.portrait, false, true, false);
     } else {
         // Hide the portrait
         info.hidePortrait = true;
@@ -951,7 +893,7 @@ function postNewTurnCard(combat, context) {
         }
     }
 
-    	const obfuscateType = getSettingSafely(CRIER.obfuscateNPCs, 'all');
+    	const obfuscateType = await getSettingSafely(CRIER.obfuscateNPCs, 'all');
     const hasVisibleName = () => info.token ? [30, 50].includes(getDocData(tokenDoc).displayName) : true; // 30=hovered by anyone or 50=always for everyone
     const obfuscate = {
         get all() { return false; },
@@ -963,12 +905,12 @@ function postNewTurnCard(combat, context) {
     if (info.obfuscated) info.name = game.i18n.localize('coffee-pub-crier.UnidentifiedTurn');
 
     const label = `<span class='name'>${info.name}</span>`;
-    	const override = getSettingSafely(CRIER.turnLabel, '{name}');
+    	    const override = await getSettingSafely(CRIER.turnLabel, '{name}');
     if (override) info.label = override.replace('{name}', label);
     else info.label = game.i18n.format('coffee-pub-crier.Turn', { name: label });
 
 
-    const msgs = generateCards(info, context);
+    const msgs = await generateCards(info, context);
 
     return msgs;
 }
@@ -981,29 +923,29 @@ function postNewTurnCard(combat, context) {
  * @param {Combat} combat
  * @param {String} userId
  */
-function processTurn(combat, _update, context, userId) {
+async function processTurn(combat, _update, context, userId) {
     if (game.user.id !== userId) return; // Trust the one provoking combat update has sufficient permissions
 
     const msgs = [];
     // Round cycling message
-    	if (getSettingSafely(CRIER.roundCycling, true)) {
-        const roundMsg = postNewRound(combat, context);
+    	if (await getSettingSafely(CRIER.roundCycling, true)) {
+        const roundMsg = await postNewRound(combat, context);
         if (roundMsg) {
             msgs.push(roundMsg);
         } 
     }
 
     // Turn announcement
-    const turnMsgs = postNewTurnCard(combat, context);
+    const turnMsgs = await postNewTurnCard(combat, context);
     if (turnMsgs?.length) {
         msgs.push(...turnMsgs);
     }
 
         // Play Turn sound
-    const strSound = getSettingSafely(CRIER.turnSound, 'gong');
-    const resolvedSound = resolveSoundPath(strSound);
+    const strSound = await getSettingSafely(CRIER.turnSound, 'gong');
+    const resolvedSound = await resolveSoundPath(strSound);
     if (resolvedSound) {
-        playSound(resolvedSound);
+        await playSound(resolvedSound);
     }
 
     // Send the message

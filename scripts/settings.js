@@ -3,54 +3,45 @@
 // ================================================================== 
 
 // Grab the module data
-import { MODULE_TITLE, MODULE_ID, CRIER  } from './const.js';
-// -- Blacksmith API Integration --
-// All utilities now come from Blacksmith API
-// -- Import special page variables --
-// None.
-
-// ================================================================== 
-// ===== EXPORTS ====================================================
-// ================================================================== 
-
-// ================================================================== 
-// ===== FUNCTIONS ==================================================
-// ================================================================== 
+import { MODULE, CRIER  } from './const.js';
 
 // ================================================================== 
 // ===== SETTINGS ==================================================
 // ================================================================== 
   
-export const registerSettings = () => {
-    // Get Blacksmith API
-    const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
-    if (!blacksmith?.utils?.getSettingSafely) {
-        console.error("Blacksmith API not ready for settings registration!");
-        return;
-    }
+export const registerSettings = async () => {
+    try {
+        // Get Blacksmith API using new bridge file
+        const blacksmithModuleManager = await BlacksmithAPI.getModuleManager();
+        const blacksmithUtils = await BlacksmithAPI.getUtils();
+        
+        if (!blacksmithUtils?.getSettingSafely) {
+            console.error("Blacksmith API not ready for settings registration!");
+            return;
+        }
 
-    console.log('🔧 Coffee Pub Crier: Starting settings registration...');
-    console.log('🔧 Blacksmith available:', !!blacksmith);
-    console.log('🔧 BLACKSMITH object:', blacksmith.BLACKSMITH);
+        console.log('🔧 Coffee Pub Crier: Starting settings registration...');
+        console.log('🔧 Blacksmith available:', !!blacksmithModuleManager);
+        console.log('🔧 BLACKSMITH object:', blacksmithModuleManager?.BLACKSMITH);
 
-    // -------------------------------------------------------------- 
-    // Register settings...
-    console.log('🔧 Coffee Pub Crier: Registering settings...');
-    
-    // Debug: Log the variables from Blacksmith
-    if (blacksmith.BLACKSMITH) {
-        console.log('🔧 BLACKSMITH.strDefaultCardTheme:', blacksmith.BLACKSMITH.strDefaultCardTheme);
-        console.log('🔧 BLACKSMITH.arrThemeChoices:', blacksmith.BLACKSMITH.arrThemeChoices);
-        console.log('🔧 BLACKSMITH.arrIconChoices:', blacksmith.BLACKSMITH.arrIconChoices);
-        console.log('🔧 BLACKSMITH.arrSoundChoices:', blacksmith.BLACKSMITH.arrSoundChoices);
-        console.log('🔧 BLACKSMITH.arrBackgroundImageChoices:', blacksmith.BLACKSMITH.arrBackgroundImageChoices);
-    }
+        // -------------------------------------------------------------- 
+        // Register settings...
+        console.log('🔧 Coffee Pub Crier: Registering settings...');
+        
+        // Debug: Log the variables from Blacksmith
+        if (blacksmithModuleManager?.BLACKSMITH) {
+            console.log('🔧 BLACKSMITH.strDefaultCardTheme:', blacksmithModuleManager.BLACKSMITH.strDefaultCardTheme);
+            console.log('🔧 BLACKSMITH.arrThemeChoices:', blacksmithModuleManager.BLACKSMITH.arrThemeChoices);
+            console.log('🔧 BLACKSMITH.arrIconChoices:', blacksmithModuleManager.BLACKSMITH.arrIconChoices);
+            console.log('🔧 BLACKSMITH.arrSoundChoices:', blacksmithModuleManager.BLACKSMITH.arrSoundChoices);
+            console.log('🔧 BLACKSMITH.arrBackgroundImageChoices:', blacksmithModuleManager.BLACKSMITH.arrBackgroundImageChoices);
+        }
 
 		// -- TITLE --
 		// ------------------------------------------------------------
-		game.settings.register(MODULE_ID, CRIER.headingH1Crier, {
-			name: MODULE_ID + '.headingH1Crier-Label',
-			hint: MODULE_ID + '.headingH1Crier-Hint',
+		game.settings.register(MODULE.ID, CRIER.headingH1Crier, {
+			name: MODULE.ID + '.headingH1Crier-Label',
+			hint: MODULE.ID + '.headingH1Crier-Hint',
 			scope: "world",
 			config: true,
 			default: "",
@@ -60,9 +51,9 @@ export const registerSettings = () => {
 
 		// -- ROUNDS --
 		// ------------------------------------------------------------
-		game.settings.register(MODULE_ID, CRIER.headingH2Rounds, {
-			name: MODULE_ID + '.headingH2Rounds-Label',
-			hint: MODULE_ID + '.headingH2Rounds-Hint',
+		game.settings.register(MODULE.ID, CRIER.headingH2Rounds, {
+			name: MODULE.ID + '.headingH2Rounds-Label',
+			hint: MODULE.ID + '.headingH2Rounds-Hint',
 			scope: "world",
 			config: true,
 			default: "",
@@ -72,9 +63,9 @@ export const registerSettings = () => {
 
 		// -- ROUND STYLES --
 		// ------------------------------------------------------------
-		game.settings.register(MODULE_ID, CRIER.headingH3simpleRoundStyle, {
-			name: MODULE_ID + '.headingH3simpleRoundStyle-Label',
-			hint: MODULE_ID + '.headingH3simpleRoundStyle-Hint',
+		game.settings.register(MODULE.ID, CRIER.headingH3simpleRoundStyle, {
+			name: MODULE.ID + '.headingH3simpleRoundStyle-Label',
+			hint: MODULE.ID + '.headingH3simpleRoundStyle-Hint',
 			scope: "world",
 			config: true,
 			default: "",
@@ -84,48 +75,48 @@ export const registerSettings = () => {
 
 		// ===== ROUND SETTINGS =====
 		// -- Round Cycling --
-		game.settings.register(MODULE_ID, CRIER.roundCycling, {
-			name: MODULE_ID + '.roundCycling-Label',
-			hint: MODULE_ID + '.roundCycling-Hint',
+		game.settings.register(MODULE.ID, CRIER.roundCycling, {
+			name: MODULE.ID + '.roundCycling-Label',
+			hint: MODULE.ID + '.roundCycling-Hint',
 			type: Boolean,
 			config: true,
 			scope: 'world',
 			default: true
 		});
 		// -- Round Card Style --
-		game.settings.register(MODULE_ID, CRIER.roundCardStyle, {
-			name: MODULE_ID + '.roundCardStyle-Label',
-			hint: MODULE_ID + '.roundCardStyle-Hint',
+		game.settings.register(MODULE.ID, CRIER.roundCardStyle, {
+			name: MODULE.ID + '.roundCardStyle-Label',
+			hint: MODULE.ID + '.roundCardStyle-Hint',
 			scope: 'world',
 			config: true,
 			type: String,
-			default: blacksmith.BLACKSMITH?.strDefaultCardTheme || 'cardsgreen',
-			choices: blacksmith.BLACKSMITH?.arrThemeChoices || {
+			default: blacksmithModuleManager?.BLACKSMITH?.strDefaultCardTheme || 'cardsgreen',
+			choices: blacksmithModuleManager?.BLACKSMITH?.arrThemeChoices || {
 				'error': 'Failed to load themes - check Blacksmith module'
 			}
 		});
 		
-		console.log('🔧 Round Card Style registered with choices:', blacksmith.BLACKSMITH?.arrThemeChoices ? `${Object.keys(blacksmith.BLACKSMITH.arrThemeChoices).length} themes` : 'error fallback');
+		console.log('🔧 Round Card Style registered with choices:', blacksmithModuleManager?.BLACKSMITH?.arrThemeChoices ? `${Object.keys(blacksmithModuleManager.BLACKSMITH.arrThemeChoices).length} themes` : 'error fallback');
 		// -- Round Icon --
-		game.settings.register(MODULE_ID, CRIER.roundIconStyle, {
-			name: MODULE_ID + '.roundIconStyle-Label',
-			hint: MODULE_ID + '.roundIconStyle-Hint',
+		game.settings.register(MODULE.ID, CRIER.roundIconStyle, {
+			name: MODULE.ID + '.roundIconStyle-Label',
+			hint: MODULE.ID + '.roundIconStyle-Hint',
 			scope: 'world',
 			config: true,
 			type: String,
 			default: 'fa-chess-queen',
-			choices: blacksmith.BLACKSMITH?.arrIconChoices || {
+			choices: blacksmithModuleManager?.BLACKSMITH?.arrIconChoices || {
 				'error': 'Failed to load icons - check Blacksmith module'
 			},
 		});
 		
-		console.log('🔧 Round Icon Style registered with choices:', blacksmith.BLACKSMITH?.arrIconChoices ? `${Object.keys(blacksmith.BLACKSMITH.arrIconChoices).length} icons` : 'error fallback');
+		console.log('🔧 Round Icon Style registered with choices:', blacksmithModuleManager?.BLACKSMITH?.arrIconChoices ? `${Object.keys(blacksmithModuleManager.BLACKSMITH.arrIconChoices).length} icons` : 'error fallback');
 
 		// -- ROUND SETTINGS --
 		// ------------------------------------------------------------
-		game.settings.register(MODULE_ID, CRIER.headingH3simpleRoundSettings, {
-			name: MODULE_ID + '.headingH3simpleRoundSettings-Label',
-			hint: MODULE_ID + '.headingH3simpleRoundSettings-Hint',
+		game.settings.register(MODULE.ID, CRIER.headingH3simpleRoundSettings, {
+			name: MODULE.ID + '.headingH3simpleRoundSettings-Label',
+			hint: MODULE.ID + '.headingH3simpleRoundSettings-Hint',
 			scope: "world",
 			config: true,
 			default: "",
@@ -134,21 +125,21 @@ export const registerSettings = () => {
 		// ------------------------------------------------------------
 
 		// -- Round Sound --
-		game.settings.register(MODULE_ID, CRIER.roundSound, {
-			name: MODULE_ID + '.roundSound-Label',
-			hint: MODULE_ID + '.roundSound-Hint',
+		game.settings.register(MODULE.ID, CRIER.roundSound, {
+			name: MODULE.ID + '.roundSound-Label',
+			hint: MODULE.ID + '.roundSound-Hint',
 			scope: 'world',
 			config: true,
 			type: String,
 			default: 'gong',
-			choices: blacksmith.BLACKSMITH?.arrSoundChoices || {
+			choices: blacksmithModuleManager?.BLACKSMITH?.arrSoundChoices || {
 				'error': 'Failed to load sounds - check Blacksmith module'
 			},
 		});
 		// -- Round Label --
-		game.settings.register(MODULE_ID, CRIER.roundLabel, {
-			name: MODULE_ID + '.round-Label',
-			hint: MODULE_ID + '.round-Hint',
+		game.settings.register(MODULE.ID, CRIER.roundLabel, {
+			name: MODULE.ID + '.round-Label',
+			hint: MODULE.ID + '.round-Hint',
 			type: String,
 			config: true,
 			scope: 'world',
@@ -158,9 +149,9 @@ export const registerSettings = () => {
 
 		// -- TURNS --
 		// ------------------------------------------------------------
-		game.settings.register(MODULE_ID, CRIER.headingH2turns, {
-			name: MODULE_ID + '.headingH2turns-Label',
-			hint: MODULE_ID + '.headingH2turns-Hint',
+		game.settings.register(MODULE.ID, CRIER.headingH2turns, {
+			name: MODULE.ID + '.headingH2turns-Label',
+			hint: MODULE.ID + '.headingH2turns-Hint',
 			scope: "world",
 			config: true,
 			default: "",
@@ -170,9 +161,9 @@ export const registerSettings = () => {
 
 		// -- TURN STYLE --
 		// ------------------------------------------------------------
-		game.settings.register(MODULE_ID, CRIER.headingH3simpleTurnStyle, {
-			name: MODULE_ID + '.headingH3simpleTurnStyle-Label',
-			hint: MODULE_ID + '.headingH3simpleTurnStyle-Hint',
+		game.settings.register(MODULE.ID, CRIER.headingH3simpleTurnStyle, {
+			name: MODULE.ID + '.headingH3simpleTurnStyle-Label',
+			hint: MODULE.ID + '.headingH3simpleTurnStyle-Hint',
 			scope: "world",
 			config: true,
 			default: "",
@@ -182,18 +173,18 @@ export const registerSettings = () => {
 
 		// ===== TURN SETTINGS =====
 		// -- Display Turn Cards --
-		game.settings.register(MODULE_ID, CRIER.turnCycling, {
-			name: MODULE_ID + '.turnCycling-Label',
-			hint: MODULE_ID + '.turnCycling-Hint',
+		game.settings.register(MODULE.ID, CRIER.turnCycling, {
+			name: MODULE.ID + '.turnCycling-Label',
+			hint: MODULE.ID + '.turnCycling-Hint',
 			type: Boolean,
 			config: true,
 			scope: 'world',
 			default: true,
 		});
 		// -- Turn Card Layout --
-		game.settings.register(MODULE_ID, CRIER.turnLayout, {
-			name: MODULE_ID + '.turnLayout-Label',
-			hint: MODULE_ID + '.turnLayout-Hint',
+		game.settings.register(MODULE.ID, CRIER.turnLayout, {
+			name: MODULE.ID + '.turnLayout-Label',
+			hint: MODULE.ID + '.turnLayout-Hint',
 			type: String,
 			config: true,
 			scope: 'world',
@@ -204,35 +195,35 @@ export const registerSettings = () => {
 			default: 'full',
 		});
 		// -- Turn Card Color --
-		game.settings.register(MODULE_ID, CRIER.turnCardStyle, {
-			name: MODULE_ID + '.turnCardStyle-Label',
-			hint: MODULE_ID + '.turnCardStyle-Hint',
+		game.settings.register(MODULE.ID, CRIER.turnCardStyle, {
+			name: MODULE.ID + '.turnCardStyle-Label',
+			hint: MODULE.ID + '.turnCardStyle-Hint',
 			scope: 'world',
 			config: true,
 			type: String,
-			default: blacksmith.BLACKSMITH?.strDefaultCardTheme || 'cardsdark',
-			choices: blacksmith.BLACKSMITH?.arrThemeChoices || {
+			default: blacksmithModuleManager?.BLACKSMITH?.strDefaultCardTheme || 'cardsdark',
+			choices: blacksmithModuleManager?.BLACKSMITH?.arrThemeChoices || {
 				'error': 'Failed to load themes - check Blacksmith module'
 			},
 		});
 		// -- Turn Card Color --
-		game.settings.register(MODULE_ID, CRIER.turnIconStyle, {
-			name: MODULE_ID + '.turnIconStyle-Label',
-			hint: MODULE_ID + '.turnIconStyle-Hint',
+		game.settings.register(MODULE.ID, CRIER.turnIconStyle, {
+			name: MODULE.ID + '.turnIconStyle-Label',
+			hint: MODULE.ID + '.turnIconStyle-Hint',
 			scope: 'world',
 			config: true,
 			type: String,
 			default: 'fa-shield',
-			choices: blacksmith.BLACKSMITH?.arrIconChoices || {
+			choices: blacksmithModuleManager?.BLACKSMITH?.arrIconChoices || {
 				'error': 'Failed to load icons - check Blacksmith module'
 			},
 		});
 
 		// -- TURN STYLE --
 		// ------------------------------------------------------------
-		game.settings.register(MODULE_ID, CRIER.headingH3simpleTurnSettings, {
-			name: MODULE_ID + '.headingH3simpleTurnSettings-Label',
-			hint: MODULE_ID + '.headingH3simpleTurnSettings-Hint',
+		game.settings.register(MODULE.ID, CRIER.headingH3simpleTurnSettings, {
+			name: MODULE.ID + '.headingH3simpleTurnSettings-Label',
+			hint: MODULE.ID + '.headingH3simpleTurnSettings-Hint',
 			scope: "world",
 			config: true,
 			default: "",
@@ -241,21 +232,21 @@ export const registerSettings = () => {
 		// ------------------------------------------------------------
 
 		// -- Turn Sound --
-		game.settings.register(MODULE_ID, CRIER.turnSound, {
-			name: MODULE_ID + '.turnSound-Label',
-			hint: MODULE_ID + '.turnSound-Hint',
+		game.settings.register(MODULE.ID, CRIER.turnSound, {
+			name: MODULE.ID + '.turnSound-Label',
+			hint: MODULE.ID + '.turnSound-Hint',
 			scope: 'world',
 			config: true,
 			type: String,
 			default: 'gong',
-			choices: blacksmith.BLACKSMITH?.arrSoundChoices || {
+			choices: blacksmithModuleManager?.BLACKSMITH?.arrSoundChoices || {
 				'error': 'Failed to load sounds - check Blacksmith module'
 			},
 		});
 		// -- Turn Card Label --
-		game.settings.register(MODULE_ID, CRIER.turnLabel, {
-			name: MODULE_ID + '.turnCard-Label',
-			hint: MODULE_ID + '.turnCard-Hint',
+		game.settings.register(MODULE.ID, CRIER.turnLabel, {
+			name: MODULE.ID + '.turnCard-Label',
+			hint: MODULE.ID + '.turnCard-Hint',
 			type: String,
 			config: true,
 			scope: 'world',
@@ -266,9 +257,9 @@ export const registerSettings = () => {
 
 		// ===== TURN CARD PERSONALIZATION =====
 		// -- Image Style --
-		game.settings.register(MODULE_ID, CRIER.portraitStyle, {
-			name: MODULE_ID + '.portraitStyle-Label',
-			hint: MODULE_ID + '.portraitStyle-Hint',
+		game.settings.register(MODULE.ID, CRIER.portraitStyle, {
+			name: MODULE.ID + '.portraitStyle-Label',
+			hint: MODULE.ID + '.portraitStyle-Hint',
 			type: String,
 			config: true,
 			scope: 'world',
@@ -280,21 +271,21 @@ export const registerSettings = () => {
 			default: 'portrait',
 		});
 		// -- Image Background --
-		game.settings.register(MODULE_ID, CRIER.tokenBackground, {
-			name: MODULE_ID + '.tokenBackground-Label',
-			hint: MODULE_ID + '.tokenBackground-Hint',
-			type: String,
-			config: true,
+		game.settings.register(MODULE.ID, CRIER.tokenBackground, {
+			name: MODULE.ID + '.tokenBackground-Label',
+			hint: MODULE.ID + '.tokenBackground-Hint',
 			scope: 'world',
-			choices: blacksmith.BLACKSMITH?.arrBackgroundImageChoices || {
+			config: true,
+			type: String,
+			choices: blacksmithModuleManager?.BLACKSMITH?.arrBackgroundImageChoices || {
 				'error': 'Failed to load backgrounds - check Blacksmith module'
 			},
 			default: 'dirt',
 		});
 		// -- Image Scale --
-		game.settings.register(MODULE_ID, CRIER.tokenScale, {
-			name: MODULE_ID + '.tokenScale-Label',
-			hint: MODULE_ID + '.tokenScale-Hint',
+		game.settings.register(MODULE.ID, CRIER.tokenScale, {
+			name: MODULE.ID + '.tokenScale-Label',
+			hint: MODULE.ID + '.tokenScale-Hint',
 			scope: "world",
 			config: true,
 			type: Number,
@@ -307,26 +298,26 @@ export const registerSettings = () => {
 		});
 
 		// -- NPC Names --
-		game.settings.register(MODULE_ID, CRIER.obfuscateNPCs, {
-			name: MODULE_ID + '.obfuscateNPCs-Label',
-			hint: MODULE_ID + '.obfuscateNPCs-Hint',
+		game.settings.register(MODULE.ID, CRIER.obfuscateNPCs, {
+			name: MODULE.ID + '.obfuscateNPCs-Label',
+			hint: MODULE.ID + '.obfuscateNPCs-Hint',
 			type: String,
 			config: true,
 			scope: 'world',
 			choices: {
-				all: MODULE_ID + '.ObfuscateNPCsVisibility.All',
-				owned: MODULE_ID + '.ObfuscateNPCsVisibility.Owned',
-				token: MODULE_ID + '.ObfuscateNPCsVisibility.Token',
+				all: MODULE.ID + '.ObfuscateNPCsVisibility.All',
+				owned: MODULE.ID + '.ObfuscateNPCsVisibility.Owned',
+				token: MODULE.ID + '.ObfuscateNPCsVisibility.Token',
 				// visible: 'coffee.pub-crier.ObfuscateNPCsVisibility.Visible',
-				any: MODULE_ID + '.ObfuscateNPCsVisibility.Any',
+				any: MODULE.ID + '.ObfuscateNPCsVisibility.Any',
 			},
 			default: 'all',
 		});
 		// ===== MISC Settings =====
 		// -- Compact --
-		game.settings.register(MODULE_ID, CRIER.compact, {
-			name: MODULE_ID + '.Compact-Label',
-			hint: MODULE_ID + '.Compact-Hint',
+		game.settings.register(MODULE.ID, CRIER.compact, {
+			name: MODULE.ID + '.Compact-Label',
+			hint: MODULE.ID + '.Compact-Hint',
 			type: Boolean,
 			config: true,
 			scope: 'world',
@@ -335,9 +326,9 @@ export const registerSettings = () => {
 		
 		// -- TURN PERSOANLIZATION --
 		// ------------------------------------------------------------
-		game.settings.register(MODULE_ID, CRIER.headingH3simpleTurnElements, {
-			name: MODULE_ID + '.headingH3simpleTurnElements-Label',
-			hint: MODULE_ID + '.headingH3simpleTurnElements-Hint',
+		game.settings.register(MODULE.ID, CRIER.headingH3simpleTurnElements, {
+			name: MODULE.ID + '.headingH3simpleTurnElements-Label',
+			hint: MODULE.ID + '.headingH3simpleTurnElements-Hint',
 			scope: "world",
 			config: true,
 			default: "",
@@ -346,18 +337,18 @@ export const registerSettings = () => {
 		// ------------------------------------------------------------
 
 		// -- Bloody Portraits --
-		game.settings.register(MODULE_ID, CRIER.hideBloodyPortrait, {
-			name: MODULE_ID + '.hideBloodyPortrait-Label',
-			hint: MODULE_ID + '.hideBloodyPortrait-Hint',
+		game.settings.register(MODULE.ID, CRIER.hideBloodyPortrait, {
+			name: MODULE.ID + '.hideBloodyPortrait-Label',
+			hint: MODULE.ID + '.hideBloodyPortrait-Hint',
 			type: Boolean,
 			config: true,
 			scope: 'world',
 			default: false,
 		});
 		// -- Player Names --
-		game.settings.register(MODULE_ID, CRIER.hidePlayer, {
-			name: MODULE_ID + '.hidePlayer-Label',
-			hint: MODULE_ID + '.hidePlayer-Hint',
+		game.settings.register(MODULE.ID, CRIER.hidePlayer, {
+			name: MODULE.ID + '.hidePlayer-Label',
+			hint: MODULE.ID + '.hidePlayer-Hint',
 			type: Boolean,
 			config: true,
 			scope: 'world',
@@ -365,18 +356,18 @@ export const registerSettings = () => {
 		});
 		
 		// -- Abilities --
-		game.settings.register(MODULE_ID, CRIER.hideAbilities, {
-			name: MODULE_ID + '.hideAbilities-Label',
-			hint: MODULE_ID + '.hideAbilities-Hint',
+		game.settings.register(MODULE.ID, CRIER.hideAbilities, {
+			name: MODULE.ID + '.hideAbilities-Label',
+			hint: MODULE.ID + '.hideAbilities-Hint',
 			type: Boolean,
 			config: true,
 			scope: 'world',
 			default: false,
 		});
 		// -- Health --
-		game.settings.register(MODULE_ID, CRIER.hideHealth, {
-			name: MODULE_ID + '.hideHealth-Label',
-			hint: MODULE_ID + '.hideHealth-Hint',
+		game.settings.register(MODULE.ID, CRIER.hideHealth, {
+			name: MODULE.ID + '.hideHealth-Label',
+			hint: MODULE.ID + '.hideHealth-Hint',
 			type: Boolean,
 			config: true,
 			scope: 'world',
@@ -385,18 +376,18 @@ export const registerSettings = () => {
 
 		// ===== MISSED TURNS =====
 		// -- Display Missed Turns --
-		game.settings.register(MODULE_ID, CRIER.missedKey, {
-			name: MODULE_ID + '.missedTurn-Label',
-			hint: MODULE_ID + '.missedTurn-Hint',
+		game.settings.register(MODULE.ID, CRIER.missedKey, {
+			name: MODULE.ID + '.missedTurn-Label',
+			hint: MODULE.ID + '.missedTurn-Hint',
 			type: Boolean,
 			config: true,
 			scope: 'world',
 			default: true
 		});
 		// -- Missed Turn in Chat --
-		game.settings.register(MODULE_ID, CRIER.missedTurnNotification, {
-			name: MODULE_ID + '.missedTurnNotification-Label',
-			hint: MODULE_ID + '.missedTurnNotification-Hint',
+		game.settings.register(MODULE.ID, CRIER.missedTurnNotification, {
+			name: MODULE.ID + '.missedTurnNotification-Label',
+			hint: MODULE.ID + '.missedTurnNotification-Hint',
 			type: Boolean,
 			config: true,
 			scope: 'world',
@@ -409,7 +400,11 @@ export const registerSettings = () => {
         console.log('🔧 Total settings registered:', Object.keys(CRIER).length);
         
         // Verify settings were actually registered
-        const registeredSettings = Array.from(game.settings.settings).filter(s => s[1].module === MODULE_ID);
+        const registeredSettings = Array.from(game.settings.settings).filter(s => s[1].module === MODULE.ID);
         console.log('🔧 FoundryVTT registered settings count:', registeredSettings.length);
         console.log('🔧 Registered setting keys:', registeredSettings.map(s => s[1].key));
+        
+    } catch (error) {
+        console.error('❌ Coffee Pub Crier: Failed to register settings with new Blacksmith API:', error);
+    }
 };
