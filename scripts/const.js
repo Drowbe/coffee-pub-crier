@@ -43,11 +43,7 @@ export const MODULE = {
     DESCRIPTION: moduleData.description,
 };
 
-
-
-// MIGRATION - we need to transition these to the new MODULE object
-// export const MODULE_NAME = 'CRIER'
-// export const MODULE_ID = 'coffee-pub-crier'
+// CRIER CONSTANTS
 export const CRIER = {
 	module: 'coffee-pub-crier',
 	modulepath: 'modules/coffee-pub-crier/',
