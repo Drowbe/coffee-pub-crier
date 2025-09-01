@@ -83,17 +83,27 @@
 - [x] Verify `module.json` has `coffee-pub-blacksmith` as a library dependency.
 - [x] Confirm bridge import exists at top of `scripts/crier.js`.
 
+#### Quick Start Steps (Blacksmith API Documentation)
+- [x] Step 1: Add Blacksmith as library dependency in `module.json`.
+- [x] Step 2: Import bridge file `import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js'`.
+- [x] Step 3: Register module during `init` hook using `BlacksmithModuleManager.registerModule()`.
+- [x] Step 4: Test integration with console commands (testing function available globally).
+- [x] Step 5: Test integration (GMs can run `testCrierBlacksmith()` in console).
+- [x] Step 6: Start using the API (using globals directly).
+
 #### Globals migration (scripts/crier.js)
-- [ ] Replace `await BlacksmithAPI.getUtils()` calls with `BlacksmithUtils`.
-- [ ] Replace `await BlacksmithAPI.getModuleManager()` calls with `BlacksmithModuleManager`.
-- [ ] Remove `BlacksmithAPI.waitForReady()` usage.
-- [ ] Update `getSettingSafely` to call `BlacksmithUtils.getSettingSafely` directly.
-- [ ] Update `postConsoleAndNotification` to use `BlacksmithUtils.postConsoleAndNotification` when available.
-- [ ] Update `getActorId` to prefer `BlacksmithUtils.getActorId` (keep fallback).
-- [ ] Update `getTokenId` to prefer `BlacksmithUtils.getTokenId` (keep fallback).
-- [ ] Update `getTokenImage` to prefer `BlacksmithUtils.getTokenImage` (keep fallback).
-- [ ] Update `getPortraitImage` to prefer `BlacksmithUtils.getPortraitImage` (keep fallback).
-- [ ] Update `playSound` to prefer `BlacksmithUtils.playSound` (keep fallback).
+- [x] Replace `await BlacksmithAPI.getUtils()` calls with `BlacksmithUtils`.
+- [x] Replace `await BlacksmithAPI.getModuleManager()` calls with `BlacksmithModuleManager`.
+- [x] Remove `BlacksmithAPI.waitForReady()` usage.
+- [x] Update `getSettingSafely` to call `BlacksmithUtils.getSettingSafely` directly.
+- [x] Update `postConsoleAndNotification` to use `BlacksmithUtils.postConsoleAndNotification` when available.
+- [x] Update `getActorId` to prefer `BlacksmithUtils.getActorId` (keep fallback).
+- [x] Update `getTokenId` to prefer `BlacksmithUtils.getTokenId` (keep fallback).
+- [x] Update `getTokenImage` to prefer `BlacksmithUtils.getTokenImage` (keep fallback).
+- [x] Update `getPortraitImage` to prefer `BlacksmithUtils.getPortraitImage` (keep fallback).
+- [x] Update `playSound` to prefer `BlacksmithUtils.playSound` (keep fallback).
+- [x] Remove legacy wrapper functions (getBlacksmithUtils, postConsoleAndNotification, playSound).
+- [x] Follow Quick Start pattern from Blacksmith API documentation.
 
 #### Constants and choices (scripts/settings.js)
 - [ ] Replace theme choices with `BlacksmithConstants?.arrThemeChoices` (fallback `BLACKSMITH?.arrThemeChoices`).

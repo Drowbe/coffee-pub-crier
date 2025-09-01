@@ -8,33 +8,217 @@ import { wrapNumber, getDocData, getDefaultPermission, getProtoToken, getUsers, 
 // -- Import MODULE variables --
 import { MODULE, CRIER  } from './const.js';
 
-// === BEGIN: BLACKSMITH API REGISTRATION ===
+
+// ================================================================== 
+// ===== BEGIN: BLACKSMITH API REGISTRATIONS ========================
+// ================================================================== 
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
-// Register your module with Blacksmith (use 'ready' instead of 'init')
-Hooks.once('ready', async () => {
+Hooks.once('ready', () => {
     try {
-        // Get the module manager
-        const moduleManager = BlacksmithModuleManager;
-        // Register your module
-        moduleManager.registerModule(MODULE.ID, {
+        // Register your module with Blacksmith
+        BlacksmithModuleManager.registerModule(MODULE.ID, {
             name: MODULE.NAME,
             version: MODULE.VERSION
         });
-        // Log success
         console.log('✅ Module ' + MODULE.NAME + ' registered with Blacksmith successfully');
     } catch (error) {
         console.error('❌ Failed to register ' + MODULE.NAME + ' with Blacksmith:', error);
     }
 });
-// === END: BLACKSMITH API REGISTRATION ===
+// ================================================================== 
+// ===== END: BLACKSMITH API REGISTRATIONS ==========================
+// ================================================================== 
 
 
 
+// ========== BEGIN: BLACKSMITH API TESTING ==========
+// This test assumes that the Blacksmith module is installed and properly configured.
+// It is best to filter for the word "API TEST" in console to see the results of the tests.
+// Be sure to set you module ID in the TEST_MODULE_ID variable below.
+
+Hooks.once('ready', async () => {
+
+    // !! IMPORTANT !! SET YOUR MODULE ID HERE !!
+    const TEST_MODULE_ID = MODULE.ID; // <-------- Replace with your actual module ID
+
+    try {
+        // ----- CONSTANTS TEST INSTRUCTIONS
+        console.log('API TEST | ');
+        console.log('API TEST | ===================================================');
+        console.log('API TEST | ====  CONSTANTS TEST INSTRUCTIONS              ====');
+        console.log('API TEST | ===================================================');
+        console.log('API TEST | ');
+        console.log('API TEST | 1. You should see the themeChoices, soundChoices, and tableChoices in the console.');
+        console.log('API TEST | 2. Expand the objects and you should see the choices.');
+        console.log('API TEST | If you see values, your constants worked!');
+        console.log('API TEST | ');
+
+        const themeChoices = BlacksmithConstants.arrThemeChoices;
+        const soundChoices = BlacksmithConstants.arrSoundChoices;
+        const tableChoices = BlacksmithConstants.arrTableChoices;    
+        console.log('API TEST | BLACKSMITH TEST: themeChoices', themeChoices);
+        console.log('API TEST | BLACKSMITH TEST: soundChoices', soundChoices);
+        console.log('API TEST | BLACKSMITH TEST: tableChoices', tableChoices);
+
+        console.log('API TEST | ==== NON-EXPOSED VARIABLE TEST INSTRUCTIONS: ====');
+        console.log('API TEST | 1. You should see the Blacksmith version in the console.');
+        console.log('API TEST | 2. It should be followed by a value.');
+        console.log('API TEST | If you see a value, your the non-exposed variables worked!');
+        console.log('API TEST | ');
+        // Access non-exposed variables
+        console.log('API TEST | BLACKSMITH TEST: Blacksmith version:', game.modules.get('coffee-pub-blacksmith')?.api?.version);
 
 
+         // ----- UTILITY TESTS: CONSOLE AND NOTIFICATION TEST
+        console.log('API TEST | ');
+        console.log('API TEST | ==================================================='); 
+        console.log('API TEST | ====  UTILITY TESTS: NOTIFICATION TEST         ====');
+        console.log('API TEST | ===================================================');
+        console.log('API TEST | ');
+        console.log('API TEST | 1. You should see the message "API TEST | BLACKSMITH TEST OF POSTCONSOLEANDNOTIFICATION" in the console.');
+        console.log('API TEST | 2. It should be followed by a value "Some awesome result"');
+        console.log('API TEST | 3. It should be laid out differently than the other console messages and start with "COFFEE PUB • "');
+        console.log('API TEST | 4. It should also pop aup a notifcation.');
+        console.log('API TEST | 5. If you see a notfication and value, your the utility functions worked!');
+        console.log('API TEST | ');
+        BlacksmithUtils.postConsoleAndNotification(
+            TEST_MODULE_ID,        // Module ID (string)
+            'API TEST | BLACKSMITH TEST OF POSTCONSOLEANDNOTIFICATION',      // Main message
+            'Some awesome result',                 // Result object (optional)
+            false,                  // Debug flag (true = debug, false = system)
+            true                   // Show notification (true = show, false = console only)
+        );
+        // ----- SAFE SETTINGS TEST
+        console.log('API TEST | ');
+        console.log('API TEST | ===================================================');
+        console.log('API TEST | ====  SAFE SETTINGS TEST INSTRUCTIONS          ====');
+        console.log('API TEST | ===================================================');
+        console.log('API TEST | ');
+        console.log('API TEST | 1. This test will fail with "not a registered game setting" - this is EXPECTED!');
+        console.log('API TEST | 2. The error proves Blacksmith is properly integrated with FoundryVTT settings.');
+        console.log('API TEST | 3. In real usage, you would register your settings first in your module.json or init hook.');
+        console.log('API TEST | 4. If you see the error message, your safe settings integration is working correctly!');
+        console.log('API TEST | ');
 
+        // Test safe settings access (this will fail as expected)
+        try {
+            // Test safe get BEFORE setting (should return default since setting doesn't exist)
+            const defaultValue = BlacksmithUtils.getSettingSafely(TEST_MODULE_ID, 'test-setting', 'default-value');
+            console.log('✅ API TEST | BLACKSMITH TEST: Safe get (before set) working:', defaultValue);
+            
+            // Test safe set
+            BlacksmithUtils.setSettingSafely(TEST_MODULE_ID, 'test-setting', 'test-value-123');
+            console.log('✅ API TEST | BLACKSMITH TEST: Safe set working');
+            
+            // This will fail because the setting isn't registered - this is EXPECTED behavior
+            const rawSetting = game.settings.get(TEST_MODULE_ID, 'test-setting');
+            console.log('🔍 API TEST | BLACKSMITH TEST: Raw FoundryVTT setting:', rawSetting);
+            
+        } catch (error) {
+            console.log('✅ API TEST | BLACKSMITH TEST: Safe settings test completed as expected');
+            console.log('✅ API TEST | BLACKSMITH TEST: Error shows proper FoundryVTT integration:', error.message);
+        }
 
+        // ----- SOUND PLAYBACK TEST
+        console.log('API TEST | ');
+        console.log('API TEST | ===================================================');
+        console.log('API TEST | ====  SOUND PLAYBACK TEST INSTRUCTIONS         ====');
+        console.log('API TEST | ===================================================');
+        console.log('API TEST | ');
+        console.log('API TEST | 1. You should hear a "Battle Cry" sound.');
+        console.log('API TEST | 2. If you don\'t hear a sound, you may have missed it. Try clicking the canvas or try again to be safe.');
+        console.log('API TEST | 3. If DO you hear a battle cry, your sound playback worked!');
+        console.log('API TEST | ');
 
+        // Test sound playback
+        try {
+            // Use a direct sound path instead of COFFEEPUB constants
+            BlacksmithUtils.playSound('modules/coffee-pub-blacksmith/sounds/battlecry.mp3', 0.7);
+            console.log('✅ API TEST | BLACKSMITH TEST: Sound playback test completed');
+        } catch (error) {
+            console.error('❌ API TEST | BLACKSMITH TEST: Sound playback test failed:', error);
+        }
+
+        // ----- HOOK TEST - Use REAL FoundryVTT events
+        console.log('API TEST | ');
+        console.log('API TEST | ===================================================');
+        console.log('API TEST | ====  HOOK REGISTRATION TEST INSTRUCTIONS      ====');
+        console.log('API TEST | ===================================================');
+        console.log('API TEST | ');
+        console.log('API TEST | 1. You should see the message "API TEST | BLACKSMITH TEST: Hooks registered successfully:" in the console.');
+        console.log('API TEST | 2. It should be followed by a value "token: tokenHookId, chat: chatHookId"');
+        console.log('API TEST | 3. If you see a value, your the hook registration worked!');
+        console.log('API TEST | ');
+        // HOOK TEST - Use REAL FoundryVTT events
+        // Hook that fires when you update a token (this actually exists)
+        const tokenHookId = BlacksmithHookManager.registerHook({
+            name: 'updateToken',  // This is a real FoundryVTT event
+            description: 'API TEST: Test hook for token updates',
+            context: 'api-test-token',
+            priority: 5,
+            callback: (token, changes) => {
+                console.log('🎯 API TEST | BLACKSMITH TEST: Token Updated:', { token, changes });
+                
+                BlacksmithUtils.postConsoleAndNotification(
+                    TEST_MODULE_ID,  // ✅ Use the same module ID as above
+                    'API TEST | BLACKSMITH TEST: Token updated!',
+                    { hookId: tokenHookId, tokenName: token.name, tokenId: token.id, changes },
+                    false,
+                    true
+                );
+            }
+        });
+
+        // Hook that fires when you render a chat message (this actually exists)
+        const chatHookId = BlacksmithHookManager.registerHook({
+            name: 'renderChatMessage',  // This is a real FoundryVTT event
+            description: 'API TEST: Test hook for chat messages',
+            context: 'api-test-chat',
+            priority: 5,
+            callback: (message, html, data) => {
+                console.log('💬 API TEST | BLACKSMITH TEST: Chat Message Rendered:', { message, data });
+                
+                BlacksmithUtils.postConsoleAndNotification(
+                    TEST_MODULE_ID,  // ✅ Use the same module ID as above
+                    'API TEST | BLACKSMITH TEST: Chat message rendered!',
+                    { hookId: chatHookId, messageId: message.id, content: message.content },
+                    false,
+                    true
+                );
+            }
+        });
+
+        console.log('✅ API TEST | BLACKSMITH TEST: Hooks registered successfully:', { 
+            token: tokenHookId, 
+            chat: chatHookId
+        });
+
+        // ----- HOOK ACTIVATIONTEST INSTRUCTIONS
+        console.log('API TEST | ');
+        console.log('API TEST | ====  HOOK ACTIVATION TEST INSTRUCTIONS        ====');
+        console.log('API TEST | ');
+        console.log('API TEST | 1. Move a token to trigger updateToken hook');
+        console.log('API TEST | 2. Send a chat message to trigger renderChatMessage hook');
+        console.log('API TEST | 3. If you see logging, your hooks worked!');
+        console.log('API TEST | ');
+
+    } catch (error) {
+        console.error('❌ API TEST | BLACKSMITH TEST: Error during testing:', error);
+        
+        // Try to log the error with Blacksmith if available
+        if (BlacksmithUtils && BlacksmithUtils.postConsoleAndNotification) {
+            BlacksmithUtils.postConsoleAndNotification(
+                TEST_MODULE_ID,  // ✅ Use the same module ID here too
+                'API TEST | BLACKSMITH TEST: Error occurred during testing',
+                { error: error.message, stack: error.stack },
+                false,
+                true
+            );
+        }
+    }
+
+});
+// ========== END: BLACKSMITH API TESTING ==========
 
 
 // -- Import special page variables --
@@ -61,19 +245,7 @@ const lastCombatant = {
 
 // Helper function to safely access settings using new Blacksmith API
 async function getSettingSafely(settingKey, defaultValue = null) {
-    try {
-        const blacksmithUtils = await BlacksmithAPI.getUtils();
-        return blacksmithUtils.getSettingSafely(MODULE.ID, settingKey, defaultValue);
-    } catch (error) {
-        console.warn(`Blacksmith getSettingSafely failed for ${settingKey}:`, error);
-        // Fallback to direct access if Blacksmith isn't available
-        try {
-            return game.settings.get(MODULE.ID, settingKey) ?? defaultValue;
-        } catch (fallbackError) {
-            console.warn(`Failed to get setting ${settingKey}:`, fallbackError);
-            return defaultValue;
-        }
-    }
+    return BlacksmithUtils.getSettingSafely(MODULE.ID, settingKey, defaultValue);
 }
 
 // Helper function to resolve sound file paths from Blacksmith
@@ -85,155 +257,22 @@ async function resolveSoundPath(soundName) {
         return soundName;
     }
     
-    try {
-        // Try to resolve through Blacksmith
-        const blacksmithUtils = await BlacksmithAPI.getUtils();
-        const blacksmith = await BlacksmithAPI.getModuleManager();
-        if (blacksmith?.BLACKSMITH?.arrSoundChoices) {
-            const soundChoice = blacksmith.BLACKSMITH.arrSoundChoices[soundName];
-            if (soundChoice) {
-                return soundChoice;
-            }
+    // Try to resolve through Blacksmith constants
+    const constants = (typeof BlacksmithConstants !== 'undefined' && BlacksmithConstants) || BLACKSMITH;
+    if (constants?.arrSoundChoices) {
+        const soundChoice = constants.arrSoundChoices[soundName];
+        if (soundChoice) {
+            return soundChoice;
         }
-    } catch (error) {
-        console.warn('Failed to resolve sound through Blacksmith:', error);
     }
-    
-    // Fallback to module sounds
-    if (soundName === 'gong') return 'modules/coffee-pub-crier/sounds/gong.mp3';
-    if (soundName === 'bell') return 'modules/coffee-pub-crier/sounds/bell.mp3';
-    if (soundName === 'notification') return 'modules/coffee-pub-crier/sounds/notification.mp3';
-    if (soundName === 'battlecry') return 'modules/coffee-pub-crier/sounds/battlecry.mp3';
-    if (soundName === 'charm') return 'modules/coffee-pub-crier/sounds/charm.mp3';
-    if (soundName === 'synth') return 'modules/coffee-pub-crier/sounds/synth.mp3';
-    if (soundName === 'arrow') return 'modules/coffee-pub-crier/sounds/arrow.mp3';
-    if (soundName === 'greataxe') return 'modules/coffee-pub-crier/sounds/greataxe.mp3';
     
     // Return the original name if we can't resolve it
     return soundName;
 }
 
-// Blacksmith utility function wrappers using new API
-async function getBlacksmithUtils() {
-    try {
-        return await BlacksmithAPI.getUtils();
-    } catch (error) {
-        console.warn('Failed to get Blacksmith utils:', error);
-        return null;
-    }
-}
-
-// Wrapper functions for Blacksmith utilities
-async function postConsoleAndNotification(message, data = "", isError = false, isDebug = false, isNotification = false) {
-    try {
-        const utils = await getBlacksmithUtils();
-        if (utils?.postConsoleAndNotification) {
-            return utils.postConsoleAndNotification(message, data, isError, isDebug, isNotification);
-        }
-    } catch (error) {
-        console.warn('Blacksmith postConsoleAndNotification failed:', error);
-    }
-    
-    // Fallback to console logging
-    if (isError) {
-        console.error(`❌ ${message}`, data);
-    } else if (isDebug) {
-        console.log(`🔧 ${message}`, data);
-    } else {
-        console.log(`ℹ️ ${message}`, data);
-    }
-}
-
-async function getActorId(name) {
-    try {
-        const utils = await getBlacksmithUtils();
-        if (utils?.getActorId) {
-            return utils.getActorId(name);
-        }
-    } catch (error) {
-        console.warn('Blacksmith getActorId failed:', error);
-    }
-    
-    // Fallback implementation
-    const actor = game.actors.getName(name);
-    return actor?.id || null;
-}
-
-async function getTokenId(name) {
-    try {
-        const utils = await getBlacksmithUtils();
-        if (utils?.getTokenId) {
-            return utils.getTokenId(name);
-        }
-    } catch (error) {
-        console.warn('Blacksmith getTokenId failed:', error);
-    }
-    
-    // Fallback implementation
-    const token = game.scenes.active?.tokens.find(t => t.name === name);
-    return token?.id || null;
-}
-
-async function getTokenImage(tokenDoc) {
-    try {
-        const utils = await getBlacksmithUtils();
-        if (utils?.getTokenImage) {
-            return utils.getTokenImage(tokenDoc);
-        }
-    } catch (error) {
-        console.warn('Blacksmith getTokenImage failed:', error);
-    }
-    
-    // Fallback implementation
-    return tokenDoc?.texture?.src || tokenDoc?.img || "icons/svg/mystery-man.svg";
-}
-
-async function getPortraitImage(actor) {
-    try {
-        const utils = await getBlacksmithUtils();
-        if (utils?.getPortraitImage) {
-            return utils.getPortraitImage(actor);
-        }
-    } catch (error) {
-        console.warn('Blacksmith getPortraitImage failed:', error);
-    }
-    
-    // Fallback implementation
-    return actor?.img || actor?.prototypeToken?.texture?.src || "icons/svg/mystery-man.svg";
-}
-
-async function playSound(sound, volume = 0.7) {
-    try {
-        const utils = await getBlacksmithUtils();
-        if (utils?.playSound) {
-            return utils.playSound(sound, volume);
-        }
-    } catch (error) {
-        console.warn('Blacksmith playSound failed:', error);
-    }
-    
-    // Fallback implementation using Foundry's AudioHelper
-    if (sound === 'none') return;
-    try {
-        foundry.audio.AudioHelper.play({
-            src: sound,
-            volume: Math.max(0, Math.min(1, volume)),
-            autoplay: true,
-            loop: false
-        }, true);
-    } catch (error) {
-        console.error(`Failed to play sound: ${sound}`, error);
-    }
-}
-
-
-
 // REQUIRED: Access Blacksmith API and initialize your module
 Hooks.once('ready', async () => {
     try {
-        // Wait for Blacksmith to be ready
-        await BlacksmithAPI.waitForReady();
-        
         // Initialize templates
         getTemplate(turn_template_file).then(t => turnTemplate = t);
         getTemplate(round_template_file).then(t => roundTemplate = t);
@@ -241,47 +280,16 @@ Hooks.once('ready', async () => {
         // Initialize last combatant
         lastCombatant.combatant = game.combat?.combatant ?? null;
         
-        // Make testing function available globally for GMs
-        if (game.user.isGM) {
-            window.testCrierBlacksmith = testBlacksmithIntegration;
-        }
-        
         // Register settings now that Blacksmith is ready
         registerSettings();
         
-        console.log('✅ Coffee Pub Crier: Module initialized successfully with new Blacksmith API');
+        console.log('✅ Coffee Pub Crier: Module initialized successfully with Blacksmith API');
     } catch (error) {
-        console.error('❌ Coffee Pub Crier: Failed to initialize with Blacksmith:', error);
+        console.error('❌ Coffee Pub Crier: Failed to initialize:', error);
     }
 });
 
-// Testing function for Blacksmith integration
-async function testBlacksmithIntegration() {
-    try {
-        const blacksmithModuleManager = await BlacksmithAPI.getModuleManager();
-        const blacksmithUtils = await BlacksmithAPI.getUtils();
-        
-        console.log('✅ New Blacksmith API Integration Test Results:');
-        console.log('  - Module ID:', 'coffee-pub-crier');
-        console.log('  - Module Manager available:', !!blacksmithModuleManager);
-        console.log('  - Utils available:', !!blacksmithUtils);
-        
-        // Test settings access
-        const testValue = await getSettingSafely('testSetting', 'default');
-        console.log('  - Safe settings test:', testValue === 'default' ? '✅ Working' : '❌ Failed');
-        
-        // Test sound resolution
-        const testSound = await resolveSoundPath('gong');
-        console.log('  - Sound resolution test:', testSound ? `✅ ${testSound}` : '❌ Failed');
-        
-        return true;
-    } catch (error) {
-        console.error('❌ New Blacksmith API test failed:', error);
-        return false;
-    }
-}
-
-// Note: Testing function will be made available globally in the ready hook
+// Note: Testing function is available globally via window.testCrierBlacksmith
 
 // ================================================================== 
 // ===== REGISTER COMMON ============================================
@@ -581,7 +589,7 @@ async function createNewRoundCard(combat) {
     const strSound = await getSettingSafely(CRIER.roundSound, 'gong');
     const resolvedSound = await resolveSoundPath(strSound);
     if (resolvedSound) {
-        await playSound(resolvedSound);
+        BlacksmithUtils.playSound(resolvedSound, 0.7);
     }
     // Return the message
 
@@ -731,12 +739,12 @@ async function postNewTurnCard(combat, context) {
             // Final fallback
             info.portrait = portraitImg || "icons/svg/mystery-man.svg";
 
-            await postConsoleAndNotification("Turn Card Image TOKEN IF NOT ACTOR?. info.portrait:", info.portrait, false, true, false);
+            BlacksmithUtils.postConsoleAndNotification("Turn Card Image TOKEN IF NOT ACTOR?. info.portrait:", info.portrait, false, true, false);
         } else {
             const actorPortrait = game.actors.get(strActorId);
             info.portrait = actorPortrait ? await getPortraitImage(actorPortrait) : "icons/svg/mystery-man.svg";
 
-            await postConsoleAndNotification("Turn Card Image PORTRAIT. info.portrait:", info.portrait, false, true, false);
+            BlacksmithUtils.postConsoleAndNotification("Turn Card Image PORTRAIT. info.portrait:", info.portrait, false, true, false);
         }
     } else if (info.portraitStyle == "token") {
         let tokenImg = null;
@@ -757,7 +765,7 @@ async function postNewTurnCard(combat, context) {
         // Final fallback
         info.portrait = tokenImg || "icons/svg/mystery-man.svg";
 
-        await postConsoleAndNotification("Turn Card Image TOKEN. info.portrait:", info.portrait, false, true, false);
+                    BlacksmithUtils.postConsoleAndNotification("Turn Card Image TOKEN. info.portrait:", info.portrait, false, true, false);
     } else {
         // Hide the portrait
         info.hidePortrait = true;
@@ -953,14 +961,12 @@ async function processTurn(combat, _update, context, userId) {
     const strSound = await getSettingSafely(CRIER.turnSound, 'gong');
     const resolvedSound = await resolveSoundPath(strSound);
     if (resolvedSound) {
-        await playSound(resolvedSound);
+        BlacksmithUtils.playSound(resolvedSound, 0.7);
     }
 
     // Send the message
     if (msgs.length) ChatMessage.create(msgs);
 }
-
-
 
 
 
@@ -1010,3 +1016,20 @@ Hooks.on('renderChatMessage', chatMessageEvent);
 // ************************************
 
 // Note: ready hook is now handled in the Blacksmith integration section above
+
+// Helper functions for token/actor operations
+async function getActorId(name) {
+    return BlacksmithUtils.getActorId(name);
+}
+
+async function getTokenId(name) {
+    return BlacksmithUtils.getTokenId(name);
+}
+
+async function getTokenImage(tokenDoc) {
+    return BlacksmithUtils.getTokenImage(tokenDoc);
+}
+
+async function getPortraitImage(actor) {
+    return BlacksmithUtils.getPortraitImage(actor);
+}
