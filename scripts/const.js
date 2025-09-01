@@ -73,6 +73,7 @@ export const CRIER = {
     turnSound: 'turnSound',
     roundSound: 'roundSound',
     chatSpacing: 'chatSpacing',
+    roundInitialized: 'roundInitialized',
 
     headingH1Crier: 'headingH1Crier',
     headingH2Rounds: 'headingH2Rounds',

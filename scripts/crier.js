@@ -52,6 +52,20 @@ const lastCombatant = {
 	spoke: false
 };
 
+// Track whether the current round has been properly initialized with all initiatives rolled
+// This is now stored as a persistent setting, but we keep a local cache for performance
+let roundInitialized = false;
+
+// Helper functions to sync with persistent setting
+function getRoundInitialized() {
+    return game.settings.get(MODULE.ID, CRIER.roundInitialized);
+}
+
+function setRoundInitialized(value) {
+    game.settings.set(MODULE.ID, CRIER.roundInitialized, value);
+    roundInitialized = value; // Keep local cache in sync
+}
+
 // ================================================================== 
 // ===== NEW BLACKSMITH INTEGRATION =================================
 // ================================================================== 
@@ -108,13 +122,16 @@ Hooks.once('ready', async () => {
         // Register settings now that Blacksmith is ready
         registerSettings();
         
+        // Initialize round initialization flag from persistent setting (after settings are registered)
+        roundInitialized = getRoundInitialized();
+        
         // Register hooks via BlacksmithHookManager
         const preUpdateCombatHookId = BlacksmithHookManager.registerHook({
             name: 'preUpdateCombat',
             description: 'Coffee Pub Crier: Detect combat changes and calculate deltas',
             context: MODULE.ID,
             priority: 2,
-            callback: (combat, updateData, context) => {
+            callback: async (combat, updateData, context) => {
                 const roundDelta = updateData.round !== undefined ? updateData.round - combat.round : 0,
                     turnCount = combat.turns.length,
                     roundAdjust = roundDelta * turnCount,
@@ -129,6 +146,28 @@ Hooks.once('ready', async () => {
                     roundShift: roundDelta,
                     combat: combat.id,
                 };
+
+                // Check if this is an initiative update and if all initiatives are now rolled
+                if (!getRoundInitialized() && updateData.initiative !== undefined) {
+                    const combatantsArray = Array.from(combat.combatants.values());
+                    const allHaveInitiative = combatantsArray.every(combatant => 
+                        combatant.initiative !== null && combatant.initiative !== undefined
+                    );
+                    
+                    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'HOOK: preUpdateCombat - checking initiatives after update', { 
+                        combat: combat.id,
+                        allHaveInitiative,
+                        combatantsCount: combatantsArray.length,
+                        initiativeData: combatantsArray.map(c => ({ name: c.name, initiative: c.initiative }))
+                    }, true, false);
+                    
+                    // If all initiatives are now rolled, trigger turn card creation
+                    if (allHaveInitiative) {
+                        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'HOOK: preUpdateCombat - all initiatives rolled, triggering turn card', {}, true, false);
+                        // Process turn change to create the first turn card
+                        await processCombatChange(combat, updateData, context, game.user.id, true, false);
+                    }
+                }
             }
         });
         
@@ -175,11 +214,14 @@ Hooks.once('ready', async () => {
                 if (turnChanged || roundChanged) {
                     // Reset lastCombatant tracking if a new round starts
                     if (roundChanged) {
-                        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'HOOK: New round detected, resetting lastCombatant', {}, true, false);
+                        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'HOOK: New round detected, resetting lastCombatant and roundInitialized', {}, true, false);
                         lastCombatant.combatant = null;
                         lastCombatant.spoke = false;
+                        setRoundInitialized(false);
                     }
-                    return processTurn(combat, update, context, userId);
+                    
+                    // Process round changes (round cards) and turn changes (turn cards) separately
+                    return processCombatChange(combat, update, context, userId, turnChanged, roundChanged);
                 }
             }
         });
@@ -603,6 +645,9 @@ async function postNewTurnCard(combat, context) {
         BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Skipping - no token doc', {}, true, false);
         return; // Combatant with no token, unusual, but possible
     }
+    
+    // Initiative check is now handled in processCombatChange function
+    // This function assumes the round is properly initialized
 
     const previous = {
         combatant: lastCombatant.combatant, // cache
@@ -928,6 +973,97 @@ async function postNewTurnCard(combat, context) {
  * @param {Combat} combat
  * @param {String} userId
  */
+async function processCombatChange(combat, _update, context, userId, turnChanged, roundChanged) {
+    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Starting', { 
+        combat: combat.id, 
+        userId, 
+        context, 
+        turnChanged, 
+        roundChanged 
+    }, true, false);
+    
+    if (game.user.id !== userId) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Skipping - wrong user', { gameUserId: game.user.id, userId }, true, false);
+        return;
+    }
+
+    const msgs = [];
+    
+    // Handle round changes - create round card if enabled
+    if (roundChanged) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Processing round change', {}, true, false);
+        if (await getSettingSafely(MODULE.ID, CRIER.roundCycling)) {
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Round cycling enabled', {}, true, false);
+            const roundMsg = await postNewRound(combat, context);
+            if (roundMsg) {
+                msgs.push(roundMsg);
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Round message created', { roundMsg }, true, false);
+            }
+        }
+    }
+    
+    // Handle turn changes - create turn card if round is initialized or all initiatives are rolled
+    if (turnChanged) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Processing turn change', { roundInitialized }, true, false);
+        
+        // If round is not initialized, check if all initiatives are rolled
+        if (!roundInitialized) {
+            const combatantsArray = Array.from(combat.combatants.values());
+            const initiativeData = combatantsArray.map(c => ({
+                name: c.name,
+                initiative: c.initiative,
+                hasInitiative: c.initiative !== null && c.initiative !== undefined
+            }));
+            
+            const allHaveInitiative = combatantsArray.every(combatant => 
+                combatant.initiative !== null && combatant.initiative !== undefined
+            );
+            
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Checking initiatives', { 
+                allHaveInitiative,
+                initiativeData,
+                combatantsCount: combatantsArray.length,
+                detailedInitiativeData: combatantsArray.map(c => ({
+                    name: c.name,
+                    initiative: c.initiative,
+                    initiativeType: typeof c.initiative,
+                    isNull: c.initiative === null,
+                    isUndefined: c.initiative === undefined,
+                    hasInitiative: c.initiative !== null && c.initiative !== undefined
+                }))
+            }, true, false);
+            
+            if (!allHaveInitiative) {
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Round not initialized, skipping turn card', { 
+                    combatantsWithoutInitiative: combatantsArray.filter(c => c.initiative === null || c.initiative === undefined).map(c => c.name)
+                }, true, false);
+                return; // Don't create turn card yet
+            } else {
+                // All initiatives rolled, mark round as initialized
+                setRoundInitialized(true);
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Round initialized, all initiatives rolled', {}, true, false);
+            }
+        }
+        
+        // Create turn card (either round is initialized or we just initialized it)
+        const turnMsgs = await postNewTurnCard(combat, context);
+        if (turnMsgs?.length) {
+            msgs.push(...turnMsgs);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Turn messages created', { count: turnMsgs.length }, true, false);
+        }
+    }
+
+    // Post all messages
+    if (msgs.length) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Creating chat messages', { count: msgs.length, messageTypes: msgs.map(m => m.type) }, true, false);
+        for (const msg of msgs) {
+            await ChatMessage.create(msg);
+        }
+    } else {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: No messages to create', {}, true, false);
+    }
+}
+
 async function processTurn(combat, _update, context, userId) {
     BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Starting', { combat: combat.id, userId, context }, true, false);
     

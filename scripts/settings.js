@@ -386,6 +386,17 @@ export const registerSettings = async () => {
 			default: true,
 		});
 
+		// ===== INTERNAL STATE TRACKING =====
+		// -- Round Initialization Flag (Hidden Setting) --
+		game.settings.register(MODULE.ID, CRIER.roundInitialized, {
+			name: 'Round Initialized',
+			hint: 'Internal flag tracking if current round has all initiatives rolled',
+			scope: 'world',
+			config: false, // Hidden setting - not shown in UI
+			type: Boolean,
+			default: false
+		});
+
         // -------------------------------------------------------------- 
         
         console.log('✅ Coffee Pub Crier: Settings registration completed successfully');
