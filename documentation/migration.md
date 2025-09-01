@@ -80,8 +80,8 @@
 ### Migration Checklist (small, discrete steps)
 
 #### Preconditions
-- [ ] Verify `module.json` has `coffee-pub-blacksmith` as a library dependency.
-- [ ] Confirm bridge import exists at top of `scripts/crier.js`.
+- [x] Verify `module.json` has `coffee-pub-blacksmith` as a library dependency.
+- [x] Confirm bridge import exists at top of `scripts/crier.js`.
 
 #### Globals migration (scripts/crier.js)
 - [ ] Replace `await BlacksmithAPI.getUtils()` calls with `BlacksmithUtils`.
