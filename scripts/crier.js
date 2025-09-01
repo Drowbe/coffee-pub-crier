@@ -248,27 +248,7 @@ async function getSettingSafely(settingKey, defaultValue = null) {
     return BlacksmithUtils.getSettingSafely(MODULE.ID, settingKey, defaultValue);
 }
 
-// Helper function to resolve sound file paths from Blacksmith
-async function resolveSoundPath(soundName) {
-    if (!soundName || soundName === 'none') return null;
-    
-    // Check if it's already a full path
-    if (soundName.startsWith('modules/') || soundName.startsWith('sounds/')) {
-        return soundName;
-    }
-    
-    // Try to resolve through Blacksmith constants
-    const constants = (typeof BlacksmithConstants !== 'undefined' && BlacksmithConstants) || BLACKSMITH;
-    if (constants?.arrSoundChoices) {
-        const soundChoice = constants.arrSoundChoices[soundName];
-        if (soundChoice) {
-            return soundChoice;
-        }
-    }
-    
-    // Return the original name if we can't resolve it
-    return soundName;
-}
+
 
 // REQUIRED: Access Blacksmith API and initialize your module
 Hooks.once('ready', async () => {
@@ -587,9 +567,11 @@ async function createNewRoundCard(combat) {
     };
         // Play Round sound
     const strSound = await getSettingSafely(CRIER.roundSound, 'gong');
-    const resolvedSound = await resolveSoundPath(strSound);
-    if (resolvedSound) {
-        BlacksmithUtils.playSound(resolvedSound, 0.7);
+    if (strSound && strSound !== 'none') {
+        const constants = (typeof BlacksmithConstants !== 'undefined' && BlacksmithConstants) || BLACKSMITH;
+        const soundPath = constants?.arrSoundChoices?.[strSound] || constants?.SOUNDGONG || strSound;
+        const volume = constants?.SOUNDVOLUMENORMAL || 0.5;
+        BlacksmithUtils.playSound(soundPath, volume);
     }
     // Return the message
 
@@ -959,9 +941,11 @@ async function processTurn(combat, _update, context, userId) {
 
         // Play Turn sound
     const strSound = await getSettingSafely(CRIER.turnSound, 'gong');
-    const resolvedSound = await resolveSoundPath(strSound);
-    if (resolvedSound) {
-        BlacksmithUtils.playSound(resolvedSound, 0.7);
+    if (strSound && strSound !== 'none') {
+        const constants = (typeof BlacksmithConstants !== 'undefined' && BlacksmithConstants) || BLACKSMITH;
+        const soundPath = constants?.arrSoundChoices?.[strSound] || constants?.SOUNDGONG || strSound;
+        const volume = constants?.SOUNDVOLUMENORMAL || 0.5;
+        BlacksmithUtils.playSound(soundPath, volume);
     }
 
     // Send the message

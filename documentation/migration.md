@@ -106,16 +106,16 @@
 - [x] Follow Quick Start pattern from Blacksmith API documentation.
 
 #### Constants and choices (scripts/settings.js)
-- [ ] Replace theme choices with `BlacksmithConstants?.arrThemeChoices` (fallback `BLACKSMITH?.arrThemeChoices`).
-- [ ] Replace icon choices with `BlacksmithConstants?.arrIconChoices` (fallback `BLACKSMITH?.arrIconChoices`).
-- [ ] Replace sound choices with `BlacksmithConstants?.arrSoundChoices` (fallback `BLACKSMITH?.arrSoundChoices`).
-- [ ] Replace background choices with `BlacksmithConstants?.arrBackgroundImageChoices` (fallback `BLACKSMITH?.arrBackgroundImageChoices`).
-- [ ] Use `BlacksmithConstants?.strDefaultCardTheme` for default theme (fallback to `BLACKSMITH?.strDefaultCardTheme`).
-- [ ] Remove any lingering `BlacksmithAPI.getX` calls in `settings.js`.
+- [x] Replace theme choices with `BlacksmithConstants?.arrThemeChoices` (fallback `BLACKSMITH?.arrThemeChoices`).
+- [x] Replace icon choices with `BlacksmithConstants?.arrIconChoices` (fallback `BLACKSMITH?.arrIconChoices`).
+- [x] Replace sound choices with `BlacksmithConstants?.arrSoundChoices` (fallback `BLACKSMITH?.arrSoundChoices`).
+- [x] Replace background choices with `BlacksmithConstants?.arrBackgroundImageChoices` (fallback `BLACKSMITH?.arrBackgroundImageChoices`).
+- [x] Use `BlacksmithConstants?.strDefaultCardTheme` for default theme (fallback to `BLACKSMITH?.strDefaultCardTheme`).
+- [x] Remove any lingering `BlacksmithAPI.getX` calls in `settings.js`.
 
 #### Sound resolution (scripts/crier.js)
-- [ ] Update `resolveSoundPath` to use constants/asset lookup for ids.
-- [ ] Preserve passthrough for full paths and existing module-local fallbacks.
+- [x] Update `resolveSoundPath` to use constants/asset lookup for ids.
+- [x] Preserve passthrough for full paths and existing module-local fallbacks.
 
 #### Hook registration and lifecycle (scripts/crier.js)
 - [ ] Register `preUpdateCombat` via `BlacksmithHookManager` with `{ id: MODULE.ID, context: 'combat' }`.

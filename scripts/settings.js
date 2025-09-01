@@ -11,30 +11,22 @@ import { MODULE, CRIER  } from './const.js';
   
 export const registerSettings = async () => {
     try {
-        // Get Blacksmith API using new bridge file
-        const blacksmithModuleManager = await BlacksmithAPI.getModuleManager();
-        const blacksmithUtils = await BlacksmithAPI.getUtils();
-        
-        if (!blacksmithUtils?.getSettingSafely) {
-            console.error("Blacksmith API not ready for settings registration!");
-            return;
-        }
-
-        console.log('🔧 Coffee Pub Crier: Starting settings registration...');
-        console.log('🔧 Blacksmith available:', !!blacksmithModuleManager);
-        console.log('🔧 BLACKSMITH object:', blacksmithModuleManager?.BLACKSMITH);
+        console.log('🔧 CRIER:Coffee Pub Crier: Starting settings registration...');
+        console.log('🔧 CRIER:Blacksmith available:', !!BlacksmithModuleManager);
+        console.log('🔧 CRIER:BLACKSMITH object:', BlacksmithConstants || BLACKSMITH);
 
         // -------------------------------------------------------------- 
         // Register settings...
         console.log('🔧 Coffee Pub Crier: Registering settings...');
         
         // Debug: Log the variables from Blacksmith
-        if (blacksmithModuleManager?.BLACKSMITH) {
-            console.log('🔧 BLACKSMITH.strDefaultCardTheme:', blacksmithModuleManager.BLACKSMITH.strDefaultCardTheme);
-            console.log('🔧 BLACKSMITH.arrThemeChoices:', blacksmithModuleManager.BLACKSMITH.arrThemeChoices);
-            console.log('🔧 BLACKSMITH.arrIconChoices:', blacksmithModuleManager.BLACKSMITH.arrIconChoices);
-            console.log('🔧 BLACKSMITH.arrSoundChoices:', blacksmithModuleManager.BLACKSMITH.arrSoundChoices);
-            console.log('🔧 BLACKSMITH.arrBackgroundImageChoices:', blacksmithModuleManager.BLACKSMITH.arrBackgroundImageChoices);
+        const constants = BlacksmithConstants || BLACKSMITH;
+        if (constants) {
+            console.log('🔧 CRIER:BLACKSMITH.strDefaultCardTheme:', constants.strDefaultCardTheme);
+            console.log('🔧 CRIER:BLACKSMITH.arrThemeChoices:', constants.arrThemeChoices);
+            console.log('🔧 CRIER:BLACKSMITH.arrIconChoices:', constants.arrIconChoices);
+            console.log('🔧 CRIER:BLACKSMITH.arrSoundChoices:', constants.arrSoundChoices);
+            console.log('🔧 CRIER:BLACKSMITH.arrBackgroundImageChoices:', constants.arrBackgroundImageChoices);
         }
 
 		// -- TITLE --
@@ -90,13 +82,13 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			default: blacksmithModuleManager?.BLACKSMITH?.strDefaultCardTheme || 'cardsgreen',
-			choices: blacksmithModuleManager?.BLACKSMITH?.arrThemeChoices || {
+			default: constants?.strDefaultCardTheme || 'cardsgreen',
+			choices: constants?.arrThemeChoices || {
 				'error': 'Failed to load themes - check Blacksmith module'
 			}
 		});
 		
-		console.log('🔧 Round Card Style registered with choices:', blacksmithModuleManager?.BLACKSMITH?.arrThemeChoices ? `${Object.keys(blacksmithModuleManager.BLACKSMITH.arrThemeChoices).length} themes` : 'error fallback');
+		console.log('🔧 Round Card Style registered with choices:', constants?.arrThemeChoices ? `${Object.keys(constants.arrThemeChoices).length} themes` : 'error fallback');
 		// -- Round Icon --
 		game.settings.register(MODULE.ID, CRIER.roundIconStyle, {
 			name: MODULE.ID + '.roundIconStyle-Label',
@@ -105,12 +97,12 @@ export const registerSettings = async () => {
 			config: true,
 			type: String,
 			default: 'fa-chess-queen',
-			choices: blacksmithModuleManager?.BLACKSMITH?.arrIconChoices || {
+			choices: constants?.arrIconChoices || {
 				'error': 'Failed to load icons - check Blacksmith module'
 			},
 		});
 		
-		console.log('🔧 Round Icon Style registered with choices:', blacksmithModuleManager?.BLACKSMITH?.arrIconChoices ? `${Object.keys(blacksmithModuleManager.BLACKSMITH.arrIconChoices).length} icons` : 'error fallback');
+		console.log('🔧 Round Icon Style registered with choices:', constants?.arrIconChoices ? `${Object.keys(constants.arrIconChoices).length} icons` : 'error fallback');
 
 		// -- ROUND SETTINGS --
 		// ------------------------------------------------------------
@@ -132,7 +124,7 @@ export const registerSettings = async () => {
 			config: true,
 			type: String,
 			default: 'gong',
-			choices: blacksmithModuleManager?.BLACKSMITH?.arrSoundChoices || {
+			choices: constants?.arrSoundChoices || {
 				'error': 'Failed to load sounds - check Blacksmith module'
 			},
 		});
@@ -201,8 +193,8 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			default: blacksmithModuleManager?.BLACKSMITH?.strDefaultCardTheme || 'cardsdark',
-			choices: blacksmithModuleManager?.BLACKSMITH?.arrThemeChoices || {
+			default: constants?.strDefaultCardTheme || 'cardsdark',
+			choices: constants?.arrThemeChoices || {
 				'error': 'Failed to load themes - check Blacksmith module'
 			},
 		});
@@ -214,7 +206,7 @@ export const registerSettings = async () => {
 			config: true,
 			type: String,
 			default: 'fa-shield',
-			choices: blacksmithModuleManager?.BLACKSMITH?.arrIconChoices || {
+			choices: constants?.arrIconChoices || {
 				'error': 'Failed to load icons - check Blacksmith module'
 			},
 		});
@@ -239,7 +231,7 @@ export const registerSettings = async () => {
 			config: true,
 			type: String,
 			default: 'gong',
-			choices: blacksmithModuleManager?.BLACKSMITH?.arrSoundChoices || {
+			choices: constants?.arrSoundChoices || {
 				'error': 'Failed to load sounds - check Blacksmith module'
 			},
 		});
@@ -277,7 +269,7 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			choices: blacksmithModuleManager?.BLACKSMITH?.arrBackgroundImageChoices || {
+			choices: constants?.arrBackgroundImageChoices || {
 				'error': 'Failed to load backgrounds - check Blacksmith module'
 			},
 			default: 'dirt',
