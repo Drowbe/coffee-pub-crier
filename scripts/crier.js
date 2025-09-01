@@ -31,194 +31,7 @@ Hooks.once('ready', () => {
 
 
 
-// ========== BEGIN: BLACKSMITH API TESTING ==========
-// This test assumes that the Blacksmith module is installed and properly configured.
-// It is best to filter for the word "API TEST" in console to see the results of the tests.
-// Be sure to set you module ID in the TEST_MODULE_ID variable below.
 
-Hooks.once('ready', async () => {
-
-    // !! IMPORTANT !! SET YOUR MODULE ID HERE !!
-    const TEST_MODULE_ID = MODULE.ID; // <-------- Replace with your actual module ID
-
-    try {
-        // ----- CONSTANTS TEST INSTRUCTIONS
-        console.log('API TEST | ');
-        console.log('API TEST | ===================================================');
-        console.log('API TEST | ====  CONSTANTS TEST INSTRUCTIONS              ====');
-        console.log('API TEST | ===================================================');
-        console.log('API TEST | ');
-        console.log('API TEST | 1. You should see the themeChoices, soundChoices, and tableChoices in the console.');
-        console.log('API TEST | 2. Expand the objects and you should see the choices.');
-        console.log('API TEST | If you see values, your constants worked!');
-        console.log('API TEST | ');
-
-        const themeChoices = BlacksmithConstants.arrThemeChoices;
-        const soundChoices = BlacksmithConstants.arrSoundChoices;
-        const tableChoices = BlacksmithConstants.arrTableChoices;    
-        console.log('API TEST | BLACKSMITH TEST: themeChoices', themeChoices);
-        console.log('API TEST | BLACKSMITH TEST: soundChoices', soundChoices);
-        console.log('API TEST | BLACKSMITH TEST: tableChoices', tableChoices);
-
-        console.log('API TEST | ==== NON-EXPOSED VARIABLE TEST INSTRUCTIONS: ====');
-        console.log('API TEST | 1. You should see the Blacksmith version in the console.');
-        console.log('API TEST | 2. It should be followed by a value.');
-        console.log('API TEST | If you see a value, your the non-exposed variables worked!');
-        console.log('API TEST | ');
-        // Access non-exposed variables
-        console.log('API TEST | BLACKSMITH TEST: Blacksmith version:', game.modules.get('coffee-pub-blacksmith')?.api?.version);
-
-
-         // ----- UTILITY TESTS: CONSOLE AND NOTIFICATION TEST
-        console.log('API TEST | ');
-        console.log('API TEST | ==================================================='); 
-        console.log('API TEST | ====  UTILITY TESTS: NOTIFICATION TEST         ====');
-        console.log('API TEST | ===================================================');
-        console.log('API TEST | ');
-        console.log('API TEST | 1. You should see the message "API TEST | BLACKSMITH TEST OF POSTCONSOLEANDNOTIFICATION" in the console.');
-        console.log('API TEST | 2. It should be followed by a value "Some awesome result"');
-        console.log('API TEST | 3. It should be laid out differently than the other console messages and start with "COFFEE PUB • "');
-        console.log('API TEST | 4. It should also pop aup a notifcation.');
-        console.log('API TEST | 5. If you see a notfication and value, your the utility functions worked!');
-        console.log('API TEST | ');
-        BlacksmithUtils.postConsoleAndNotification(
-            TEST_MODULE_ID,        // Module ID (string)
-            'API TEST | BLACKSMITH TEST OF POSTCONSOLEANDNOTIFICATION',      // Main message
-            'Some awesome result',                 // Result object (optional)
-            false,                  // Debug flag (true = debug, false = system)
-            true                   // Show notification (true = show, false = console only)
-        );
-        // ----- SAFE SETTINGS TEST
-        console.log('API TEST | ');
-        console.log('API TEST | ===================================================');
-        console.log('API TEST | ====  SAFE SETTINGS TEST INSTRUCTIONS          ====');
-        console.log('API TEST | ===================================================');
-        console.log('API TEST | ');
-        console.log('API TEST | 1. This test will fail with "not a registered game setting" - this is EXPECTED!');
-        console.log('API TEST | 2. The error proves Blacksmith is properly integrated with FoundryVTT settings.');
-        console.log('API TEST | 3. In real usage, you would register your settings first in your module.json or init hook.');
-        console.log('API TEST | 4. If you see the error message, your safe settings integration is working correctly!');
-        console.log('API TEST | ');
-
-        // Test safe settings access (this will fail as expected)
-        try {
-            // Test safe get BEFORE setting (should return default since setting doesn't exist)
-            const defaultValue = BlacksmithUtils.getSettingSafely(TEST_MODULE_ID, 'test-setting', 'default-value');
-            console.log('✅ API TEST | BLACKSMITH TEST: Safe get (before set) working:', defaultValue);
-            
-            // Test safe set
-            BlacksmithUtils.setSettingSafely(TEST_MODULE_ID, 'test-setting', 'test-value-123');
-            console.log('✅ API TEST | BLACKSMITH TEST: Safe set working');
-            
-            // This will fail because the setting isn't registered - this is EXPECTED behavior
-            const rawSetting = game.settings.get(TEST_MODULE_ID, 'test-setting');
-            console.log('🔍 API TEST | BLACKSMITH TEST: Raw FoundryVTT setting:', rawSetting);
-            
-        } catch (error) {
-            console.log('✅ API TEST | BLACKSMITH TEST: Safe settings test completed as expected');
-            console.log('✅ API TEST | BLACKSMITH TEST: Error shows proper FoundryVTT integration:', error.message);
-        }
-
-        // ----- SOUND PLAYBACK TEST
-        console.log('API TEST | ');
-        console.log('API TEST | ===================================================');
-        console.log('API TEST | ====  SOUND PLAYBACK TEST INSTRUCTIONS         ====');
-        console.log('API TEST | ===================================================');
-        console.log('API TEST | ');
-        console.log('API TEST | 1. You should hear a "Battle Cry" sound.');
-        console.log('API TEST | 2. If you don\'t hear a sound, you may have missed it. Try clicking the canvas or try again to be safe.');
-        console.log('API TEST | 3. If DO you hear a battle cry, your sound playback worked!');
-        console.log('API TEST | ');
-
-        // Test sound playback
-        try {
-            // Use a direct sound path instead of COFFEEPUB constants
-            BlacksmithUtils.playSound('modules/coffee-pub-blacksmith/sounds/battlecry.mp3', 0.7);
-            console.log('✅ API TEST | BLACKSMITH TEST: Sound playback test completed');
-        } catch (error) {
-            console.error('❌ API TEST | BLACKSMITH TEST: Sound playback test failed:', error);
-        }
-
-        // ----- HOOK TEST - Use REAL FoundryVTT events
-        console.log('API TEST | ');
-        console.log('API TEST | ===================================================');
-        console.log('API TEST | ====  HOOK REGISTRATION TEST INSTRUCTIONS      ====');
-        console.log('API TEST | ===================================================');
-        console.log('API TEST | ');
-        console.log('API TEST | 1. You should see the message "API TEST | BLACKSMITH TEST: Hooks registered successfully:" in the console.');
-        console.log('API TEST | 2. It should be followed by a value "token: tokenHookId, chat: chatHookId"');
-        console.log('API TEST | 3. If you see a value, your the hook registration worked!');
-        console.log('API TEST | ');
-        // HOOK TEST - Use REAL FoundryVTT events
-        // Hook that fires when you update a token (this actually exists)
-        const tokenHookId = BlacksmithHookManager.registerHook({
-            name: 'updateToken',  // This is a real FoundryVTT event
-            description: 'API TEST: Test hook for token updates',
-            context: 'api-test-token',
-            priority: 5,
-            callback: (token, changes) => {
-                console.log('🎯 API TEST | BLACKSMITH TEST: Token Updated:', { token, changes });
-                
-                BlacksmithUtils.postConsoleAndNotification(
-                    TEST_MODULE_ID,  // ✅ Use the same module ID as above
-                    'API TEST | BLACKSMITH TEST: Token updated!',
-                    { hookId: tokenHookId, tokenName: token.name, tokenId: token.id, changes },
-                    false,
-                    true
-                );
-            }
-        });
-
-        // Hook that fires when you render a chat message (this actually exists)
-        const chatHookId = BlacksmithHookManager.registerHook({
-            name: 'renderChatMessage',  // This is a real FoundryVTT event
-            description: 'API TEST: Test hook for chat messages',
-            context: 'api-test-chat',
-            priority: 5,
-            callback: (message, html, data) => {
-                console.log('💬 API TEST | BLACKSMITH TEST: Chat Message Rendered:', { message, data });
-                
-                BlacksmithUtils.postConsoleAndNotification(
-                    TEST_MODULE_ID,  // ✅ Use the same module ID as above
-                    'API TEST | BLACKSMITH TEST: Chat message rendered!',
-                    { hookId: chatHookId, messageId: message.id, content: message.content },
-                    false,
-                    true
-                );
-            }
-        });
-
-        console.log('✅ API TEST | BLACKSMITH TEST: Hooks registered successfully:', { 
-            token: tokenHookId, 
-            chat: chatHookId
-        });
-
-        // ----- HOOK ACTIVATIONTEST INSTRUCTIONS
-        console.log('API TEST | ');
-        console.log('API TEST | ====  HOOK ACTIVATION TEST INSTRUCTIONS        ====');
-        console.log('API TEST | ');
-        console.log('API TEST | 1. Move a token to trigger updateToken hook');
-        console.log('API TEST | 2. Send a chat message to trigger renderChatMessage hook');
-        console.log('API TEST | 3. If you see logging, your hooks worked!');
-        console.log('API TEST | ');
-
-    } catch (error) {
-        console.error('❌ API TEST | BLACKSMITH TEST: Error during testing:', error);
-        
-        // Try to log the error with Blacksmith if available
-        if (BlacksmithUtils && BlacksmithUtils.postConsoleAndNotification) {
-            BlacksmithUtils.postConsoleAndNotification(
-                TEST_MODULE_ID,  // ✅ Use the same module ID here too
-                'API TEST | BLACKSMITH TEST: Error occurred during testing',
-                { error: error.message, stack: error.stack },
-                false,
-                true
-            );
-        }
-    }
-
-});
-// ========== END: BLACKSMITH API TESTING ==========
 
 
 // -- Import special page variables --
@@ -254,8 +67,40 @@ async function getSettingSafely(moduleId, settingKey, defaultValue = null) {
 Hooks.once('ready', async () => {
     try {
         // Initialize templates
-        getTemplate(turn_template_file).then(t => turnTemplate = t);
-        getTemplate(round_template_file).then(t => roundTemplate = t);
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Loading templates', { turn: turn_template_file, round: round_template_file }, true, false);
+        
+        // Check if foundry.utils.getTemplate exists
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Checking foundry.utils.getTemplate', { 
+            hasFoundry: !!foundry, 
+            hasUtils: !!foundry?.utils, 
+            hasGetTemplate: !!foundry?.utils?.getTemplate 
+        }, true, false);
+        
+        try {
+            if (foundry?.utils?.getTemplate) {
+                turnTemplate = await foundry.utils.getTemplate(turn_template_file);
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Turn template loaded via foundry.utils.getTemplate', { success: !!turnTemplate, type: typeof turnTemplate }, true, false);
+            } else {
+                // Fallback to global getTemplate
+                turnTemplate = await getTemplate(turn_template_file);
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Turn template loaded via global getTemplate', { success: !!turnTemplate, type: typeof turnTemplate }, true, false);
+            }
+        } catch (err) {
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Turn template failed', { error: err.message }, true, false);
+        }
+        
+        try {
+            if (foundry?.utils?.getTemplate) {
+                roundTemplate = await foundry.utils.getTemplate(round_template_file);
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Round template loaded via foundry.utils.getTemplate', { success: !!roundTemplate, type: typeof roundTemplate }, true, false);
+    } else {
+                // Fallback to global getTemplate
+                roundTemplate = await getTemplate(round_template_file);
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Round template loaded via global getTemplate', { success: !!roundTemplate, type: typeof roundTemplate }, true, false);
+            }
+        } catch (err) {
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Round template failed', { error: err.message }, true, false);
+        }
         
         // Initialize last combatant
         lastCombatant.combatant = game.combat?.combatant ?? null;
@@ -264,12 +109,12 @@ Hooks.once('ready', async () => {
         registerSettings();
         
         // Register hooks via BlacksmithHookManager
-        BlacksmithHookManager.registerHook({
+        const preUpdateCombatHookId = BlacksmithHookManager.registerHook({
             name: 'preUpdateCombat',
             description: 'Coffee Pub Crier: Detect combat changes and calculate deltas',
             context: MODULE.ID,
-            priority: 3,
-            callback: function preUpdateCombat(combat, updateData, context) {
+            priority: 2,
+            callback: (combat, updateData, context) => {
                 const roundDelta = updateData.round !== undefined ? updateData.round - combat.round : 0,
                     turnCount = combat.turns.length,
                     roundAdjust = roundDelta * turnCount,
@@ -287,20 +132,67 @@ Hooks.once('ready', async () => {
             }
         });
         
-        BlacksmithHookManager.registerHook({
+        const updateCombatHookId = BlacksmithHookManager.registerHook({
             name: 'updateCombat',
             description: 'Coffee Pub Crier: Process turn changes and post messages',
             context: MODULE.ID,
-            priority: 3,
-            callback: processTurn
+            priority: 2,
+            callback: (combat, update, context, userId) => {
+                // Check if turn or round is being updated
+                const hasTurnUpdate = update.turn !== undefined;
+                const hasRoundUpdate = update.round !== undefined;
+                
+                // Get the current values from the combat object
+                const currentTurn = combat.turn;
+                const currentRound = combat.round;
+                
+                // Get the new values from the update object
+                const newTurn = update.turn;
+                const newRound = update.round;
+                
+                // Determine if there's an actual change
+                // If update.turn exists, it means the turn was changed
+                const turnChanged = hasTurnUpdate;
+                const roundChanged = hasRoundUpdate;
+                
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'HOOK: updateCombat hook called', { 
+                    combat: combat.id, 
+                    update, 
+                    context, 
+                    userId,
+                    hasTurnUpdate,
+                    hasRoundUpdate,
+                    currentTurn,
+                    currentRound,
+                    newTurn,
+                    newRound,
+                    turnChanged,
+                    roundChanged,
+                    shouldProcess: turnChanged || roundChanged
+                }, true, false);
+                
+                // Only process if there's an actual turn or round change
+                if (turnChanged || roundChanged) {
+                    // Reset lastCombatant tracking if a new round starts
+                    if (roundChanged) {
+                        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'HOOK: New round detected, resetting lastCombatant', {}, true, false);
+                        lastCombatant.combatant = null;
+                        lastCombatant.spoke = false;
+                    }
+                    return processTurn(combat, update, context, userId);
+                }
+            }
         });
         
-        BlacksmithHookManager.registerHook({
+        const renderChatMessageHookId = BlacksmithHookManager.registerHook({
             name: 'renderChatMessage',
             description: 'Coffee Pub Crier: Intercept and modify chat messages',
             context: MODULE.ID,
-            priority: 3,
-            callback: chatMessageEvent
+            priority: 2,
+            callback: (cm, html, options) => {
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'HOOK: renderChatMessage hook called', { messageId: cm.id }, true, false);
+                return chatMessageEvent(cm, html, options);
+            }
         });
         
         console.log('✅ Coffee Pub Crier: Module initialized successfully with Blacksmith API');
@@ -545,24 +437,53 @@ async function createMissedTurnCard(data, context) {
 // ************************************
 
 async function generateCards(info, context) {
+	BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: Starting', { name: info.name }, true, false);
 	
 	// Noitify of MISSED TURN if the setting is enabled.
 	const msgs = [];
-	if (await getSettingSafely(CRIER.missedKey, true)) {
+	if (await getSettingSafely(MODULE.ID, CRIER.missedKey, true)) {
 		const msg = await createMissedTurnCard(info, context);
 		if (msg) msgs.push(msg);
 	}
 
-	if (getDocData(info.combatant).defeated) return msgs; // undesired
-	if (info.last?.combatant != null && info.last.combatant.id === info.combatant.id) return msgs; // don't report the same thing multiple times
+	if (getDocData(info.combatant).defeated) {
+		BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: Skipping - combatant defeated', {}, true, false);
+		return msgs; // undesired
+	}
+	if (info.last?.combatant != null && info.last.combatant.id === info.combatant.id) {
+		BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: Skipping - same combatant as last', { 
+			lastCombatantId: info.last?.combatant?.id, 
+			currentCombatantId: info.combatant?.id,
+			lastCombatantName: info.last?.combatant?.name,
+			currentCombatantName: info.combatant?.name
+		}, true, false);
+		return msgs; // don't report the same thing multiple times
+	}
 
 	const speaker = info.obfuscated ? { user: game.user.id } : ChatMessage.getSpeaker({ token: info.token?.document, actor: info.actor });
 	const minPerm = getPermissionLevels().OBSERVER;
 	const defaultVisible = info.hidden ? false : getDefaultPermission >= minPerm;
 
 	// Set Data
+	BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: About to render template', { 
+		hasTemplate: !!turnTemplate, 
+		turnTemplateType: typeof turnTemplate,
+		turnTemplateValue: turnTemplate 
+	}, true, false);
+	
+	if (!turnTemplate) {
+		BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: ERROR - turnTemplate is not loaded', {}, true, false);
+		return msgs;
+	}
+	
+	const renderedContent = turnTemplate(info, { allowProtoMethodsByDefault: true, allowProtoPropertiesByDefault: true });
+	BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: Template rendered', { 
+		contentLength: renderedContent?.length || 0,
+		contentPreview: renderedContent?.substring(0, 200) + '...'
+	}, true, false);
+	
 	const cardData = {
-		content: turnTemplate(info, { allowProtoMethodsByDefault: true, allowProtoPropertiesByDefault: true }),
+		content: renderedContent,
 		speaker,
 		rollMode: defaultVisible ? 'publicroll' : 'gmroll',
 		whisper: defaultVisible ? [] : getUsers(info.actor, minPerm),
@@ -585,6 +506,7 @@ async function generateCards(info, context) {
 
 	ChatMessage.applyRollMode(cardData, !info.hidden ? 'publicroll' : 'gmroll')
 	msgs.push(cardData);
+	BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: Created card', { count: msgs.length }, true, false);
 	return msgs;
 }
 
@@ -597,6 +519,17 @@ async function createNewRoundCard(combat) {
     const data = { combat };
     if (override) data.message = override.replace('{round}', combat.round);
     else data.message = game.i18n.format('coffee-pub-crier.RoundCycling', { round: combat.round });
+    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'CREATE NEW ROUND CARD: About to render template', { 
+        hasTemplate: !!roundTemplate, 
+        roundTemplateType: typeof roundTemplate,
+        roundTemplateValue: roundTemplate 
+    }, true, false);
+    
+    if (!roundTemplate) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'CREATE NEW ROUND CARD: ERROR - roundTemplate is not loaded', {}, true, false);
+        return null;
+    }
+    
     const msgData = {
         content: roundTemplate(data, { allowProtoMethodsByDefault: true, allowProtoPropertiesByDefault: true }),
         speaker,
@@ -642,17 +575,34 @@ async function postNewRound(combat, context) {
  * @param {String} userId
  */
 async function postNewTurnCard(combat, context) {
+    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Starting', { combat: combat.id }, true, false);
+    
     // Only continue with first GM in the list
     // if (!game.user.isGM || game.users.filter(o => o.isGM && o.active).sort((a, b) => b.role - a.role)[0].id !== game.user.id) return;
     // Exit the function if they have enabled skipping turn cards
-    	const blnShowTurnCards = await getSettingSafely(CRIER.turnCycling, true);
-    if (blnShowTurnCards !== true) return;
+    	const blnShowTurnCards = await getSettingSafely(MODULE.ID, CRIER.turnCycling, true);
+    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Turn cycling setting', { blnShowTurnCards }, true, false);
+    if (blnShowTurnCards !== true) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Skipping - turn cycling disabled', {}, true, false);
+        return;
+    }
 
     const cData = getDocData(combat.combatant);
     const defeated = cData?.defeated ?? false;
     const combatant = !defeated ? combat.combatant : null;
     const tokenDoc = combatant?.token;
-    if (!tokenDoc) return; // Combatant with no token, unusual, but possible
+    
+    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Combatant data', { 
+        hasCombatant: !!combat.combatant, 
+        defeated, 
+        hasCombatantAfterDefeat: !!combatant, 
+        hasTokenDoc: !!tokenDoc 
+    }, true, false);
+    
+    if (!tokenDoc) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Skipping - no token doc', {}, true, false);
+        return; // Combatant with no token, unusual, but possible
+    }
 
     const previous = {
         combatant: lastCombatant.combatant, // cache
@@ -662,6 +612,12 @@ async function postNewTurnCard(combat, context) {
     };
 
     // Update for next cycle
+    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Updating lastCombatant', { 
+        oldCombatantId: lastCombatant.combatant?.id,
+        newCombatantId: combatant?.id,
+        oldCombatantName: lastCombatant.combatant?.name,
+        newCombatantName: combatant?.name
+    }, true, false);
     lastCombatant.combatant = combatant;
     lastCombatant.spoke = false;
 
@@ -688,25 +644,25 @@ async function postNewTurnCard(combat, context) {
 
     // Pull style settings from settings and set stuff
     info.name = info.token?.name ?? combatant.name;
-    	info.turnLayout = await getSettingSafely(CRIER.turnLayout, 'full');
-		info.turnIconStyle = await getSettingSafely(CRIER.turnIconStyle, 'fa-shield');
-		info.turnCardStyle = await getSettingSafely(CRIER.turnCardStyle, 'cardsdark');
-		info.roundIconStyle = await getSettingSafely(CRIER.roundIconStyle, 'fa-chess-queen');
-		info.roundCardStyle = await getSettingSafely(CRIER.roundCardStyle, 'cardsgreen');
-		info.portraitStyle = await getSettingSafely(CRIER.portraitStyle, 'portrait');
-		info.tokenBackground = await getSettingSafely(CRIER.tokenBackground, 'dirt');
-		info.tokenScale = await getSettingSafely(CRIER.tokenScale, 100);
+    	info.turnLayout = await getSettingSafely(MODULE.ID, CRIER.turnLayout);
+		info.turnIconStyle = await getSettingSafely(MODULE.ID, CRIER.turnIconStyle);
+		info.turnCardStyle = await getSettingSafely(MODULE.ID, CRIER.turnCardStyle);
+		info.roundIconStyle = await getSettingSafely(MODULE.ID, CRIER.roundIconStyle);
+		info.roundCardStyle = await getSettingSafely(MODULE.ID, CRIER.roundCardStyle);
+		info.portraitStyle = await getSettingSafely(MODULE.ID, CRIER.portraitStyle);
+		info.tokenBackground = await getSettingSafely(MODULE.ID, CRIER.tokenBackground);
+		info.tokenScale = await getSettingSafely(MODULE.ID, CRIER.tokenScale);
     //	Hide the player name if needed
-    if (await getSettingSafely(CRIER.hidePlayer, false))
+    if (await getSettingSafely(MODULE.ID, CRIER.hidePlayer))
         info.hidePlayer = true;
     // Hide abilities if needed
-    if (await getSettingSafely(CRIER.hideAbilities, false))
+    if (await getSettingSafely(MODULE.ID, CRIER.hideAbilities))
         info.hideAbilities = true;	
     // Hide Health if needed
-    if (await getSettingSafely(CRIER.hideHealth, false))
+    if (await getSettingSafely(MODULE.ID, CRIER.hideHealth))
     info.hideHealth = true;	
     // Hide Bloody Portrait if needed
-    if (await getSettingSafely(CRIER.hideBloodyPortrait, false))
+    if (await getSettingSafely(MODULE.ID, CRIER.hideBloodyPortrait))
         info.hideBloodyPortrait = true;	
     // GET THE IDs
     const strTokenId = await getTokenId(info.name);
@@ -758,12 +714,12 @@ async function postNewTurnCard(combat, context) {
             // Final fallback
             info.portrait = portraitImg || "icons/svg/mystery-man.svg";
 
-            BlacksmithUtils.postConsoleAndNotification("Turn Card Image TOKEN IF NOT ACTOR?. info.portrait:", info.portrait, false, true, false);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, "Turn Card Image TOKEN IF NOT ACTOR?. info.portrait:", info.portrait, true, false);
         } else {
             const actorPortrait = game.actors.get(strActorId);
             info.portrait = actorPortrait ? await getPortraitImage(actorPortrait) : "icons/svg/mystery-man.svg";
 
-            BlacksmithUtils.postConsoleAndNotification("Turn Card Image PORTRAIT. info.portrait:", info.portrait, false, true, false);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, "Turn Card Image PORTRAIT. info.portrait:", info.portrait, true, false);
         }
     } else if (info.portraitStyle == "token") {
         let tokenImg = null;
@@ -784,7 +740,7 @@ async function postNewTurnCard(combat, context) {
         // Final fallback
         info.portrait = tokenImg || "icons/svg/mystery-man.svg";
 
-        BlacksmithUtils.postConsoleAndNotification("Turn Card Image TOKEN. info.portrait:", info.portrait, false, true, false);
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, "Turn Card Image TOKEN. info.portrait:", info.portrait, true, false);
     } else {
         // Hide the portrait
         info.hidePortrait = true;
@@ -928,7 +884,7 @@ async function postNewTurnCard(combat, context) {
         }
     }
 
-    	const obfuscateType = await getSettingSafely(CRIER.obfuscateNPCs, 'all');
+    	const obfuscateType = await getSettingSafely(MODULE.ID, CRIER.obfuscateNPCs);
     const hasVisibleName = () => info.token ? [30, 50].includes(getDocData(tokenDoc).displayName) : true; // 30=hovered by anyone or 50=always for everyone
     const obfuscate = {
         get all() { return false; },
@@ -940,12 +896,26 @@ async function postNewTurnCard(combat, context) {
     if (info.obfuscated) info.name = game.i18n.localize('coffee-pub-crier.UnidentifiedTurn');
 
     const label = `<span class='name'>${info.name}</span>`;
-    	    const override = await getSettingSafely(CRIER.turnLabel, '{name}');
+    	    const override = await getSettingSafely(MODULE.ID, CRIER.turnLabel);
     if (override) info.label = override.replace('{name}', label);
     else info.label = game.i18n.format('coffee-pub-crier.Turn', { name: label });
 
 
+    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Calling generateCards', { 
+        info: { 
+            name: info.name, 
+            combat: info.combat.id,
+            turnCardStyle: info.turnCardStyle,
+            turnIconStyle: info.turnIconStyle,
+            roundCardStyle: info.roundCardStyle,
+            roundIconStyle: info.roundIconStyle,
+            portraitStyle: info.portraitStyle,
+            tokenBackground: info.tokenBackground,
+            tokenScale: info.tokenScale
+        } 
+    }, true, false);
     const msgs = await generateCards(info, context);
+    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: generateCards returned', { count: msgs?.length || 0 }, true, false);
 
     return msgs;
 }
@@ -959,15 +929,28 @@ async function postNewTurnCard(combat, context) {
  * @param {String} userId
  */
 async function processTurn(combat, _update, context, userId) {
-    if (game.user.id !== userId) return; // Trust the one provoking combat update has sufficient permissions
+    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Starting', { combat: combat.id, userId, context }, true, false);
+    
+    if (game.user.id !== userId) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Skipping - wrong user', { gameUserId: game.user.id, userId }, true, false);
+        return;
+    } // Trust the one provoking combat update has sufficient permissions
+    
+
 
     const msgs = [];
     // Round cycling message
-    	if (await getSettingSafely(CRIER.roundCycling, true)) {
+    	if (await getSettingSafely(MODULE.ID, CRIER.roundCycling, true)) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Round cycling enabled', {}, true, false);
         const roundMsg = await postNewRound(combat, context);
         if (roundMsg) {
             msgs.push(roundMsg);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Round message created', { roundMsg }, true, false);
+        } else {
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: No round message created', {}, true, false);
         } 
+    } else {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Round cycling disabled', {}, true, false);
     }
 
     // Turn announcement
@@ -983,7 +966,20 @@ async function processTurn(combat, _update, context, userId) {
     }
 
     // Send the message
-    if (msgs.length) ChatMessage.create(msgs);
+    if (msgs.length) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Creating chat messages', { 
+            count: msgs.length,
+            messageTypes: msgs.map(msg => ({
+                type: msg.flags?.[MODULE.ID]?.turnAnnounce ? 'turn' : 
+                      msg.flags?.[MODULE.ID]?.roundCycling ? 'round' : 'other',
+                contentLength: msg.content?.length || 0,
+                hasFlags: !!msg.flags?.[MODULE.ID]
+            }))
+        }, true, false);
+        ChatMessage.create(msgs);
+    } else {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: No messages to create', {}, true, false);
+    }
 }
 
 
