@@ -28,75 +28,7 @@ Hooks.once('ready', async () => {
 });
 // === END: BLACKSMITH API REGISTRATION ===
 
-// === BEGIN: BLACKSMITH API TESTING ===
-Hooks.once('ready', async () => {
 
-    // ACCESS CONSTANTS TEST
-    const themeChoices = BlacksmithConstants.arrThemeChoices;
-    const soundChoices = BlacksmithConstants.arrSoundChoices;
-    const tableChoices = BlacksmithConstants.arrTableChoices;    
-    console.log('CRIER | BLACKSMITH TEST: themeChoices', themeChoices);
-    console.log('CRIER | BLACKSMITH TEST: soundChoices', soundChoices);
-    console.log('CRIER | BLACKSMITH TEST: tableChoices', tableChoices);
-
-    // Access non-exposed variables
-    console.log('CRIER | BLACKSMITH TEST: Blacksmith version:', game.modules.get('coffee-pub-blacksmith')?.api?.version);
-
-    // CONSOLE AND NOTIFICATION TEST
-    BlacksmithUtils.postConsoleAndNotification(
-        MODULE.NAME,        // Module ID (string)
-        'CRIER | BLACKSMITH TEST OF POSTCONSOLEANDNOTIFICATION',      // Main message
-        'Some awesome result',                 // Result object (optional)
-        false,                  // Debug flag (true = debug, false = system)
-        true                   // Show notification (true = show, false = console only)
-    );
-
-    
-    // HOOK TEST
-    // Hook that fires when you click on a token (this actually exists)
-    const tokenHookId = BlacksmithHookManager.registerHook({
-        name: 'clickToken',  // This is a real FoundryVTT event
-        description: 'CRIER: Test hook for clicking tokens',
-        context: 'crier-token-test',
-        priority: 5,
-        callback: (token) => {
-            console.log('�� CRIER | BLACKSMITH TEST: Token Clicked:', token);
-            
-            BlacksmithUtils.postConsoleAndNotification(
-                MODULE.NAME,
-                'CRIER | BLACKSMITH TEST: Token clicked!',
-                { hookId: tokenHookId, tokenName: token.name, tokenId: token.id },
-                false,
-                true
-            );
-        }
-    });
-
-    // Hook that fires when you select a token
-    const selectHookId = BlacksmithHookManager.registerHook({
-        name: 'selectToken',  // This is a real FoundryVTT event
-        description: 'CRIER: Test hook for selecting tokens',
-        context: 'crier-select-test',
-        priority: 5,
-        callback: (token) => {
-            console.log('�� CRIER | BLACKSMITH TEST: Token Selected:', token);
-            
-            BlacksmithUtils.postConsoleAndNotification(
-                MODULE.NAME,
-                'CRIER | BLACKSMITH TEST: Token selected!',
-                { hookId: selectHookId, tokenName: token.name, tokenId: token.id },
-                false,
-                true
-            );
-        }
-    });
-
-    console.log('✅ CRIER | BLACKSMITH TEST: Token hooks registered:', { token: tokenHookId, select: selectHookId });
-
-
-});
-
-// === END: BLACKSMITH API TESTING ===
 
 
 
