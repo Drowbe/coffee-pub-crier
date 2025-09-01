@@ -118,10 +118,10 @@
 - [x] Preserve passthrough for full paths and existing module-local fallbacks.
 
 #### Hook registration and lifecycle (scripts/crier.js)
-- [ ] Register `preUpdateCombat` via `BlacksmithHookManager` with `{ id: MODULE.ID, context: 'combat' }`.
-- [ ] Register `updateCombat` via `BlacksmithHookManager` with context.
-- [ ] Register `renderChatMessage` via `BlacksmithHookManager` with context.
-- [ ] Move module registration to `init` and keep templates/test exposure in `ready`.
+- [x] Register `preUpdateCombat` via `BlacksmithHookManager` with `{ id: MODULE.ID, context: 'combat' }`.
+- [x] Register `updateCombat` via `BlacksmithHookManager` with context.
+- [x] Register `renderChatMessage` via `BlacksmithHookManager` with context.
+- [x] Move module registration to `init` and keep templates/test exposure in `ready`.
 
 #### Error handling
 - [ ] Add/use a shared safe operation helper consistent with docs, or centralize try/catch logging.

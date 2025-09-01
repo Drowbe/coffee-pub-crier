@@ -244,8 +244,8 @@ const lastCombatant = {
 // ================================================================== 
 
 // Helper function to safely access settings using new Blacksmith API
-async function getSettingSafely(settingKey, defaultValue = null) {
-    return BlacksmithUtils.getSettingSafely(MODULE.ID, settingKey, defaultValue);
+async function getSettingSafely(moduleId, settingKey, defaultValue = null) {
+    return BlacksmithUtils.getSettingSafely(moduleId, settingKey, defaultValue);
 }
 
 
@@ -262,6 +262,46 @@ Hooks.once('ready', async () => {
         
         // Register settings now that Blacksmith is ready
         registerSettings();
+        
+        // Register hooks via BlacksmithHookManager
+        BlacksmithHookManager.registerHook({
+            name: 'preUpdateCombat',
+            description: 'Coffee Pub Crier: Detect combat changes and calculate deltas',
+            context: MODULE.ID,
+            priority: 3,
+            callback: function preUpdateCombat(combat, updateData, context) {
+                const roundDelta = updateData.round !== undefined ? updateData.round - combat.round : 0,
+                    turnCount = combat.turns.length,
+                    roundAdjust = roundDelta * turnCount,
+                    forward = roundDelta >= 0,
+                    turnDelta = updateData.turn !== undefined ? updateData.turn - combat.turn : 0,
+                    // Messy calculation for round changes
+                    turnDeltaWrapped = roundDelta == 0 ? turnDelta : wrapNumber(roundAdjust + turnDelta, forward ? 0 : -(turnCount - 1), forward ? turnCount - 1 : 0);
+
+                // Add custom properties to the context object
+                context.crier = {
+                    turnShift: turnDeltaWrapped,
+                    roundShift: roundDelta,
+                    combat: combat.id,
+                };
+            }
+        });
+        
+        BlacksmithHookManager.registerHook({
+            name: 'updateCombat',
+            description: 'Coffee Pub Crier: Process turn changes and post messages',
+            context: MODULE.ID,
+            priority: 3,
+            callback: processTurn
+        });
+        
+        BlacksmithHookManager.registerHook({
+            name: 'renderChatMessage',
+            description: 'Coffee Pub Crier: Intercept and modify chat messages',
+            context: MODULE.ID,
+            priority: 3,
+            callback: chatMessageEvent
+        });
         
         console.log('✅ Coffee Pub Crier: Module initialized successfully with Blacksmith API');
     } catch (error) {
@@ -566,12 +606,9 @@ async function createNewRoundCard(combat) {
         },
     };
         // Play Round sound
-    const strSound = await getSettingSafely(CRIER.roundSound, 'gong');
+    const strSound = await getSettingSafely(MODULE.ID, CRIER.roundSound);
     if (strSound && strSound !== 'none') {
-        const constants = (typeof BlacksmithConstants !== 'undefined' && BlacksmithConstants) || BLACKSMITH;
-        const soundPath = constants?.arrSoundChoices?.[strSound] || constants?.SOUNDGONG || strSound;
-        const volume = constants?.SOUNDVOLUMENORMAL || 0.5;
-        BlacksmithUtils.playSound(soundPath, volume);
+        BlacksmithUtils.playSound(strSound, COFFEEPUB.SOUNDVOLUMENORMAL);
     }
     // Return the message
 
@@ -747,7 +784,7 @@ async function postNewTurnCard(combat, context) {
         // Final fallback
         info.portrait = tokenImg || "icons/svg/mystery-man.svg";
 
-                    BlacksmithUtils.postConsoleAndNotification("Turn Card Image TOKEN. info.portrait:", info.portrait, false, true, false);
+        BlacksmithUtils.postConsoleAndNotification("Turn Card Image TOKEN. info.portrait:", info.portrait, false, true, false);
     } else {
         // Hide the portrait
         info.hidePortrait = true;
@@ -940,12 +977,9 @@ async function processTurn(combat, _update, context, userId) {
     }
 
         // Play Turn sound
-    const strSound = await getSettingSafely(CRIER.turnSound, 'gong');
+    const strSound = await getSettingSafely(MODULE.ID, CRIER.turnSound);
     if (strSound && strSound !== 'none') {
-        const constants = (typeof BlacksmithConstants !== 'undefined' && BlacksmithConstants) || BLACKSMITH;
-        const soundPath = constants?.arrSoundChoices?.[strSound] || constants?.SOUNDGONG || strSound;
-        const volume = constants?.SOUNDVOLUMENORMAL || 0.5;
-        BlacksmithUtils.playSound(soundPath, volume);
+        BlacksmithUtils.playSound(strSound, COFFEEPUB.SOUNDVOLUMENORMAL);
     }
 
     // Send the message
@@ -964,36 +998,7 @@ async function processTurn(combat, _update, context, userId) {
 
 // Note: init and ready hooks are now handled in the Blacksmith integration section above
 
-// ************************************
-// ** HOOKS ON preUpdateCombat
-// ************************************
-/**
- * Detect what was changed and how and pass it along to the real update.
- */
-Hooks.on('preUpdateCombat', function preUpdateCombat(combat, updateData, context) {
-    const roundDelta = updateData.round !== undefined ? updateData.round - combat.round : 0,
-        turnCount = combat.turns.length,
-        roundAdjust = roundDelta * turnCount,
-        forward = roundDelta >= 0,
-        turnDelta = updateData.turn !== undefined ? updateData.turn - combat.turn : 0,
-        // Messy calculation for round changes
-        turnDeltaWrapped = roundDelta == 0 ? turnDelta : wrapNumber(roundAdjust + turnDelta, forward ? 0 : -(turnCount - 1), forward ? turnCount - 1 : 0);
 
-    // Add custom properties to the context object
-    context.crier = {
-        turnShift: turnDeltaWrapped,
-        roundShift: roundDelta,
-        combat: combat.id,
-    };
-});
-
-// ************************************
-// ** HOOKS ON updateCombat / renderChatMessage
-// ************************************
-
-// Should the handling be wholly in preUpdate?
-Hooks.on('updateCombat', processTurn);
-Hooks.on('renderChatMessage', chatMessageEvent);
 
 // ************************************
 // ** HOOKS ON READY
