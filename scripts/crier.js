@@ -515,7 +515,7 @@ async function generateCards(info, context) {
 // ************************************
 async function createNewRoundCard(combat) {
     const speaker = ChatMessage.getSpeaker('GM');
-    	    const override = await getSettingSafely(CRIER.roundLabel, 'Round {round}');
+    	    const override = await getSettingSafely(MODULE.ID, CRIER.roundLabel);
     const data = { combat };
     if (override) data.message = override.replace('{round}', combat.round);
     else data.message = game.i18n.format('coffee-pub-crier.RoundCycling', { round: combat.round });
