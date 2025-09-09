@@ -243,7 +243,103 @@ Hooks.once('ready', async () => {
     }
 });
 
-// Note: Testing function is available globally via window.testCrierBlacksmith
+// Global testing function for debugging
+window.testCrierBlacksmith = function() {
+    console.log('🧪 COFFEE PUB CRIER - BLACKSMITH INTEGRATION TEST');
+    console.log('================================================');
+    
+    // Test Blacksmith API availability
+    console.log('✅ Blacksmith API Available:', {
+        BlacksmithUtils: !!BlacksmithUtils,
+        BlacksmithModuleManager: !!BlacksmithModuleManager,
+        BlacksmithHookManager: !!BlacksmithHookManager,
+        BlacksmithConstants: !!BlacksmithConstants,
+        BlacksmithAPIConstants: typeof BlacksmithAPIConstants === 'function',
+        COFFEEPUB: typeof COFFEEPUB !== 'undefined' ? !!COFFEEPUB : false
+    });
+    
+    // Test module registration
+    console.log('✅ Module Registration:', {
+        moduleId: MODULE.ID,
+        moduleName: MODULE.NAME,
+        moduleVersion: MODULE.VERSION
+    });
+    
+    // Test settings
+    console.log('✅ Settings Status:', {
+        roundInitialized: getRoundInitialized(),
+        turnCycling: game.settings.get(MODULE.ID, CRIER.turnCycling),
+        roundCycling: game.settings.get(MODULE.ID, CRIER.roundCycling),
+        turnCardStyle: game.settings.get(MODULE.ID, CRIER.turnCardStyle),
+        roundCardStyle: game.settings.get(MODULE.ID, CRIER.roundCardStyle)
+    });
+    
+    // Test templates
+    console.log('✅ Templates Status:', {
+        turnTemplate: !!turnTemplate,
+        roundTemplate: !!roundTemplate,
+        turnTemplateType: typeof turnTemplate,
+        roundTemplateType: typeof roundTemplate
+    });
+    
+    // Test combat state
+    console.log('✅ Combat State:', {
+        hasActiveCombat: !!game.combat,
+        combatId: game.combat?.id,
+        combatRound: game.combat?.round,
+        combatTurn: game.combat?.turn,
+        combatantsCount: game.combat?.combatants?.size || 0,
+        lastCombatant: lastCombatant.combatant?.name || 'None'
+    });
+    
+    // Test Blacksmith constants (with proper error handling)
+    try {
+        // Try function approach first, then fallback to global object
+        const constants = BlacksmithAPIConstants ? BlacksmithAPIConstants() : BlacksmithConstants;
+        if (constants) {
+            console.log('✅ Blacksmith Constants:', {
+                source: BlacksmithAPIConstants ? 'BlacksmithAPIConstants()' : 'BlacksmithConstants',
+                hasThemeChoices: !!constants.arrThemeChoices,
+                hasIconChoices: !!constants.arrIconChoices,
+                hasSoundChoices: !!constants.arrSoundChoices,
+                themeChoicesCount: Object.keys(constants.arrThemeChoices || {}).length,
+                iconChoicesCount: Object.keys(constants.arrIconChoices || {}).length,
+                soundChoicesCount: Object.keys(constants.arrSoundChoices || {}).length
+            });
+        } else {
+            console.log('⚠️ Blacksmith Constants: Not available yet - may need to wait for Blacksmith to fully load');
+        }
+    } catch (error) {
+        console.log('⚠️ Blacksmith Constants: Error accessing constants:', error.message);
+    }
+    
+    // Test Volume constants
+    try {
+        const volumeNormal = BlacksmithAPIConstants?.SOUNDVOLUMENORMAL || BlacksmithConstants?.SOUNDVOLUMENORMAL;
+        if (volumeNormal) {
+            console.log('✅ Volume Constants:', {
+                hasSoundVolumeNormal: !!volumeNormal,
+                soundVolumeNormal: volumeNormal
+            });
+        } else {
+            console.log('⚠️ Volume Constants: Not available yet - may need to wait for Blacksmith to fully load');
+        }
+    } catch (error) {
+        console.log('⚠️ Volume Constants: Error accessing constants:', error.message);
+    }
+    
+    console.log('================================================');
+    console.log('🧪 Test completed! Check the results above.');
+    
+    return {
+        blacksmithAvailable: !!(BlacksmithUtils && BlacksmithModuleManager && BlacksmithHookManager),
+        moduleRegistered: true,
+        settingsLoaded: true,
+        templatesLoaded: !!(turnTemplate && roundTemplate),
+        combatActive: !!game.combat,
+        constantsAvailable: !!(BlacksmithAPIConstants || BlacksmithConstants)
+    };
+};
 
 // ================================================================== 
 // ===== REGISTER COMMON ============================================
@@ -583,7 +679,7 @@ async function createNewRoundCard(combat) {
         // Play Round sound
     const strSound = await getSettingSafely(MODULE.ID, CRIER.roundSound);
     if (strSound && strSound !== 'none') {
-        BlacksmithUtils.playSound(strSound, COFFEEPUB.SOUNDVOLUMENORMAL);
+        BlacksmithUtils.playSound(strSound, BlacksmithAPIConstants?.SOUNDVOLUMENORMAL || BlacksmithConstants?.SOUNDVOLUMENORMAL || BlacksmithAPIConstants?.SOUNDVOLUMESOFT || BlacksmithConstants?.SOUNDVOLUMESOFT || 0.5);
     }
     // Return the message
 
@@ -1098,7 +1194,7 @@ async function processTurn(combat, _update, context, userId) {
         // Play Turn sound
     const strSound = await getSettingSafely(MODULE.ID, CRIER.turnSound);
     if (strSound && strSound !== 'none') {
-        BlacksmithUtils.playSound(strSound, COFFEEPUB.SOUNDVOLUMENORMAL);
+        BlacksmithUtils.playSound(strSound, BlacksmithAPIConstants?.SOUNDVOLUMENORMAL || BlacksmithConstants?.SOUNDVOLUMENORMAL || BlacksmithAPIConstants?.SOUNDVOLUMESOFT || BlacksmithConstants?.SOUNDVOLUMESOFT || 0.5);
     }
 
     // Send the message

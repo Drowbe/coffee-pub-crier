@@ -13,14 +13,15 @@ export const registerSettings = async () => {
     try {
         console.log('🔧 CRIER:Coffee Pub Crier: Starting settings registration...');
         console.log('🔧 CRIER:Blacksmith available:', !!BlacksmithModuleManager);
-        console.log('🔧 CRIER:BLACKSMITH object:', BlacksmithConstants || BLACKSMITH);
+        console.log('🔧 CRIER:BlacksmithAPIConstants available:', typeof BlacksmithAPIConstants === 'function');
+        console.log('🔧 CRIER:BlacksmithConstants available:', !!BlacksmithConstants);
 
         // -------------------------------------------------------------- 
         // Register settings...
         console.log('🔧 Coffee Pub Crier: Registering settings...');
         
-        // Debug: Log the variables from Blacksmith
-        const constants = BlacksmithConstants || BLACKSMITH;
+        // Get constants using the API function approach
+        const constants = BlacksmithAPIConstants ? BlacksmithAPIConstants() : BlacksmithConstants;
         if (constants) {
             console.log('🔧 CRIER:BLACKSMITH.strDefaultCardTheme:', constants.strDefaultCardTheme);
             console.log('🔧 CRIER:BLACKSMITH.arrThemeChoices:', constants.arrThemeChoices);
@@ -82,7 +83,7 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			default: constants?.strDefaultCardTheme || 'cardsgreen',
+			default: constants?.strDefaultCardTheme || constants?.THEMEGREEN || 'cardsgreen',
 			choices: constants?.arrThemeChoices || {
 				'error': 'Failed to load themes - check Blacksmith module'
 			}
@@ -96,7 +97,7 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			default: 'fa-chess-queen',
+			default: constants?.ICONQUEEN || 'fa-chess-queen',
 			choices: constants?.arrIconChoices || {
 				'error': 'Failed to load icons - check Blacksmith module'
 			},
@@ -123,7 +124,7 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			default: 'gong',
+			default: constants?.SOUNDGONG || 'gong',
 			choices: constants?.arrSoundChoices || {
 				'error': 'Failed to load sounds - check Blacksmith module'
 			},
@@ -193,7 +194,7 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			default: constants?.strDefaultCardTheme || 'cardsdark',
+			default: constants?.strDefaultCardTheme || constants?.THEMEDARK || 'cardsdark',
 			choices: constants?.arrThemeChoices || {
 				'error': 'Failed to load themes - check Blacksmith module'
 			},
@@ -205,7 +206,7 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			default: 'fa-shield',
+			default: constants?.ICONSHIELD || 'fa-shield',
 			choices: constants?.arrIconChoices || {
 				'error': 'Failed to load icons - check Blacksmith module'
 			},
@@ -230,7 +231,7 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			default: 'gong',
+			default: constants?.SOUNDGONG || 'gong',
 			choices: constants?.arrSoundChoices || {
 				'error': 'Failed to load sounds - check Blacksmith module'
 			},
