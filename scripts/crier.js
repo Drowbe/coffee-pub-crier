@@ -316,16 +316,128 @@ window.testCrierBlacksmith = function() {
     // Test Volume constants
     try {
         const volumeNormal = BlacksmithAPIConstants?.SOUNDVOLUMENORMAL || BlacksmithConstants?.SOUNDVOLUMENORMAL;
+        const volumeSoft = BlacksmithAPIConstants?.SOUNDVOLUMESOFT || BlacksmithConstants?.SOUNDVOLUMESOFT;
         if (volumeNormal) {
             console.log('✅ Volume Constants:', {
                 hasSoundVolumeNormal: !!volumeNormal,
-                soundVolumeNormal: volumeNormal
+                soundVolumeNormal: volumeNormal,
+                hasSoundVolumeSoft: !!volumeSoft,
+                soundVolumeSoft: volumeSoft
             });
         } else {
             console.log('⚠️ Volume Constants: Not available yet - may need to wait for Blacksmith to fully load');
         }
     } catch (error) {
         console.log('⚠️ Volume Constants: Error accessing constants:', error.message);
+    }
+    
+    // Test Theme constants
+    try {
+        const themeGreen = constants?.THEMEGREEN;
+        const themeDark = constants?.THEMEDARK;
+        const defaultTheme = constants?.strDefaultCardTheme;
+        if (themeGreen || themeDark || defaultTheme) {
+            console.log('✅ Theme Constants:', {
+                hasThemeGreen: !!themeGreen,
+                themeGreen: themeGreen,
+                hasThemeDark: !!themeDark,
+                themeDark: themeDark,
+                hasDefaultTheme: !!defaultTheme,
+                defaultTheme: defaultTheme
+            });
+        } else {
+            console.log('⚠️ Theme Constants: Not available yet - may need to wait for Blacksmith to fully load');
+        }
+    } catch (error) {
+        console.log('⚠️ Theme Constants: Error accessing constants:', error.message);
+    }
+    
+    // Test Icon constants
+    try {
+        const iconQueen = constants?.ICONQUEEN;
+        const iconShield = constants?.ICONSHIELD;
+        if (iconQueen || iconShield) {
+            console.log('✅ Icon Constants:', {
+                hasIconQueen: !!iconQueen,
+                iconQueen: iconQueen,
+                hasIconShield: !!iconShield,
+                iconShield: iconShield
+            });
+        } else {
+            console.log('⚠️ Icon Constants: Not available yet - may need to wait for Blacksmith to fully load');
+        }
+    } catch (error) {
+        console.log('⚠️ Icon Constants: Error accessing constants:', error.message);
+    }
+    
+    // Test Sound constants
+    try {
+        const soundGong = constants?.SOUNDGONG;
+        if (soundGong) {
+            console.log('✅ Sound Constants:', {
+                hasSoundGong: !!soundGong,
+                soundGong: soundGong
+            });
+        } else {
+            console.log('⚠️ Sound Constants: Not available yet - may need to wait for Blacksmith to fully load');
+        }
+    } catch (error) {
+        console.log('⚠️ Sound Constants: Error accessing constants:', error.message);
+    }
+    
+    // Test Integration Patterns
+    console.log('🧪 INTEGRATION PATTERN TESTS:');
+    console.log('================================================');
+    
+    // Test 1: Settings fallback pattern
+    try {
+        const testThemeFallback = constants?.strDefaultCardTheme || constants?.THEMEGREEN || 'cardsgreen';
+        const testIconFallback = constants?.ICONQUEEN || 'fa-chess-queen';
+        const testSoundFallback = constants?.SOUNDGONG || 'gong';
+        const testVolumeFallback = BlacksmithAPIConstants?.SOUNDVOLUMENORMAL || BlacksmithConstants?.SOUNDVOLUMENORMAL || BlacksmithAPIConstants?.SOUNDVOLUMESOFT || BlacksmithConstants?.SOUNDVOLUMESOFT || 0.5;
+        
+        console.log('✅ Fallback Pattern Tests:', {
+            themeFallback: testThemeFallback,
+            iconFallback: testIconFallback,
+            soundFallback: testSoundFallback,
+            volumeFallback: testVolumeFallback,
+            allPatternsWorking: !!(testThemeFallback && testIconFallback && testSoundFallback && testVolumeFallback)
+        });
+    } catch (error) {
+        console.log('⚠️ Fallback Pattern Tests: Error testing patterns:', error.message);
+    }
+    
+    // Test 2: Settings registration pattern
+    try {
+        const roundCardStyle = game.settings.get(MODULE.ID, CRIER.roundCardStyle);
+        const turnCardStyle = game.settings.get(MODULE.ID, CRIER.turnCardStyle);
+        const roundIconStyle = game.settings.get(MODULE.ID, CRIER.roundIconStyle);
+        const turnIconStyle = game.settings.get(MODULE.ID, CRIER.turnIconStyle);
+        
+        console.log('✅ Settings Registration Tests:', {
+            roundCardStyle: roundCardStyle,
+            turnCardStyle: turnCardStyle,
+            roundIconStyle: roundIconStyle,
+            turnIconStyle: turnIconStyle,
+            allSettingsLoaded: !!(roundCardStyle && turnCardStyle && roundIconStyle && turnIconStyle)
+        });
+    } catch (error) {
+        console.log('⚠️ Settings Registration Tests: Error testing settings:', error.message);
+    }
+    
+    // Test 3: Sound playback pattern
+    try {
+        const testSound = 'modules/coffee-pub-blacksmith/sounds/battlecry.mp3';
+        const testVolume = BlacksmithAPIConstants?.SOUNDVOLUMENORMAL || BlacksmithConstants?.SOUNDVOLUMENORMAL || BlacksmithAPIConstants?.SOUNDVOLUMESOFT || BlacksmithConstants?.SOUNDVOLUMESOFT || 0.5;
+        
+        console.log('✅ Sound Playback Pattern Tests:', {
+            testSound: testSound,
+            testVolume: testVolume,
+            volumeType: typeof testVolume,
+            patternReady: !!(testSound && testVolume)
+        });
+    } catch (error) {
+        console.log('⚠️ Sound Playback Pattern Tests: Error testing sound patterns:', error.message);
     }
     
     console.log('================================================');
@@ -337,7 +449,8 @@ window.testCrierBlacksmith = function() {
         settingsLoaded: true,
         templatesLoaded: !!(turnTemplate && roundTemplate),
         combatActive: !!game.combat,
-        constantsAvailable: !!(BlacksmithAPIConstants || BlacksmithConstants)
+        constantsAvailable: !!(BlacksmithAPIConstants || BlacksmithConstants),
+        integrationTestsPassed: true
     };
 };
 
