@@ -667,7 +667,7 @@ async function createMissedTurnCard(data, context) {
         alias = last.name;
     // Notify of MISSED TURN if the setting is enabled.
     const strMissedTurnPlayer = data.last.combatant.name;
-    	if (await getSettingSafely(CRIER.missedTurnNotification, false)) {
+	if (await getSettingSafely(MODULE.ID, CRIER.missedTurnNotification, false)) {
         ui.notifications.info("Did " + strMissedTurnPlayer + " miss their turn?", {permanent: false, console: false});
     }
     const msgData = {
@@ -713,7 +713,7 @@ async function generateCards(info, context) {
 
 	const speaker = info.obfuscated ? { user: game.user.id } : ChatMessage.getSpeaker({ token: info.token?.document, actor: info.actor });
 	const minPerm = getPermissionLevels().OBSERVER;
-	const defaultVisible = info.hidden ? false : getDefaultPermission >= minPerm;
+	const defaultVisible = info.hidden ? false : (getDefaultPermission(info.actor ?? info.tokenDoc ?? info.combatant) ?? 0) >= minPerm;
 
 	// Set Data
 	BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: About to render template', { 
@@ -1311,20 +1311,22 @@ async function processTurn(combat, _update, context, userId) {
     }
 
     // Send the message
-    if (msgs.length) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Creating chat messages', { 
-            count: msgs.length,
-            messageTypes: msgs.map(msg => ({
-                type: msg.flags?.[MODULE.ID]?.turnAnnounce ? 'turn' : 
-                      msg.flags?.[MODULE.ID]?.roundCycling ? 'round' : 'other',
-                contentLength: msg.content?.length || 0,
-                hasFlags: !!msg.flags?.[MODULE.ID]
-            }))
-        }, true, false);
-        ChatMessage.create(msgs);
-    } else {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: No messages to create', {}, true, false);
-    }
+	if (msgs.length) {
+		BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Creating chat messages', { 
+			count: msgs.length,
+			messageTypes: msgs.map(msg => ({
+				type: msg.flags?.[MODULE.ID]?.turnAnnounce ? 'turn' : 
+					  msg.flags?.[MODULE.ID]?.roundCycling ? 'round' : 'other',
+				contentLength: msg.content?.length || 0,
+				hasFlags: !!msg.flags?.[MODULE.ID]
+			}))
+		}, true, false);
+		for (const msg of msgs) {
+			await ChatMessage.create(msg);
+		}
+	} else {
+		BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: No messages to create', {}, true, false);
+	}
 }
 
 
