@@ -177,7 +177,8 @@
 	padding-right: 8px;
 	animation-name: missed-pulse-color;
     animation-duration: 1s;
-    animation-iteration-count: infinite;	
+    animation-iteration-count: 10;
+    animation-fill-mode: forwards;
 }
 @keyframes missed-pulse-color {
 	0% {
@@ -603,7 +604,8 @@ grid-row: 1; /* make this image be on the same row */
 #hp-container-cardsred #hp-progress-critical-cardsred {
     animation-name: hp-pulse-color;
     animation-duration: 2s;
-    animation-iteration-count: infinite;	
+    animation-iteration-count: 10;
+    animation-fill-mode: forwards;
 }
 /* Abilities Layout */
 #ability-container-cardsgreen,
