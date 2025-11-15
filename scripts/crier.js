@@ -121,45 +121,55 @@ async function getSettingSafely(moduleId, settingKey, defaultValue = null) {
     return BlacksmithUtils.getSettingSafely(moduleId, settingKey, defaultValue);
 }
 
+function isDebugEnabled() {
+    return typeof COFFEEPUB !== 'undefined' && COFFEEPUB?.blnDebugOn === true;
+}
+
+function debugLog(message, payloadFactory) {
+    if (!isDebugEnabled()) return;
+    const payload = typeof payloadFactory === 'function' ? payloadFactory() : payloadFactory;
+    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, message, payload ?? {}, true, false);
+}
+
 
 
 // REQUIRED: Access Blacksmith API and initialize your module
 Hooks.once('ready', async () => {
     try {
         // Initialize templates
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Loading templates', { turn: turn_template_file, round: round_template_file }, true, false);
+        debugLog('READY: Loading templates', () => ({ turn: turn_template_file, round: round_template_file }));
         
         // Check if foundry.utils.getTemplate exists
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Checking foundry.utils.getTemplate', { 
-            hasFoundry: !!foundry, 
-            hasUtils: !!foundry?.utils, 
-            hasGetTemplate: !!foundry?.utils?.getTemplate 
-        }, true, false);
+        debugLog('READY: Checking foundry.utils.getTemplate', () => ({
+            hasFoundry: !!foundry,
+            hasUtils: !!foundry?.utils,
+            hasGetTemplate: !!foundry?.utils?.getTemplate
+        }));
         
         try {
             if (foundry?.utils?.getTemplate) {
                 turnTemplate = await foundry.utils.getTemplate(turn_template_file);
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Turn template loaded via foundry.utils.getTemplate', { success: !!turnTemplate, type: typeof turnTemplate }, true, false);
+                debugLog('READY: Turn template loaded via foundry.utils.getTemplate', () => ({ success: !!turnTemplate, type: typeof turnTemplate }));
             } else {
                 // Fallback to global getTemplate
                 turnTemplate = await getTemplate(turn_template_file);
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Turn template loaded via global getTemplate', { success: !!turnTemplate, type: typeof turnTemplate }, true, false);
+                debugLog('READY: Turn template loaded via global getTemplate', () => ({ success: !!turnTemplate, type: typeof turnTemplate }));
             }
         } catch (err) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Turn template failed', { error: err.message }, true, false);
+            debugLog('READY: Turn template failed', () => ({ error: err.message }));
         }
         
         try {
             if (foundry?.utils?.getTemplate) {
                 roundTemplate = await foundry.utils.getTemplate(round_template_file);
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Round template loaded via foundry.utils.getTemplate', { success: !!roundTemplate, type: typeof roundTemplate }, true, false);
+                debugLog('READY: Round template loaded via foundry.utils.getTemplate', () => ({ success: !!roundTemplate, type: typeof roundTemplate }));
     } else {
                 // Fallback to global getTemplate
                 roundTemplate = await getTemplate(round_template_file);
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Round template loaded via global getTemplate', { success: !!roundTemplate, type: typeof roundTemplate }, true, false);
+                debugLog('READY: Round template loaded via global getTemplate', () => ({ success: !!roundTemplate, type: typeof roundTemplate }));
             }
         } catch (err) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'READY: Round template failed', { error: err.message }, true, false);
+            debugLog('READY: Round template failed', () => ({ error: err.message }));
         }
         
         // Initialize last combatant
@@ -209,7 +219,7 @@ Hooks.once('ready', async () => {
                     
                     // If all initiatives are now rolled, trigger turn card creation
                     if (allHaveInitiative) {
-                        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'HOOK: preUpdateCombat - all initiatives rolled, triggering turn card', {}, true, false);
+                        debugLog('HOOK: preUpdateCombat - all initiatives rolled, triggering turn card');
                         // Process turn change to create the first turn card
                         await processCombatChange(combat, updateData, context, game.user.id, true, false);
                     }
@@ -260,7 +270,7 @@ Hooks.once('ready', async () => {
                 if (turnChanged || roundChanged) {
                     // Reset lastCombatant tracking if a new round starts
                     if (roundChanged) {
-                        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'HOOK: New round detected, resetting lastCombatant and roundInitialized', {}, true, false);
+                        debugLog('HOOK: New round detected, resetting lastCombatant and roundInitialized');
                         lastCombatant.combatant = null;
                         lastCombatant.spoke = false;
                         setRoundInitialized(false);
@@ -278,7 +288,7 @@ Hooks.once('ready', async () => {
             context: MODULE.ID,
             priority: 2,
             callback: (cm, html, options) => {
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'HOOK: renderChatMessage hook called', { messageId: cm.id }, true, false);
+                debugLog('HOOK: renderChatMessage hook called', () => ({ messageId: cm.id }));
                 return chatMessageEvent(cm, html, options);
             }
         });
@@ -734,7 +744,7 @@ async function createMissedTurnCard(data, context) {
 // ************************************
 
 async function generateCards(info, context) {
-	BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: Starting', { name: info.name }, true, false);
+	debugLog('GENERATE CARDS: Starting', () => ({ name: info.name }));
 	
 	// Noitify of MISSED TURN if the setting is enabled.
 	const msgs = [];
@@ -744,7 +754,7 @@ async function generateCards(info, context) {
 	}
 
 	if (getDocData(info.combatant).defeated) {
-		BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: Skipping - combatant defeated', {}, true, false);
+		debugLog('GENERATE CARDS: Skipping - combatant defeated');
 		return msgs; // undesired
 	}
 	if (info.last?.combatant != null && info.last.combatant.id === info.combatant.id) {
@@ -769,7 +779,7 @@ async function generateCards(info, context) {
 	}, true, false);
 	
 	if (!turnTemplate) {
-		BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: ERROR - turnTemplate is not loaded', {}, true, false);
+		debugLog('GENERATE CARDS: ERROR - turnTemplate is not loaded');
 		return msgs;
 	}
 	
@@ -803,7 +813,7 @@ async function generateCards(info, context) {
 
 	ChatMessage.applyRollMode(cardData, !info.hidden ? 'publicroll' : 'gmroll')
 	msgs.push(cardData);
-	BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: Created card', { count: msgs.length }, true, false);
+	debugLog('GENERATE CARDS: Created card', () => ({ count: msgs.length }));
 	return msgs;
 }
 
@@ -823,7 +833,7 @@ async function createNewRoundCard(combat) {
     }, true, false);
     
     if (!roundTemplate) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'CREATE NEW ROUND CARD: ERROR - roundTemplate is not loaded', {}, true, false);
+        debugLog('CREATE NEW ROUND CARD: ERROR - roundTemplate is not loaded');
         return null;
     }
     
@@ -872,15 +882,15 @@ async function postNewRound(combat, context) {
  * @param {String} userId
  */
 async function postNewTurnCard(combat, context) {
-    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Starting', { combat: combat.id }, true, false);
+    debugLog('POST NEW TURN CARD: Starting', () => ({ combat: combat.id }));
     
     // Only continue with first GM in the list
     // if (!game.user.isGM || game.users.filter(o => o.isGM && o.active).sort((a, b) => b.role - a.role)[0].id !== game.user.id) return;
     // Exit the function if they have enabled skipping turn cards
     	const blnShowTurnCards = await getSettingSafely(MODULE.ID, CRIER.turnCycling, true);
-    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Turn cycling setting', { blnShowTurnCards }, true, false);
+    debugLog('POST NEW TURN CARD: Turn cycling setting', () => ({ blnShowTurnCards }));
     if (blnShowTurnCards !== true) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Skipping - turn cycling disabled', {}, true, false);
+        debugLog('POST NEW TURN CARD: Skipping - turn cycling disabled');
         return;
     }
 
@@ -889,15 +899,15 @@ async function postNewTurnCard(combat, context) {
     const combatant = !defeated ? combat.combatant : null;
     const tokenDoc = combatant?.token;
     
-    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Combatant data', { 
-        hasCombatant: !!combat.combatant, 
-        defeated, 
-        hasCombatantAfterDefeat: !!combatant, 
-        hasTokenDoc: !!tokenDoc 
-    }, true, false);
+    debugLog('POST NEW TURN CARD: Combatant data', () => ({
+        hasCombatant: !!combat.combatant,
+        defeated,
+        hasCombatantAfterDefeat: !!combatant,
+        hasTokenDoc: !!tokenDoc
+    }));
     
     if (!tokenDoc) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Skipping - no token doc', {}, true, false);
+        debugLog('POST NEW TURN CARD: Skipping - no token doc');
         return; // Combatant with no token, unusual, but possible
     }
     
@@ -912,12 +922,12 @@ async function postNewTurnCard(combat, context) {
     };
 
     // Update for next cycle
-    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Updating lastCombatant', { 
+    debugLog('POST NEW TURN CARD: Updating lastCombatant', () => ({
         oldCombatantId: lastCombatant.combatant?.id,
         newCombatantId: combatant?.id,
         oldCombatantName: lastCombatant.combatant?.name,
         newCombatantName: combatant?.name
-    }, true, false);
+    }));
     lastCombatant.combatant = combatant;
     lastCombatant.spoke = false;
 
@@ -1015,12 +1025,12 @@ async function postNewTurnCard(combat, context) {
             // Final fallback
             info.portrait = portraitImg || "icons/svg/mystery-man.svg";
 
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, "Turn Card Image TOKEN IF NOT ACTOR?. info.portrait:", info.portrait, true, false);
+            debugLog('Turn Card Image TOKEN IF NOT ACTOR?. info.portrait:', () => info.portrait);
         } else {
             const actorPortrait = game.actors.get(strActorId);
             info.portrait = actorPortrait ? await getPortraitImage(actorPortrait) : "icons/svg/mystery-man.svg";
 
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, "Turn Card Image PORTRAIT. info.portrait:", info.portrait, true, false);
+            debugLog('Turn Card Image PORTRAIT. info.portrait:', () => info.portrait);
         }
     } else if (info.portraitStyle == "token") {
         let tokenImg = null;
@@ -1041,7 +1051,7 @@ async function postNewTurnCard(combat, context) {
         // Final fallback
         info.portrait = tokenImg || "icons/svg/mystery-man.svg";
 
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, "Turn Card Image TOKEN. info.portrait:", info.portrait, true, false);
+        debugLog('Turn Card Image TOKEN. info.portrait:', () => info.portrait);
     } else {
         // Hide the portrait
         info.hidePortrait = true;
@@ -1202,9 +1212,9 @@ async function postNewTurnCard(combat, context) {
     else info.label = game.i18n.format('coffee-pub-crier.Turn', { name: label });
 
 
-    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: Calling generateCards', { 
-        info: { 
-            name: info.name, 
+    debugLog('POST NEW TURN CARD: Calling generateCards', () => ({
+        info: {
+            name: info.name,
             combat: info.combat.id,
             turnCardStyle: info.turnCardStyle,
             turnIconStyle: info.turnIconStyle,
@@ -1213,10 +1223,10 @@ async function postNewTurnCard(combat, context) {
             portraitStyle: info.portraitStyle,
             tokenBackground: info.tokenBackground,
             tokenScale: info.tokenScale
-        } 
-    }, true, false);
+        }
+    }));
     const msgs = await generateCards(info, context);
-    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'POST NEW TURN CARD: generateCards returned', { count: msgs?.length || 0 }, true, false);
+    debugLog('POST NEW TURN CARD: generateCards returned', () => ({ count: msgs?.length || 0 }));
 
     return msgs;
 }
@@ -1230,16 +1240,16 @@ async function postNewTurnCard(combat, context) {
  * @param {String} userId
  */
 async function processCombatChange(combat, _update, context, userId, turnChanged, roundChanged) {
-    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Starting', { 
-        combat: combat.id, 
-        userId, 
-        context, 
-        turnChanged, 
-        roundChanged 
-    }, true, false);
+    debugLog('PROCESS COMBAT CHANGE: Starting', () => ({
+        combat: combat.id,
+        userId,
+        context,
+        turnChanged,
+        roundChanged
+    }));
     
     if (game.user.id !== userId) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Skipping - wrong user', { gameUserId: game.user.id, userId }, true, false);
+        debugLog('PROCESS COMBAT CHANGE: Skipping - wrong user', () => ({ gameUserId: game.user.id, userId }));
         return;
     }
 
@@ -1247,20 +1257,20 @@ async function processCombatChange(combat, _update, context, userId, turnChanged
     
     // Handle round changes - create round card if enabled
     if (roundChanged) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Processing round change', {}, true, false);
+        debugLog('PROCESS COMBAT CHANGE: Processing round change');
         if (await getSettingSafely(MODULE.ID, CRIER.roundCycling)) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Round cycling enabled', {}, true, false);
+            debugLog('PROCESS COMBAT CHANGE: Round cycling enabled');
             const roundMsg = await postNewRound(combat, context);
             if (roundMsg) {
                 msgs.push(roundMsg);
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Round message created', { roundMsg }, true, false);
+                debugLog('PROCESS COMBAT CHANGE: Round message created', () => ({ roundMsg }));
             }
         }
     }
     
     // Handle turn changes - create turn card if round is initialized or all initiatives are rolled
     if (turnChanged) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Processing turn change', { roundInitialized }, true, false);
+        debugLog('PROCESS COMBAT CHANGE: Processing turn change', () => ({ roundInitialized }));
         
         // If round is not initialized, check if all initiatives are rolled
         if (!roundInitialized) {
@@ -1275,7 +1285,7 @@ async function processCombatChange(combat, _update, context, userId, turnChanged
                 combatant.initiative !== null && combatant.initiative !== undefined
             );
             
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Checking initiatives', { 
+            debugLog('PROCESS COMBAT CHANGE: Checking initiatives', () => ({
                 allHaveInitiative,
                 initiativeData,
                 combatantsCount: combatantsArray.length,
@@ -1287,17 +1297,17 @@ async function processCombatChange(combat, _update, context, userId, turnChanged
                     isUndefined: c.initiative === undefined,
                     hasInitiative: c.initiative !== null && c.initiative !== undefined
                 }))
-            }, true, false);
+            }));
             
             if (!allHaveInitiative) {
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Round not initialized, skipping turn card', { 
+                debugLog('PROCESS COMBAT CHANGE: Round not initialized, skipping turn card', () => ({
                     combatantsWithoutInitiative: combatantsArray.filter(c => c.initiative === null || c.initiative === undefined).map(c => c.name)
-                }, true, false);
+                }));
                 return; // Don't create turn card yet
             } else {
                 // All initiatives rolled, mark round as initialized
                 setRoundInitialized(true);
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Round initialized, all initiatives rolled', {}, true, false);
+                debugLog('PROCESS COMBAT CHANGE: Round initialized, all initiatives rolled');
             }
         }
         
@@ -1305,26 +1315,26 @@ async function processCombatChange(combat, _update, context, userId, turnChanged
         const turnMsgs = await postNewTurnCard(combat, context);
         if (turnMsgs?.length) {
             msgs.push(...turnMsgs);
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Turn messages created', { count: turnMsgs.length }, true, false);
+            debugLog('PROCESS COMBAT CHANGE: Turn messages created', () => ({ count: turnMsgs.length }));
         }
     }
 
     // Post all messages
     if (msgs.length) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: Creating chat messages', { count: msgs.length, messageTypes: msgs.map(m => m.type) }, true, false);
+        debugLog('PROCESS COMBAT CHANGE: Creating chat messages', () => ({ count: msgs.length, messageTypes: msgs.map(m => m.type) }));
         for (const msg of msgs) {
             await ChatMessage.create(msg);
         }
     } else {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS COMBAT CHANGE: No messages to create', {}, true, false);
+        debugLog('PROCESS COMBAT CHANGE: No messages to create');
     }
 }
 
 async function processTurn(combat, _update, context, userId) {
-    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Starting', { combat: combat.id, userId, context }, true, false);
+    debugLog('PROCESS TURN: Starting', () => ({ combat: combat.id, userId, context }));
     
     if (game.user.id !== userId) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Skipping - wrong user', { gameUserId: game.user.id, userId }, true, false);
+        debugLog('PROCESS TURN: Skipping - wrong user', () => ({ gameUserId: game.user.id, userId }));
         return;
     } // Trust the one provoking combat update has sufficient permissions
     
@@ -1333,16 +1343,16 @@ async function processTurn(combat, _update, context, userId) {
     const msgs = [];
     // Round cycling message
     	if (await getSettingSafely(MODULE.ID, CRIER.roundCycling, true)) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Round cycling enabled', {}, true, false);
+        debugLog('PROCESS TURN: Round cycling enabled');
         const roundMsg = await postNewRound(combat, context);
         if (roundMsg) {
             msgs.push(roundMsg);
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Round message created', { roundMsg }, true, false);
+            debugLog('PROCESS TURN: Round message created', () => ({ roundMsg }));
         } else {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: No round message created', {}, true, false);
+            debugLog('PROCESS TURN: No round message created');
         } 
     } else {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Round cycling disabled', {}, true, false);
+        debugLog('PROCESS TURN: Round cycling disabled');
     }
 
     // Turn announcement
@@ -1372,7 +1382,7 @@ async function processTurn(combat, _update, context, userId) {
 			await ChatMessage.create(msg);
 		}
 	} else {
-		BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: No messages to create', {}, true, false);
+		debugLog('PROCESS TURN: No messages to create');
 	}
 }
 
