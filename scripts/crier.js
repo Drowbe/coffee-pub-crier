@@ -66,6 +66,52 @@ function setRoundInitialized(value) {
     roundInitialized = value; // Keep local cache in sync
 }
 
+const TURN_SETTINGS_CACHE_TTL = 5000;
+const TURN_SETTING_KEYS = {
+    turnLayout: CRIER.turnLayout,
+    turnIconStyle: CRIER.turnIconStyle,
+    turnCardStyle: CRIER.turnCardStyle,
+    roundIconStyle: CRIER.roundIconStyle,
+    roundCardStyle: CRIER.roundCardStyle,
+    portraitStyle: CRIER.portraitStyle,
+    tokenBackground: CRIER.tokenBackground,
+    tokenScale: CRIER.tokenScale,
+    hidePlayer: CRIER.hidePlayer,
+    hideAbilities: CRIER.hideAbilities,
+    hideHealth: CRIER.hideHealth,
+    hideBloodyPortrait: CRIER.hideBloodyPortrait,
+    turnLabel: CRIER.turnLabel,
+    obfuscateNPCs: CRIER.obfuscateNPCs
+};
+
+let turnSettingsCache = null;
+let turnSettingsCacheTimestamp = 0;
+
+async function getTurnCardSettings() {
+    const now = Date.now();
+    if (!turnSettingsCache || (now - turnSettingsCacheTimestamp) > TURN_SETTINGS_CACHE_TTL) {
+        const entries = [];
+        for (const [name, key] of Object.entries(TURN_SETTING_KEYS)) {
+            try {
+                const value = await getSettingSafely(MODULE.ID, key);
+                entries.push([name, value]);
+            } catch (error) {
+                BlacksmithUtils.postConsoleAndNotification(
+                    MODULE.NAME,
+                    `SETTINGS CACHE: Failed to load ${name}`,
+                    { key, error: error?.message ?? error },
+                    true,
+                    true
+                );
+                entries.push([name, null]);
+            }
+        }
+        turnSettingsCache = Object.fromEntries(entries);
+        turnSettingsCacheTimestamp = now;
+    }
+    return turnSettingsCache;
+}
+
 // ================================================================== 
 // ===== NEW BLACKSMITH INTEGRATION =================================
 // ================================================================== 
@@ -897,26 +943,27 @@ async function postNewTurnCard(combat, context) {
     };
 
     // Pull style settings from settings and set stuff
-    info.name = info.token?.name ?? combatant.name;
-    	info.turnLayout = await getSettingSafely(MODULE.ID, CRIER.turnLayout);
-		info.turnIconStyle = await getSettingSafely(MODULE.ID, CRIER.turnIconStyle);
-		info.turnCardStyle = await getSettingSafely(MODULE.ID, CRIER.turnCardStyle);
-		info.roundIconStyle = await getSettingSafely(MODULE.ID, CRIER.roundIconStyle);
-		info.roundCardStyle = await getSettingSafely(MODULE.ID, CRIER.roundCardStyle);
-		info.portraitStyle = await getSettingSafely(MODULE.ID, CRIER.portraitStyle);
-		info.tokenBackground = await getSettingSafely(MODULE.ID, CRIER.tokenBackground);
-		info.tokenScale = await getSettingSafely(MODULE.ID, CRIER.tokenScale);
+	info.name = info.token?.name ?? combatant.name;
+	const cardSettings = await getTurnCardSettings();
+	info.turnLayout = cardSettings.turnLayout ?? 'full';
+	info.turnIconStyle = cardSettings.turnIconStyle ?? 'fa-shield';
+	info.turnCardStyle = cardSettings.turnCardStyle ?? 'cardsdark';
+	info.roundIconStyle = cardSettings.roundIconStyle ?? 'fa-chess-queen';
+	info.roundCardStyle = cardSettings.roundCardStyle ?? 'cardsgreen';
+	info.portraitStyle = cardSettings.portraitStyle ?? 'portrait';
+	info.tokenBackground = cardSettings.tokenBackground ?? 'dirt';
+	info.tokenScale = cardSettings.tokenScale ?? 100;
     //	Hide the player name if needed
-    if (await getSettingSafely(MODULE.ID, CRIER.hidePlayer))
+    if (cardSettings.hidePlayer)
         info.hidePlayer = true;
     // Hide abilities if needed
-    if (await getSettingSafely(MODULE.ID, CRIER.hideAbilities))
+    if (cardSettings.hideAbilities)
         info.hideAbilities = true;	
     // Hide Health if needed
-    if (await getSettingSafely(MODULE.ID, CRIER.hideHealth))
-    info.hideHealth = true;	
+    if (cardSettings.hideHealth)
+        info.hideHealth = true;	
     // Hide Bloody Portrait if needed
-    if (await getSettingSafely(MODULE.ID, CRIER.hideBloodyPortrait))
+    if (cardSettings.hideBloodyPortrait)
         info.hideBloodyPortrait = true;	
     // GET THE IDs
     const strTokenId = await getTokenId(info.name);
@@ -1138,7 +1185,7 @@ async function postNewTurnCard(combat, context) {
         }
     }
 
-    	const obfuscateType = await getSettingSafely(MODULE.ID, CRIER.obfuscateNPCs);
+    	const obfuscateType = cardSettings.obfuscateNPCs;
     const hasVisibleName = () => info.token ? [30, 50].includes(getDocData(tokenDoc).displayName) : true; // 30=hovered by anyone or 50=always for everyone
     const obfuscate = {
         get all() { return false; },
@@ -1150,7 +1197,7 @@ async function postNewTurnCard(combat, context) {
     if (info.obfuscated) info.name = game.i18n.localize('coffee-pub-crier.UnidentifiedTurn');
 
     const label = `<span class='name'>${info.name}</span>`;
-    	    const override = await getSettingSafely(MODULE.ID, CRIER.turnLabel);
+    	const override = cardSettings.turnLabel;
     if (override) info.label = override.replace('{name}', label);
     else info.label = game.i18n.format('coffee-pub-crier.Turn', { name: label });
 
