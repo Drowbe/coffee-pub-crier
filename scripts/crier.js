@@ -670,8 +670,7 @@ function chatMessageEvent(cm, [html], _options) {
 	if (flags.missedTurn){
 	// They want to notify on missed turn and it has been missed
 	// check compress and see chose the option to remove speaker and timestamp
-		//DEBUG TURNING OFF MISSED TURNS FOR NOW
-		//interceptMissedTurnMessage(cm, html, main);
+		interceptMissedTurnMessage(cm, html, main);
 	} else if (flags.turnAnnounce || flags.token) {
 		updateLastCombatantFromMsg(cm, flags);
 		// check compress and see chose the option to remove speaker and timestamp
