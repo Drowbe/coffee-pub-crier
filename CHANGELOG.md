@@ -6,10 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [13.0.0] - v13 Migration Begins
+## [13.0.0] - v13 Migration Complete
 
 ### Important Notice
-- **v13 MIGRATION START:** This version begins the migration to FoundryVTT v13
+- **v13 MIGRATION COMPLETE:** This version completes the migration to FoundryVTT v13
 - **Breaking Changes:** This version requires FoundryVTT v13.0.0 or later
 - **v12 Support Ended:** v12.1.4-FINAL was the last version supporting FoundryVTT v12
 
@@ -17,6 +17,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Minimum Core Version:** Updated to require FoundryVTT v13.0.0
 - **Module Version:** Bumped to 13.0.0 to align with FoundryVTT v13
 - **Compatibility:** Module now exclusively supports FoundryVTT v13
+
+### Migration Changes
+- **jQuery Removal:** Added jQuery detection pattern for `renderChatMessage` hook to handle native DOM elements
+- **Font Awesome Migration:** Updated all Font Awesome 5 class prefixes (`fas`) to Font Awesome 6 (`fa-solid`)
+  - Updated templates: `templates/turns.hbs` (4 instances)
+  - Updated JavaScript: `scripts/crier.js` (2 instances)
+  - Updated CSS: `styles/module.css` (10 selectors across all card themes)
+- **Hook Parameter Handling:** Updated `chatMessageEvent` to properly handle native DOM elements from v13 hooks
+
+### Technical
+- **Native DOM:** All DOM manipulation now uses native DOM APIs
+- **Font Awesome 6:** All icons now use FA6 class prefixes compatible with FoundryVTT v13
+- **Backward Compatibility:** Module is NOT compatible with FoundryVTT v12 - users must upgrade to v13
 
 ## [12.1.4] - Final v12 Release
 

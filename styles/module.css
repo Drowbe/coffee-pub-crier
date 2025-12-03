@@ -67,12 +67,12 @@
     white-space: nowrap
 	
 }
-.chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalred div.round-message .fas,
-.chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalplain div.round-message .fas,
-.chat-message[data-message-id].coffee-pub.round-cycling-cardssimple div.round-message .fas,
-.chat-message[data-message-id].coffee-pub.round-cycling-cardsdark div.round-message .fas,
-.chat-message[data-message-id].coffee-pub.round-cycling-cardsgreen div.round-message .fas,
-.chat-message[data-message-id].coffee-pub.round-cycling-cardsred div.round-message .fas{
+.chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalred div.round-message .fa-solid,
+.chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalplain div.round-message .fa-solid,
+.chat-message[data-message-id].coffee-pub.round-cycling-cardssimple div.round-message .fa-solid,
+.chat-message[data-message-id].coffee-pub.round-cycling-cardsdark div.round-message .fa-solid,
+.chat-message[data-message-id].coffee-pub.round-cycling-cardsgreen div.round-message .fa-solid,
+.chat-message[data-message-id].coffee-pub.round-cycling-cardsred div.round-message .fa-solid{
     font-weight:550;
     font-size: 0.9em;
 	padding-top: 0px;
@@ -907,7 +907,7 @@ grid-row: 1; /* make this image be on the same row */
     border-top: 1px dotted #8B845A;
 	border-bottom: 0px;
 }
-#crier-cards-wrapper-cardsdark .fas {
+#crier-cards-wrapper-cardsdark .fa-solid {
 	color: #BAAFAF;
 }
 #crier-cards-wrapper-cardsdark p {
@@ -1049,7 +1049,7 @@ grid-row: 1; /* make this image be on the same row */
     border-top: 1px dotted #8B845A;
 	border-bottom: 0px;
 }
-#crier-cards-wrapper-cardsred .fas {
+#crier-cards-wrapper-cardsred .fa-solid {
 	color: #E8D5D5;
 }
 #crier-cards-wrapper-cardsred p {
@@ -1192,7 +1192,7 @@ grid-row: 1; /* make this image be on the same row */
     border-top: 1px dotted #8B845A;
 	border-bottom: 0px;
 }
-#crier-cards-wrapper-cardsgreen .fas {
+#crier-cards-wrapper-cardsgreen .fa-solid {
 	color: #E8D5D5;
 }
 #crier-cards-wrapper-cardsgreen p {
@@ -1335,7 +1335,7 @@ grid-row: 1; /* make this image be on the same row */
     border-top: 1px dotted #8B845A;
 	border-bottom: 0px;
 }
-#crier-cards-wrapper-cardsblue .fas {
+#crier-cards-wrapper-cardsblue .fa-solid {
 	color: #E8D5D5;
 }
 

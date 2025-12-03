@@ -581,7 +581,7 @@ function interceptNewRoundMessage(cm, html, main) {
 
     header.prepend(msg);
     const icon = document.createElement('i');
-    icon.classList.add('fas', strRoundIcon);
+    icon.classList.add('fa-solid', strRoundIcon);
     msg?.prepend(icon, ' ');
 
     // Migrate data attributes
@@ -650,10 +650,21 @@ function updateLastCombatantFromMsg(cm, flags) {
 // ************************************
 /**
  * @param {ChatMessage} cm
- * @param {JQuery} html
+ * @param {HTMLElement|JQuery|Array} html
  * @param {Object} _options
  */
-function chatMessageEvent(cm, [html], _options) {
+function chatMessageEvent(cm, html, _options) {
+	// v13: Detect and convert jQuery to native DOM if needed
+	let nativeHtml = html;
+	if (html && (html.jquery || typeof html.find === 'function')) {
+		nativeHtml = html[0] || html.get?.(0) || html;
+	}
+	
+	// If html was an array, extract first element
+	if (Array.isArray(nativeHtml)) {
+		nativeHtml = nativeHtml[0] || nativeHtml;
+	}
+	
 	const isGM = game.user.isGM;
 	const cmd = getDocData(cm);
 	const flags = cmd.flags?.[MODULE.ID];
@@ -664,21 +675,21 @@ function chatMessageEvent(cm, [html], _options) {
 		return;
 	}
 
-	const main = html.closest('[data-message-id]');
-	html?.classList.add('crier', 'coffee-pub');
+	const main = nativeHtml.closest('[data-message-id]');
+	nativeHtml?.classList.add('crier', 'coffee-pub');
 
 	if (flags.missedTurn){
 	// They want to notify on missed turn and it has been missed
 	// check compress and see chose the option to remove speaker and timestamp
-		interceptMissedTurnMessage(cm, html, main);
+		interceptMissedTurnMessage(cm, nativeHtml, main);
 	} else if (flags.turnAnnounce || flags.token) {
 		updateLastCombatantFromMsg(cm, flags);
 		// check compress and see chose the option to remove speaker and timestamp
-		//interceptNewTurnMessage(cm, html, main);
+		//interceptNewTurnMessage(cm, nativeHtml, main);
 	}
 	else if (flags.roundCycling) {
 		// check compress and see chose the option to remove speaker and timestamp
-		interceptNewRoundMessage(cm, html, main);
+		interceptNewRoundMessage(cm, nativeHtml, main);
 	}
 
 	main?.querySelector('.whisper-to')?.remove();
@@ -689,9 +700,9 @@ function chatMessageEvent(cm, [html], _options) {
 			combat = game.combats.get(combatId),
 			combatant = combat?.combatants.get(combatantId);
 		if (combatant?.token) {
-			const name = html.querySelector('.actor .name-box .name');
+			const name = nativeHtml.querySelector('.actor .name-box .name');
 			if (name) name.textContent = combatant.token.name;
-			html.classList.add('obfuscated');
+			nativeHtml.classList.add('obfuscated');
 		}
 	}
 }
@@ -726,7 +737,7 @@ async function createMissedTurnCard(data, context) {
         ui.notifications.info("Did " + strMissedTurnPlayer + " miss their turn?", {permanent: false, console: false});
     }
     const msgData = {
-        content: `<div class="coffee-pub crier"><span class="missed-turn-icon"><i class="fas fa-fire"></i></span><span class="missed-combatant">${data.last.combatant.name}</span> <span class="missed-turn-text"> may have missed a turn.</span></div>`,
+        content: `<div class="coffee-pub crier"><span class="missed-turn-icon"><i class="fa-solid fa-fire"></i></span><span class="missed-combatant">${data.last.combatant.name}</span> <span class="missed-turn-text"> may have missed a turn.</span></div>`,
         rollMode: 'selfroll',
         whisper: [...game.users.filter(u => u.isGM)],
         speaker: { scene, actor, token, alias },
