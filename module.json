@@ -13,9 +13,9 @@
   "license": "LICENSE",
 
   "compatibility": {
-    "minimum": "13.0.0",
-    "verified": "13.0.0",
-    "maximum": "14"
+    "minimum": "13",
+    "verified": "13",
+    "maximum": "13"
   },
   "socket": "",
   "library": "",
