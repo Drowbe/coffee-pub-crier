@@ -767,6 +767,10 @@ async function generateCards(info, context) {
 		debugLog('GENERATE CARDS: Skipping - combatant defeated');
 		return msgs; // undesired
 	}
+	if (info.hidden) {
+		debugLog('GENERATE CARDS: Skipping - combatant hidden');
+		return msgs; // don't show card for hidden monsters
+	}
 	if (info.last?.combatant != null && info.last.combatant.id === info.combatant.id) {
 		BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: Skipping - same combatant as last', { 
 			lastCombatantId: info.last?.combatant?.id, 
