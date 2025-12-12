@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.0.1]
+
+### Changed
+- **Hidden Monster Cards**: Turn cards are no longer displayed for monsters that are hidden in the combat tracker
+- **Hidden Canvas Tokens**: Turn cards are no longer displayed for NPC tokens that are hidden on the canvas (player cards always show regardless of canvas visibility)
+
 ## [13.0.0] - v13 Migration Complete
 
 ### Important Notice
