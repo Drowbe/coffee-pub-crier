@@ -1023,11 +1023,15 @@ async function postNewTurnCard(combat, context) {
      }
     // Set the kind of image to set in the turn card
     if (info.portraitStyle == "portrait") {
-        if (strActorId.length == 0) {
-            // string is empty, so use the token
-            let portraitImg = null;
-            
-            // Try to get token image
+        // Try to get portrait image for all actors (both players and NPCs)
+        let portraitImg = null;
+        
+        if (info.actor) {
+            portraitImg = await getPortraitImage(info.actor);
+        }
+        
+        // Fallback to token image if portrait is not available
+        if (!portraitImg) {
             if (tokenDoc) {
                 portraitImg = await getTokenImage(tokenDoc);
             }
@@ -1039,17 +1043,12 @@ async function postNewTurnCard(combat, context) {
                     portraitImg = await getTokenImage(protoToken);
                 }
             }
-            
-            // Final fallback
-            info.portrait = portraitImg || "icons/svg/mystery-man.svg";
-
-            debugLog('Turn Card Image TOKEN IF NOT ACTOR?. info.portrait:', () => info.portrait);
-        } else {
-            const actorPortrait = game.actors.get(strActorId);
-            info.portrait = actorPortrait ? await getPortraitImage(actorPortrait) : "icons/svg/mystery-man.svg";
-
-            debugLog('Turn Card Image PORTRAIT. info.portrait:', () => info.portrait);
         }
+        
+        // Final fallback
+        info.portrait = portraitImg || "icons/svg/mystery-man.svg";
+
+        debugLog('Turn Card Image PORTRAIT. info.portrait:', () => info.portrait);
     } else if (info.portraitStyle == "token") {
         let tokenImg = null;
         
