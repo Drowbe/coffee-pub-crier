@@ -11,24 +11,8 @@ import { MODULE, CRIER  } from './const.js';
   
 export const registerSettings = async () => {
     try {
-        console.log('🔧 CRIER:Coffee Pub Crier: Starting settings registration...');
-        console.log('🔧 CRIER:Blacksmith available:', !!BlacksmithModuleManager);
-        console.log('🔧 CRIER:BlacksmithAPIConstants available:', typeof BlacksmithAPIConstants === 'function');
-        console.log('🔧 CRIER:BlacksmithConstants available:', !!BlacksmithConstants);
-
-        // -------------------------------------------------------------- 
-        // Register settings...
-        console.log('🔧 Coffee Pub Crier: Registering settings...');
-        
         // Get constants using the API function approach
         const constants = BlacksmithAPIConstants ? BlacksmithAPIConstants() : BlacksmithConstants;
-        if (constants) {
-            console.log('🔧 CRIER:BLACKSMITH.strDefaultCardTheme:', constants.strDefaultCardTheme);
-            console.log('🔧 CRIER:BLACKSMITH.arrThemeChoices:', constants.arrThemeChoices);
-            console.log('🔧 CRIER:BLACKSMITH.arrIconChoices:', constants.arrIconChoices);
-            console.log('🔧 CRIER:BLACKSMITH.arrSoundChoices:', constants.arrSoundChoices);
-            console.log('🔧 CRIER:BLACKSMITH.arrBackgroundImageChoices:', constants.arrBackgroundImageChoices);
-        }
 
 		// -- TITLE --
 		// ------------------------------------------------------------
@@ -88,8 +72,6 @@ export const registerSettings = async () => {
 				'error': 'Failed to load themes - check Blacksmith module'
 			}
 		});
-		
-		console.log('🔧 Round Card Style registered with choices:', constants?.arrThemeChoices ? `${Object.keys(constants.arrThemeChoices).length} themes` : 'error fallback');
 		// -- Round Icon --
 		game.settings.register(MODULE.ID, CRIER.roundIconStyle, {
 			name: MODULE.ID + '.roundIconStyle-Label',
@@ -102,8 +84,6 @@ export const registerSettings = async () => {
 				'error': 'Failed to load icons - check Blacksmith module'
 			},
 		});
-		
-		console.log('🔧 Round Icon Style registered with choices:', constants?.arrIconChoices ? `${Object.keys(constants.arrIconChoices).length} icons` : 'error fallback');
 
 		// -- ROUND SETTINGS --
 		// ------------------------------------------------------------
@@ -399,14 +379,6 @@ export const registerSettings = async () => {
 		});
 
         // -------------------------------------------------------------- 
-        
-        console.log('✅ Coffee Pub Crier: Settings registration completed successfully');
-        console.log('🔧 Total settings registered:', Object.keys(CRIER).length);
-        
-        // Verify settings were actually registered
-        const registeredSettings = Array.from(game.settings.settings).filter(s => s[1].module === MODULE.ID);
-        console.log('🔧 FoundryVTT registered settings count:', registeredSettings.length);
-        console.log('🔧 Registered setting keys:', registeredSettings.map(s => s[1].key));
         
     } catch (error) {
         console.error('❌ Coffee Pub Crier: Failed to register settings with new Blacksmith API:', error);

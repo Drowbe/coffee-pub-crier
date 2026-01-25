@@ -20,7 +20,6 @@ Hooks.once('ready', () => {
             name: MODULE.NAME,
             version: MODULE.VERSION
         });
-        console.log('✅ Module ' + MODULE.NAME + ' registered with Blacksmith successfully');
     } catch (error) {
         console.error('❌ Failed to register ' + MODULE.NAME + ' with Blacksmith:', error);
     }
@@ -210,13 +209,6 @@ Hooks.once('ready', async () => {
                         combatant.initiative !== null && combatant.initiative !== undefined
                     );
                     
-                    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'HOOK: preUpdateCombat - checking initiatives after update', { 
-                        combat: combat.id,
-                        allHaveInitiative,
-                        combatantsCount: combatantsArray.length,
-                        initiativeData: combatantsArray.map(c => ({ name: c.name, initiative: c.initiative }))
-                    }, true, false);
-                    
                     // If all initiatives are now rolled, trigger turn card creation
                     if (allHaveInitiative) {
                         debugLog('HOOK: preUpdateCombat - all initiatives rolled, triggering turn card');
@@ -250,22 +242,6 @@ Hooks.once('ready', async () => {
                 const turnChanged = hasTurnUpdate;
                 const roundChanged = hasRoundUpdate;
                 
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'HOOK: updateCombat hook called', { 
-                    combat: combat.id, 
-                    update, 
-                    context, 
-                    userId,
-                    hasTurnUpdate,
-                    hasRoundUpdate,
-                    currentTurn,
-                    currentRound,
-                    newTurn,
-                    newRound,
-                    turnChanged,
-                    roundChanged,
-                    shouldProcess: turnChanged || roundChanged
-                }, true, false);
-                
                 // Only process if there's an actual turn or round change
                 if (turnChanged || roundChanged) {
                     // Reset lastCombatant tracking if a new round starts
@@ -293,222 +269,10 @@ Hooks.once('ready', async () => {
             }
         });
         
-        console.log('✅ Coffee Pub Crier: Module initialized successfully with Blacksmith API');
     } catch (error) {
         console.error('❌ Coffee Pub Crier: Failed to initialize:', error);
     }
 });
-
-// Global testing function for debugging
-window.testCrierBlacksmith = function() {
-    console.log('🧪 COFFEE PUB CRIER - BLACKSMITH INTEGRATION TEST');
-    console.log('================================================');
-    
-    // Test Blacksmith API availability
-    console.log('✅ Blacksmith API Available:', {
-        BlacksmithUtils: !!BlacksmithUtils,
-        BlacksmithModuleManager: !!BlacksmithModuleManager,
-        BlacksmithHookManager: !!BlacksmithHookManager,
-        BlacksmithConstants: !!BlacksmithConstants,
-        BlacksmithAPIConstants: typeof BlacksmithAPIConstants === 'function',
-        COFFEEPUB: typeof COFFEEPUB !== 'undefined' ? !!COFFEEPUB : false
-    });
-    
-    // Test module registration
-    console.log('✅ Module Registration:', {
-        moduleId: MODULE.ID,
-        moduleName: MODULE.NAME,
-        moduleVersion: MODULE.VERSION
-    });
-    
-    // Test settings
-    console.log('✅ Settings Status:', {
-        roundInitialized: getRoundInitialized(),
-        turnCycling: game.settings.get(MODULE.ID, CRIER.turnCycling),
-        roundCycling: game.settings.get(MODULE.ID, CRIER.roundCycling),
-        turnCardStyle: game.settings.get(MODULE.ID, CRIER.turnCardStyle),
-        roundCardStyle: game.settings.get(MODULE.ID, CRIER.roundCardStyle)
-    });
-    
-    // Test templates
-    console.log('✅ Templates Status:', {
-        turnTemplate: !!turnTemplate,
-        roundTemplate: !!roundTemplate,
-        turnTemplateType: typeof turnTemplate,
-        roundTemplateType: typeof roundTemplate
-    });
-    
-    // Test combat state
-    console.log('✅ Combat State:', {
-        hasActiveCombat: !!game.combat,
-        combatId: game.combat?.id,
-        combatRound: game.combat?.round,
-        combatTurn: game.combat?.turn,
-        combatantsCount: game.combat?.combatants?.size || 0,
-        lastCombatant: lastCombatant.combatant?.name || 'None'
-    });
-    
-    // Test Blacksmith constants (with proper error handling)
-    try {
-        // Try function approach first, then fallback to global object
-        const constants = BlacksmithAPIConstants ? BlacksmithAPIConstants() : BlacksmithConstants;
-        if (constants) {
-            console.log('✅ Blacksmith Constants:', {
-                source: BlacksmithAPIConstants ? 'BlacksmithAPIConstants()' : 'BlacksmithConstants',
-                hasThemeChoices: !!constants.arrThemeChoices,
-                hasIconChoices: !!constants.arrIconChoices,
-                hasSoundChoices: !!constants.arrSoundChoices,
-                themeChoicesCount: Object.keys(constants.arrThemeChoices || {}).length,
-                iconChoicesCount: Object.keys(constants.arrIconChoices || {}).length,
-                soundChoicesCount: Object.keys(constants.arrSoundChoices || {}).length
-            });
-        } else {
-            console.log('⚠️ Blacksmith Constants: Not available yet - may need to wait for Blacksmith to fully load');
-        }
-    } catch (error) {
-        console.log('⚠️ Blacksmith Constants: Error accessing constants:', error.message);
-    }
-    
-    // Test Volume constants
-    try {
-        const volumeNormal = BlacksmithAPIConstants?.SOUNDVOLUMENORMAL || BlacksmithConstants?.SOUNDVOLUMENORMAL;
-        const volumeSoft = BlacksmithAPIConstants?.SOUNDVOLUMESOFT || BlacksmithConstants?.SOUNDVOLUMESOFT;
-        if (volumeNormal) {
-            console.log('✅ Volume Constants:', {
-                hasSoundVolumeNormal: !!volumeNormal,
-                soundVolumeNormal: volumeNormal,
-                hasSoundVolumeSoft: !!volumeSoft,
-                soundVolumeSoft: volumeSoft
-            });
-        } else {
-            console.log('⚠️ Volume Constants: Not available yet - may need to wait for Blacksmith to fully load');
-        }
-    } catch (error) {
-        console.log('⚠️ Volume Constants: Error accessing constants:', error.message);
-    }
-    
-    // Test Theme constants
-    try {
-        const themeGreen = constants?.THEMEGREEN;
-        const themeDark = constants?.THEMEDARK;
-        const defaultTheme = constants?.strDefaultCardTheme;
-        if (themeGreen || themeDark || defaultTheme) {
-            console.log('✅ Theme Constants:', {
-                hasThemeGreen: !!themeGreen,
-                themeGreen: themeGreen,
-                hasThemeDark: !!themeDark,
-                themeDark: themeDark,
-                hasDefaultTheme: !!defaultTheme,
-                defaultTheme: defaultTheme
-            });
-        } else {
-            console.log('⚠️ Theme Constants: Not available yet - may need to wait for Blacksmith to fully load');
-        }
-    } catch (error) {
-        console.log('⚠️ Theme Constants: Error accessing constants:', error.message);
-    }
-    
-    // Test Icon constants
-    try {
-        const iconQueen = constants?.ICONQUEEN;
-        const iconShield = constants?.ICONSHIELD;
-        if (iconQueen || iconShield) {
-            console.log('✅ Icon Constants:', {
-                hasIconQueen: !!iconQueen,
-                iconQueen: iconQueen,
-                hasIconShield: !!iconShield,
-                iconShield: iconShield
-            });
-        } else {
-            console.log('⚠️ Icon Constants: Not available yet - may need to wait for Blacksmith to fully load');
-        }
-    } catch (error) {
-        console.log('⚠️ Icon Constants: Error accessing constants:', error.message);
-    }
-    
-    // Test Sound constants
-    try {
-        const soundGong = constants?.SOUNDGONG;
-        if (soundGong) {
-            console.log('✅ Sound Constants:', {
-                hasSoundGong: !!soundGong,
-                soundGong: soundGong
-            });
-        } else {
-            console.log('⚠️ Sound Constants: Not available yet - may need to wait for Blacksmith to fully load');
-        }
-    } catch (error) {
-        console.log('⚠️ Sound Constants: Error accessing constants:', error.message);
-    }
-    
-    // Test Integration Patterns
-    console.log('🧪 INTEGRATION PATTERN TESTS:');
-    console.log('================================================');
-    
-    // Test 1: Settings fallback pattern
-    try {
-        const testThemeFallback = constants?.strDefaultCardTheme || constants?.THEMEGREEN || 'cardsgreen';
-        const testIconFallback = constants?.ICONQUEEN || 'fa-chess-queen';
-        const testSoundFallback = constants?.SOUNDGONG || 'gong';
-        const testVolumeFallback = BlacksmithAPIConstants?.SOUNDVOLUMENORMAL || BlacksmithConstants?.SOUNDVOLUMENORMAL || BlacksmithAPIConstants?.SOUNDVOLUMESOFT || BlacksmithConstants?.SOUNDVOLUMESOFT || 0.5;
-        
-        console.log('✅ Fallback Pattern Tests:', {
-            themeFallback: testThemeFallback,
-            iconFallback: testIconFallback,
-            soundFallback: testSoundFallback,
-            volumeFallback: testVolumeFallback,
-            allPatternsWorking: !!(testThemeFallback && testIconFallback && testSoundFallback && testVolumeFallback)
-        });
-    } catch (error) {
-        console.log('⚠️ Fallback Pattern Tests: Error testing patterns:', error.message);
-    }
-    
-    // Test 2: Settings registration pattern
-    try {
-        const roundCardStyle = game.settings.get(MODULE.ID, CRIER.roundCardStyle);
-        const turnCardStyle = game.settings.get(MODULE.ID, CRIER.turnCardStyle);
-        const roundIconStyle = game.settings.get(MODULE.ID, CRIER.roundIconStyle);
-        const turnIconStyle = game.settings.get(MODULE.ID, CRIER.turnIconStyle);
-        
-        console.log('✅ Settings Registration Tests:', {
-            roundCardStyle: roundCardStyle,
-            turnCardStyle: turnCardStyle,
-            roundIconStyle: roundIconStyle,
-            turnIconStyle: turnIconStyle,
-            allSettingsLoaded: !!(roundCardStyle && turnCardStyle && roundIconStyle && turnIconStyle)
-        });
-    } catch (error) {
-        console.log('⚠️ Settings Registration Tests: Error testing settings:', error.message);
-    }
-    
-    // Test 3: Sound playback pattern
-    try {
-        const testSound = 'modules/coffee-pub-blacksmith/sounds/battlecry.mp3';
-        const testVolume = BlacksmithAPIConstants?.SOUNDVOLUMENORMAL || BlacksmithConstants?.SOUNDVOLUMENORMAL || BlacksmithAPIConstants?.SOUNDVOLUMESOFT || BlacksmithConstants?.SOUNDVOLUMESOFT || 0.5;
-        
-        console.log('✅ Sound Playback Pattern Tests:', {
-            testSound: testSound,
-            testVolume: testVolume,
-            volumeType: typeof testVolume,
-            patternReady: !!(testSound && testVolume)
-        });
-    } catch (error) {
-        console.log('⚠️ Sound Playback Pattern Tests: Error testing sound patterns:', error.message);
-    }
-    
-    console.log('================================================');
-    console.log('🧪 Test completed! Check the results above.');
-    
-    return {
-        blacksmithAvailable: !!(BlacksmithUtils && BlacksmithModuleManager && BlacksmithHookManager),
-        moduleRegistered: true,
-        settingsLoaded: true,
-        templatesLoaded: !!(turnTemplate && roundTemplate),
-        combatActive: !!game.combat,
-        constantsAvailable: !!(BlacksmithAPIConstants || BlacksmithConstants),
-        integrationTestsPassed: true
-    };
-};
 
 // ================================================================== 
 // ===== REGISTER COMMON ============================================
@@ -776,12 +540,6 @@ async function generateCards(info, context) {
 		return msgs; // don't show card for NPCs hidden on canvas
 	}
 	if (info.last?.combatant != null && info.last.combatant.id === info.combatant.id) {
-		BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: Skipping - same combatant as last', { 
-			lastCombatantId: info.last?.combatant?.id, 
-			currentCombatantId: info.combatant?.id,
-			lastCombatantName: info.last?.combatant?.name,
-			currentCombatantName: info.combatant?.name
-		}, true, false);
 		return msgs; // don't report the same thing multiple times
 	}
 
@@ -789,23 +547,12 @@ async function generateCards(info, context) {
 	const minPerm = getPermissionLevels().OBSERVER;
 	const defaultVisible = info.hidden ? false : (getDefaultPermission(info.actor ?? info.tokenDoc ?? info.combatant) ?? 0) >= minPerm;
 
-	// Set Data
-	BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: About to render template', { 
-		hasTemplate: !!turnTemplate, 
-		turnTemplateType: typeof turnTemplate,
-		turnTemplateValue: turnTemplate 
-	}, true, false);
-	
 	if (!turnTemplate) {
 		debugLog('GENERATE CARDS: ERROR - turnTemplate is not loaded');
 		return msgs;
 	}
 	
 	const renderedContent = turnTemplate(info, { allowProtoMethodsByDefault: true, allowProtoPropertiesByDefault: true });
-	BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'GENERATE CARDS: Template rendered', { 
-		contentLength: renderedContent?.length || 0,
-		contentPreview: renderedContent?.substring(0, 200) + '...'
-	}, true, false);
 	
 	const cardData = {
 		content: renderedContent,
@@ -844,11 +591,6 @@ async function createNewRoundCard(combat) {
     const data = { combat };
     if (override) data.message = override.replace('{round}', combat.round);
     else data.message = game.i18n.format('coffee-pub-crier.RoundCycling', { round: combat.round });
-    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'CREATE NEW ROUND CARD: About to render template', { 
-        hasTemplate: !!roundTemplate, 
-        roundTemplateType: typeof roundTemplate,
-        roundTemplateValue: roundTemplate 
-    }, true, false);
     
     if (!roundTemplate) {
         debugLog('CREATE NEW ROUND CARD: ERROR - roundTemplate is not loaded');
@@ -1386,15 +1128,6 @@ async function processTurn(combat, _update, context, userId) {
 
     // Send the message
 	if (msgs.length) {
-		BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'PROCESS TURN: Creating chat messages', { 
-			count: msgs.length,
-			messageTypes: msgs.map(msg => ({
-				type: msg.flags?.[MODULE.ID]?.turnAnnounce ? 'turn' : 
-					  msg.flags?.[MODULE.ID]?.roundCycling ? 'round' : 'other',
-				contentLength: msg.content?.length || 0,
-				hasFlags: !!msg.flags?.[MODULE.ID]
-			}))
-		}, true, false);
 		for (const msg of msgs) {
 			await ChatMessage.create(msg);
 		}
