@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.0.3]
+
+### Removed
+- **Verbose Debug Code**: Removed development console.log statements from settings registration, module constants initialization, and removed the global `testCrierBlacksmith()` test function
+- **Routine Operation Debug Messages**: Removed verbose debug messages that were firing during normal operation:
+  - "HOOK: updateCombat hook called" (fired on every combat update)
+  - "HOOK: preUpdateCombat - checking initiatives after update"
+  - "GENERATE CARDS: About to render template" (fired every card generation)
+  - "GENERATE CARDS: Template rendered"
+  - "GENERATE CARDS: Skipping - same combatant as last"
+  - "CREATE NEW ROUND CARD: About to render template" (fired every round)
+  - "PROCESS TURN: Creating chat messages" (fired every turn)
+
+### Technical
+- **Cleaner Console Output**: Console output is now much quieter during normal operation, with only error messages and gated debug logs (when debug mode is enabled) appearing
+
 ## [13.0.2]
 
 ### Fixed
