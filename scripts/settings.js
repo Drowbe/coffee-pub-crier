@@ -4,6 +4,7 @@
 
 // Grab the module data
 import { MODULE, CRIER  } from './const.js';
+import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 
 // ================================================================== 
 // ===== SETTINGS ==================================================
@@ -14,66 +15,127 @@ import { MODULE, CRIER  } from './const.js';
 // ================================================================== 
 
 /**
- * Get Blacksmith theme choices for round cards
+ * Get Blacksmith theme choices for round cards using Chat Cards API
  * Returns choices that map to Blacksmith announcement themes
  * New themes listed first, legacy themes with "(Legacy)" suffix
  */
-function getRoundCardThemeChoices() {
-	// New Blacksmith themes (listed first)
-	const newThemes = {
-		'theme-announcement-green': 'Green Moss (Announcement)',
-		'theme-announcement-red': 'Red Wine (Announcement)',
-		'theme-announcement-blue': 'Blue Velvet (Announcement)',
-		'theme-default': 'Simple',
-		'theme-blue': 'Blue Velvet',
-		'theme-green': 'Green Moss',
-		'theme-red': 'Red Wine'
-	};
-	
-	// Legacy themes (mapped to new themes for backward compatibility)
-	// Only the main legacy themes - minimal/simple variants removed (they map to same themes)
-	const legacyThemes = {
+async function getRoundCardThemeChoices() {
+	try {
+		const blacksmith = await BlacksmithAPI.get();
+		const chatCardsAPI = blacksmith?.chatCards;
+		
+		if (!chatCardsAPI) {
+			console.warn('Coffee Pub Crier: Blacksmith Chat Cards API not available, using fallback');
+			return getRoundCardThemeChoicesFallback();
+		}
+		
+		// Get announcement themes from API with CSS class names as keys (round cards are announcements)
+		const newThemes = chatCardsAPI.getAnnouncementThemeChoicesWithClassNames();
+		
+		// Also include card themes for round cards (some users may want regular card themes)
+		const cardThemes = chatCardsAPI.getCardThemeChoicesWithClassNames();
+		
+		// Combine: announcements first, then card themes
+		const allNewThemes = { ...newThemes, ...cardThemes };
+		
+		// Legacy themes (mapped to new themes for backward compatibility)
+		// Only the main legacy themes - minimal/simple variants removed (they map to same themes)
+		const legacyThemes = {
+			'cardsgreen': 'Green Moss (Announcement) (Legacy)',
+			'cardsred': 'Red Wine (Announcement) (Legacy)',
+			'cardsdark': 'Dark And Stormy (Legacy)',
+			'cardsblue': 'Blue Velvet (Legacy)'
+		};
+		
+		return { ...allNewThemes, ...legacyThemes };
+	} catch (error) {
+		console.error('Coffee Pub Crier: Error getting round card themes from API:', error);
+		return getRoundCardThemeChoicesFallback();
+	}
+}
+
+/**
+ * Fallback theme choices if API is unavailable
+ */
+function getRoundCardThemeChoicesFallback() {
+	// Fallback returns CSS class names as keys (matching API format)
+	return {
+		'theme-announcement-green': 'Announcement Green',
+		'theme-announcement-red': 'Announcement Red',
+		'theme-announcement-blue': 'Announcement Blue',
+		'theme-default': 'Default',
+		'theme-blue': 'Blue',
+		'theme-green': 'Green',
+		'theme-red': 'Red',
 		'cardsgreen': 'Green Moss (Announcement) (Legacy)',
 		'cardsred': 'Red Wine (Announcement) (Legacy)',
 		'cardsdark': 'Dark And Stormy (Legacy)',
 		'cardsblue': 'Blue Velvet (Legacy)'
 	};
-	
-	return { ...newThemes, ...legacyThemes };
 }
 
 /**
- * Get Blacksmith theme choices for turn cards
+ * Get Blacksmith theme choices for turn cards using Chat Cards API
  * Returns choices that map to Blacksmith card themes
  * New themes listed first, legacy themes with "(Legacy)" suffix
  */
-function getTurnCardThemeChoices() {
-	// New Blacksmith themes (listed first)
-	const newThemes = {
-		'theme-default': 'Simple',
-		'theme-blue': 'Blue Velvet',
-		'theme-green': 'Green Moss',
-		'theme-red': 'Red Wine',
-		'theme-orange': 'Orange'
-	};
-	
-	// Legacy themes (mapped to new themes for backward compatibility)
-	// Only the main legacy themes - minimal/simple variants removed (they map to same themes)
-	const legacyThemes = {
+async function getTurnCardThemeChoices() {
+	try {
+		const blacksmith = await BlacksmithAPI.get();
+		const chatCardsAPI = blacksmith?.chatCards;
+		
+		if (!chatCardsAPI) {
+			console.warn('Coffee Pub Crier: Blacksmith Chat Cards API not available, using fallback');
+			return getTurnCardThemeChoicesFallback();
+		}
+		
+		// Get card themes from API with CSS class names as keys (turn cards are regular cards)
+		const newThemes = chatCardsAPI.getCardThemeChoicesWithClassNames();
+		
+		// Legacy themes (mapped to new themes for backward compatibility)
+		// Only the main legacy themes - minimal/simple variants removed (they map to same themes)
+		const legacyThemes = {
+			'cardsdark': 'Dark And Stormy (Legacy)',
+			'cardsgreen': 'Green Moss (Legacy)',
+			'cardsred': 'Red Wine (Legacy)',
+			'cardsblue': 'Blue Velvet (Legacy)',
+			'cardsbrown': 'Brown Earth (Legacy)'
+		};
+		
+		return { ...newThemes, ...legacyThemes };
+	} catch (error) {
+		console.error('Coffee Pub Crier: Error getting turn card themes from API:', error);
+		return getTurnCardThemeChoicesFallback();
+	}
+}
+
+/**
+ * Fallback theme choices if API is unavailable
+ */
+function getTurnCardThemeChoicesFallback() {
+	// Fallback returns CSS class names as keys (matching API format)
+	return {
+		'theme-default': 'Default',
+		'theme-blue': 'Blue',
+		'theme-green': 'Green',
+		'theme-red': 'Red',
+		'theme-orange': 'Orange',
 		'cardsdark': 'Dark And Stormy (Legacy)',
 		'cardsgreen': 'Green Moss (Legacy)',
 		'cardsred': 'Red Wine (Legacy)',
 		'cardsblue': 'Blue Velvet (Legacy)',
 		'cardsbrown': 'Brown Earth (Legacy)'
 	};
-	
-	return { ...newThemes, ...legacyThemes };
 }
 
 export const registerSettings = async () => {
     try {
         // Get constants using the API function approach
         const constants = BlacksmithAPIConstants ? BlacksmithAPIConstants() : BlacksmithConstants;
+        
+        // Get theme choices from Chat Cards API (await before using in settings)
+        const roundCardThemeChoices = await getRoundCardThemeChoices();
+        const turnCardThemeChoices = await getTurnCardThemeChoices();
 
 		// -- TITLE --
 		// ------------------------------------------------------------
@@ -122,15 +184,15 @@ export const registerSettings = async () => {
 			default: true
 		});
 		// -- Round Card Style --
-		// Updated to use Blacksmith theme choices for round cards
+		// Updated to use Blacksmith Chat Cards API for round cards
 		game.settings.register(MODULE.ID, CRIER.roundCardStyle, {
 			name: MODULE.ID + '.roundCardStyle-Label',
 			hint: MODULE.ID + '.roundCardStyle-Hint',
 			scope: 'world',
 			config: true,
 			type: String,
-			default: 'cardsgreen', // Maps to theme-announcement-green
-			choices: getRoundCardThemeChoices()
+			default: 'cardsgreen', // Legacy key - maps to 'theme-announcement-green'. New themes use CSS class names directly (e.g., 'theme-announcement-green')
+			choices: roundCardThemeChoices
 		});
 		// -- Round Icon --
 		game.settings.register(MODULE.ID, CRIER.roundIconStyle, {
@@ -228,15 +290,15 @@ export const registerSettings = async () => {
 			default: 'full',
 		});
 		// -- Turn Card Color --
-		// Updated to use Blacksmith theme choices for turn cards
+		// Updated to use Blacksmith Chat Cards API for turn cards
 		game.settings.register(MODULE.ID, CRIER.turnCardStyle, {
 			name: MODULE.ID + '.turnCardStyle-Label',
 			hint: MODULE.ID + '.turnCardStyle-Hint',
 			scope: 'world',
 			config: true,
 			type: String,
-			default: 'cardsdark',
-			choices: getTurnCardThemeChoices(),
+			default: 'cardsdark', // Legacy key - maps to 'theme-default'. New themes use CSS class names directly (e.g., 'theme-default')
+			choices: turnCardThemeChoices,
 		});
 		// -- Turn Card Color --
 		game.settings.register(MODULE.ID, CRIER.turnIconStyle, {

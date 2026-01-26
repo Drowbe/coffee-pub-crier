@@ -57,7 +57,13 @@ let roundInitialized = false;
 
 // Helper functions to sync with persistent setting
 function getRoundInitialized() {
-    return game.settings.get(MODULE.ID, CRIER.roundInitialized);
+    try {
+        return game.settings.get(MODULE.ID, CRIER.roundInitialized);
+    } catch (error) {
+        // Setting not registered yet - return default
+        console.warn('Coffee Pub Crier: roundInitialized setting not yet registered, using default false');
+        return false;
+    }
 }
 
 function setRoundInitialized(value) {
@@ -174,8 +180,8 @@ Hooks.once('ready', async () => {
         // Initialize last combatant
         lastCombatant.combatant = game.combat?.combatant ?? null;
         
-        // Register settings now that Blacksmith is ready
-        registerSettings();
+        // Register settings now that Blacksmith is ready (await since it's async)
+        await registerSettings();
         
         // Initialize round initialization flag from persistent setting (after settings are registered)
         roundInitialized = getRoundInitialized();
@@ -562,44 +568,78 @@ async function generateCards(info, context) {
 // ************************************
 // ** MAP ROUND CARD STYLE TO BLACKSMITH THEME
 // ************************************
-function mapRoundCardStyleToTheme(roundCardStyle) {
-    // If already a new theme key (starts with 'theme-'), return as-is
+async function mapRoundCardStyleToTheme(roundCardStyle) {
+    // If already a CSS class name (starts with 'theme-'), return as-is
     if (roundCardStyle?.startsWith('theme-')) {
         return roundCardStyle;
     }
-    // Map legacy keys to new themes
-    const themeMap = {
-        'cardsdark': 'theme-default',
-        'cardsgreen': 'theme-announcement-green',
-        'cardsred': 'theme-announcement-red',
-        'cardsblue': 'theme-announcement-blue',
-        'cardsminimalred': 'theme-announcement-red',
-        'cardsminimalplain': 'theme-default',
-        'cardssimple': 'theme-default'
-    };
-    return themeMap[roundCardStyle] || 'theme-default';
+    
+    // If it's a legacy key (starts with 'cards'), map it to CSS class name
+    if (roundCardStyle?.startsWith('cards')) {
+        const themeMap = {
+            'cardsdark': 'theme-default',
+            'cardsgreen': 'theme-announcement-green',
+            'cardsred': 'theme-announcement-red',
+            'cardsblue': 'theme-announcement-blue',
+            'cardsminimalred': 'theme-announcement-red',
+            'cardsminimalplain': 'theme-default',
+            'cardssimple': 'theme-default'
+        };
+        return themeMap[roundCardStyle] || 'theme-default';
+    }
+    
+    // If it's a theme ID (not a class name), try to convert it using API
+    try {
+        const blacksmith = await BlacksmithAPI.get();
+        const chatCardsAPI = blacksmith?.chatCards;
+        if (chatCardsAPI) {
+            return chatCardsAPI.getThemeClassName(roundCardStyle) || 'theme-default';
+        }
+    } catch (error) {
+        console.warn('Coffee Pub Crier: Error accessing Chat Cards API, using fallback:', error);
+    }
+    
+    // Fallback to default
+    return 'theme-default';
 }
 
 // ************************************
 // ** MAP TURN CARD STYLE TO BLACKSMITH THEME
 // ************************************
-function mapTurnCardStyleToTheme(turnCardStyle) {
-    // If already a new theme key (starts with 'theme-'), return as-is
+async function mapTurnCardStyleToTheme(turnCardStyle) {
+    // If already a CSS class name (starts with 'theme-'), return as-is
     if (turnCardStyle?.startsWith('theme-')) {
         return turnCardStyle;
     }
-    // Map legacy keys to new themes
-    const themeMap = {
-        'cardsdark': 'theme-default',
-        'cardsgreen': 'theme-green',
-        'cardsred': 'theme-red',
-        'cardsblue': 'theme-blue',
-        'cardsbrown': 'theme-default',
-        'cardsminimalred': 'theme-red',
-        'cardsminimalplain': 'theme-default',
-        'cardssimple': 'theme-default'
-    };
-    return themeMap[turnCardStyle] || 'theme-default';
+    
+    // If it's a legacy key (starts with 'cards'), map it to CSS class name
+    if (turnCardStyle?.startsWith('cards')) {
+        const themeMap = {
+            'cardsdark': 'theme-default',
+            'cardsgreen': 'theme-green',
+            'cardsred': 'theme-red',
+            'cardsblue': 'theme-blue',
+            'cardsbrown': 'theme-default',
+            'cardsminimalred': 'theme-red',
+            'cardsminimalplain': 'theme-default',
+            'cardssimple': 'theme-default'
+        };
+        return themeMap[turnCardStyle] || 'theme-default';
+    }
+    
+    // If it's a theme ID (not a class name), try to convert it using API
+    try {
+        const blacksmith = await BlacksmithAPI.get();
+        const chatCardsAPI = blacksmith?.chatCards;
+        if (chatCardsAPI) {
+            return chatCardsAPI.getThemeClassName(turnCardStyle) || 'theme-default';
+        }
+    } catch (error) {
+        console.warn('Coffee Pub Crier: Error accessing Chat Cards API, using fallback:', error);
+    }
+    
+    // Fallback to default
+    return 'theme-default';
 }
 
 // ************************************
@@ -611,12 +651,13 @@ async function createNewRoundCard(combat) {
     const roundCardStyle = await getSettingSafely(MODULE.ID, CRIER.roundCardStyle, 'cardsgreen');
     const roundIconStyle = await getSettingSafely(MODULE.ID, CRIER.roundIconStyle, 'fa-chess-queen');
     
+    const theme = await mapRoundCardStyleToTheme(roundCardStyle);
     const data = { 
         combat,
         message: override ? override.replace('{round}', combat.round) : game.i18n.format('coffee-pub-crier.RoundCycling', { round: combat.round }),
         roundCardStyle,
         roundIconStyle,
-        theme: mapRoundCardStyleToTheme(roundCardStyle)
+        theme
     };
     
     if (!roundTemplate) {
@@ -745,7 +786,7 @@ async function postNewTurnCard(combat, context) {
 	info.turnLayout = cardSettings.turnLayout ?? 'full';
 	info.turnIconStyle = cardSettings.turnIconStyle ?? 'fa-shield';
 	info.turnCardStyle = cardSettings.turnCardStyle ?? 'cardsdark';
-	info.theme = mapTurnCardStyleToTheme(info.turnCardStyle);
+	info.theme = await mapTurnCardStyleToTheme(info.turnCardStyle);
 	info.roundIconStyle = cardSettings.roundIconStyle ?? 'fa-chess-queen';
 	info.roundCardStyle = cardSettings.roundCardStyle ?? 'cardsgreen';
 	info.portraitStyle = cardSettings.portraitStyle ?? 'portrait';
