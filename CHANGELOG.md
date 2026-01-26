@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.0.4]
 
+### NOTE: Early draft release of unified themes.
+
 ### Added
 - **Blacksmith Chat Cards API Integration**: Full integration with Blacksmith's Chat Cards API for dynamic theme management
   - Round cards use `getAnnouncementThemeChoicesWithClassNames()` - only announcement themes available
