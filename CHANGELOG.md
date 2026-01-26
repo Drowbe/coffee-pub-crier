@@ -6,19 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [13.0.4]
 
 ### Added
+- **Blacksmith Chat Cards API Integration**: Full integration with Blacksmith's Chat Cards API for dynamic theme management
+  - Round cards use `getAnnouncementThemeChoicesWithClassNames()` - only announcement themes available
+  - Turn cards use `getCardThemeChoicesWithClassNames()` - only card themes available
+  - Settings store CSS class names directly (e.g., `theme-default`, `theme-blue`) eliminating ID-to-class conversion
 - **Blacksmith chat cards**: Round and turn cards now use the Coffee Pub Blacksmith chat card framework (`.blacksmith-card`, themes, `card-header`, `section-content`). Internal layout (portraits, HP, abilities, death saves) is unchanged.
-- **Round card theme mapping**: Round Card Style setting choices show Blacksmith theme names; styles map to `theme-default`, `theme-announcement-green`, `theme-announcement-red`, etc.
-- **Turn card theme mapping**: Turn Card Style setting choices show Blacksmith theme names; styles map to `theme-default`, `theme-green`, `theme-red`, `theme-blue`, etc.
 
 ### Changed
-- **Round cards**: Template uses Blacksmith structure (hide-header span, `blacksmith-card` + theme, `card-header` with icon). Round icon and message come from template; `createNewRoundCard` passes `roundCardStyle`, `roundIconStyle`, and `theme`.
-- **Turn cards**: Template wrapped in `blacksmith-card` + theme; title blocks use `card-header`, body uses `section-content`. Full, small, and none layouts preserved.
+- **Round cards**: 
+  - Template uses Blacksmith structure (hide-header span, `blacksmith-card` + theme, `card-header` with icon)
+  - Round Card Style dropdown now shows **only announcement themes** (Announcement Green, Announcement Red, Announcement Blue)
+  - Default changed from legacy `cardsgreen` to `theme-announcement-green`
+- **Turn cards**: 
+  - Template wrapped in `blacksmith-card` + theme; title blocks use `card-header`, body uses `section-content`
+  - Turn Card Style dropdown shows **only card themes** (Default, Blue, Green, Red, Orange)
+  - Default changed from legacy `cardsdark` to `theme-default`
+  - Full, small, and none layouts preserved
 - **Missed turn cards**: Now use Blacksmith framework (`blacksmith-card theme-orange`) with hide-header span. Removed JavaScript manipulation of Foundry's `.message-header`; no longer overriding core chat template styles.
-- **CSS**: Turn card styles scoped to `.blacksmith-card.crier`. Wrapper-level chrome (background, border) removed; Blacksmith themes provide card styling. HP bars, abilities, death saves, image-stack, and token backgrounds kept and scoped. Missed turn card CSS simplified and scoped to `.blacksmith-card.crier.missed-crier`.
-- **Settings**: Round and Turn Card Style dropdowns use `getRoundCardThemeChoices()` and `getTurnCardThemeChoices()` instead of Blacksmith constants.
+- **CSS**: 
+  - All styles scoped to `.blacksmith-card .section-content` only - no styling of `.card-header` or wrapper
+  - Removed all legacy theme-specific CSS (cardsdark, cardsgreen, etc.)
+  - Generic attribute selector `[class^="crier-cards-user-"]` replaces theme-specific classes
+  - Wrapper-level chrome (background, border) removed; Blacksmith themes provide card styling
+  - HP bars, abilities, death saves, image-stack, and token backgrounds kept and scoped
+- **Settings**: 
+  - Round and Turn Card Style dropdowns dynamically populated from Blacksmith Chat Cards API
+  - Theme choices use CSS class names as keys (no ID conversion needed)
+  - Settings registration now async to await API theme choices
+- **Theme Mapping**: 
+  - Simplified `mapRoundCardStyleToTheme()` and `mapTurnCardStyleToTheme()` functions
+  - Removed all legacy key mapping code (cardsdark, cardsgreen, etc.)
+  - Functions now only handle CSS class names (pass-through) or convert theme IDs via API
+
+### Removed
+- **All legacy theme code**: Removed legacy theme keys (cardsdark, cardsgreen, cardsred, cardsblue, cardsbrown, cardsminimalred, cardsminimalplain, cardssimple) from settings and mapping functions
+- **Legacy theme fallbacks**: Removed legacy theme entries from fallback functions
+- **Legacy CSS**: Removed all theme-specific CSS tied to old style names
+
+### Fixed
+- **Initialization error**: Fixed "setting is not registered" error by awaiting `registerSettings()` before accessing settings
+- **Settings timing**: Added proper async/await handling for settings registration to ensure API theme choices are available
 
 ### Deprecated
 - **Legacy round card CSS**: Previous round card rules (`.round-cycling-*`, etc.) commented out in `module.css`; migration date noted.
