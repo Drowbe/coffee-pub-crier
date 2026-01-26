@@ -1,17 +1,18 @@
 <span style="visibility: hidden">coffeepub-hide-header</span>
-<div id="crier-cards-wrapper-{{turnCardStyle}}" data-actor-id="{{actor.id}}" data-user-id="{{user.id}}" data-token-id="{{token.id}}" >
+<div class="blacksmith-card {{theme}} crier" data-actor-id="{{actor.id}}" data-user-id="{{user.id}}" data-token-id="{{token.id}}">
 	{{#if blnLayoutFull}}
-		<div id="crier-cards-title-{{turnCardStyle}}">
+		<div class="card-header" id="crier-cards-title-{{turnCardStyle}}">
 			{{#unless blnHideTurnIcon}}
 				<i class="fa-solid {{turnIconStyle}}" id="crier-cards-icon-{{turnCardStyle}}"></i>
 			{{/unless}}
 			<h1>{{{label}}}</h1>
 		</div>
+		<div class="section-content">
 		{{#unless hidePortrait}}
 			<div id="crier-cards-content-{{turnCardStyle}}">
 				{{#if hideBloodyPortrait}}
 					<img class="crier-token-background-{{tokenBackground}} under" style="width: {{tokenScale}}%;" src="{{portrait}}" />
-				{{/if}}				
+				{{/if}}
 				{{#unless hideBloodyPortrait}}
 				<div class="image-stack">
 					<div class="image-stack__item image-stack__item--top">
@@ -35,7 +36,7 @@
 						{{/if}}
 						{{#if isHurt}}
 							<div title="Current Health: {{attributeHP}} - Wounded" id="hp-progress-hurt-{{turnCardStyle}}" style="width:{{attributehpprogress}}%"></div>
-						{{/if}}			
+						{{/if}}
 						{{#if isDying}}
 							<div title="Current Health: {{attributeHP}} - Dying" id="hp-progress-dying-{{turnCardStyle}}" style="width:{{attributehpprogress}}%"></div>
 						{{/if}}
@@ -103,47 +104,50 @@
 				</div>
 			{{/unless}}
 		{{/unless}}
+		</div>
 	{{/if}}
 	{{#if blnLayoutSmall}}
-		<div class="grid-container">
-			<div class="grid-child left">
-				<div id="crier-cards-title-{{turnCardStyle}}">
-					{{#unless blnHideTurnIcon}}
-						<i class="fa-solid {{turnIconStyle}}" id="crier-cards-icon-{{turnCardStyle}}"></i>
+		<div class="card-header" id="crier-cards-title-{{turnCardStyle}}">
+			{{#unless blnHideTurnIcon}}
+				<i class="fa-solid {{turnIconStyle}}" id="crier-cards-icon-{{turnCardStyle}}"></i>
+			{{/unless}}
+			<h1>{{{label}}}</h1>
+		</div>
+		<div class="section-content">
+			<div class="grid-container">
+				<div class="grid-child left">
+					{{#unless hidePlayer}}
+						<div id="crier-cards-description-{{turnCardStyle}}">
+							<h2><span class="crier-cards-user-{{turnCardStyle}}">{{player}}</span></h2>
+						</div>
 					{{/unless}}
-					<h1>{{{label}}}</h1>
 				</div>
-				{{#unless hidePlayer}}
-					<div id="crier-cards-description-{{turnCardStyle}}">
-						<h2><span class="crier-cards-user-{{turnCardStyle}}">{{player}}</span></h2>
-					</div>
-				{{/unless}}
-			</div>		
-			<div class="grid-child right">
-				{{#unless hidePortrait}}
-					<img src="{{portrait}}" />
-				{{/unless}}
-				{{#if hidePortrait}}
-					<img src="icons/svg/combat.svg" />
-				{{/if}}
+				<div class="grid-child right">
+					{{#unless hidePortrait}}
+						<img src="{{portrait}}" />
+					{{/unless}}
+					{{#if hidePortrait}}
+						<img src="icons/svg/combat.svg" />
+					{{/if}}
+				</div>
 			</div>
 		</div>
 	{{/if}}
 	{{#if blnLayoutNone}}
-		<div id="crier-cards-title-{{turnCardStyle}}">
+		<div class="card-header" id="crier-cards-title-{{turnCardStyle}}">
 			{{#unless blnHideTurnIcon}}<i class="fa-solid {{turnIconStyle}}" id="crier-cards-icon-{{turnCardStyle}}"></i>{{/unless}}<h1>{{{label}}}</h1>
 		</div>
-		{{#unless hidePortrait}}
-			<div id="crier-cards-content-{{turnCardStyle}}">
-				<img src="{{portrait}}" />
-			</div>
-		{{/unless}}
-		{{#unless hidePlayer}}
-			<div id="crier-cards-description-{{turnCardStyle}}">
-				<h2><span class="crier-cards-user-{{turnCardStyle}}">{{player}}</span></h2>
-			</div>
-		{{/unless}}
-		
+		<div class="section-content">
+			{{#unless hidePortrait}}
+				<div id="crier-cards-content-{{turnCardStyle}}">
+					<img src="{{portrait}}" />
+				</div>
+			{{/unless}}
+			{{#unless hidePlayer}}
+				<div id="crier-cards-description-{{turnCardStyle}}">
+					<h2><span class="crier-cards-user-{{turnCardStyle}}">{{player}}</span></h2>
+				</div>
+			{{/unless}}
+		</div>
 	{{/if}}
 </div>
-

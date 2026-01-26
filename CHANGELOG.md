@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Added
+- **Blacksmith chat cards**: Round and turn cards now use the Coffee Pub Blacksmith chat card framework (`.blacksmith-card`, themes, `card-header`, `section-content`). Internal layout (portraits, HP, abilities, death saves) is unchanged.
+- **Round card theme mapping**: Round Card Style setting choices show Blacksmith theme names; styles map to `theme-default`, `theme-announcement-green`, `theme-announcement-red`, etc.
+- **Turn card theme mapping**: Turn Card Style setting choices show Blacksmith theme names; styles map to `theme-default`, `theme-green`, `theme-red`, `theme-blue`, etc.
+
+### Changed
+- **Round cards**: Template uses Blacksmith structure (hide-header span, `blacksmith-card` + theme, `card-header` with icon). Round icon and message come from template; `createNewRoundCard` passes `roundCardStyle`, `roundIconStyle`, and `theme`.
+- **Turn cards**: Template wrapped in `blacksmith-card` + theme; title blocks use `card-header`, body uses `section-content`. Full, small, and none layouts preserved.
+- **CSS**: Turn card styles scoped to `.blacksmith-card.crier`. Wrapper-level chrome (background, border) removed; Blacksmith themes provide card styling. HP bars, abilities, death saves, image-stack, and token backgrounds kept and scoped.
+- **Settings**: Round and Turn Card Style dropdowns use `getRoundCardThemeChoices()` and `getTurnCardThemeChoices()` instead of Blacksmith constants.
+
+### Deprecated
+- **Legacy round card CSS**: Previous round card rules (`.round-cycling-*`, etc.) commented out in `module.css`; migration date noted.
+- **Legacy turn card chrome**: Per-theme wrapper/title/description colors (DARK, RED, GREEN, BLUE blocks) removed in favour of Blacksmith themes.
+
+
 ## [13.0.3]
 
 ### Removed

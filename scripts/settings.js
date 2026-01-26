@@ -9,6 +9,45 @@ import { MODULE, CRIER  } from './const.js';
 // ===== SETTINGS ==================================================
 // ================================================================== 
   
+// ================================================================== 
+// ===== HELPER FUNCTIONS ==========================================
+// ================================================================== 
+
+/**
+ * Get Blacksmith theme choices for round cards
+ * Returns choices that map to Blacksmith announcement themes
+ */
+function getRoundCardThemeChoices() {
+	// Map old style values to new Blacksmith theme names for round cards
+	// We keep the old values as keys for backward compatibility, but show Blacksmith theme names
+	return {
+		'cardsgreen': 'Green Moss (Announcement)',
+		'cardsred': 'Red Wine (Announcement)',
+		'cardsdark': 'Dark And Stormy',
+		'cardsblue': 'Blue Velvet',
+		'cardsminimalred': 'Red Wine (Minimal)',
+		'cardsminimalplain': 'Simple (Minimal)',
+		'cardssimple': 'Simple'
+	};
+}
+
+/**
+ * Get Blacksmith theme choices for turn cards
+ * Returns choices that map to Blacksmith card themes
+ */
+function getTurnCardThemeChoices() {
+	return {
+		'cardsdark': 'Dark And Stormy',
+		'cardsgreen': 'Green Moss',
+		'cardsred': 'Red Wine',
+		'cardsblue': 'Blue Velvet',
+		'cardsbrown': 'Brown Earth',
+		'cardsminimalred': 'Red Wine (Minimal)',
+		'cardsminimalplain': 'Simple (Minimal)',
+		'cardssimple': 'Simple'
+	};
+}
+
 export const registerSettings = async () => {
     try {
         // Get constants using the API function approach
@@ -61,16 +100,15 @@ export const registerSettings = async () => {
 			default: true
 		});
 		// -- Round Card Style --
+		// Updated to use Blacksmith theme choices for round cards
 		game.settings.register(MODULE.ID, CRIER.roundCardStyle, {
 			name: MODULE.ID + '.roundCardStyle-Label',
 			hint: MODULE.ID + '.roundCardStyle-Hint',
 			scope: 'world',
 			config: true,
 			type: String,
-			default: constants?.strDefaultCardTheme || constants?.THEMEGREEN || 'cardsgreen',
-			choices: constants?.arrThemeChoices || {
-				'error': 'Failed to load themes - check Blacksmith module'
-			}
+			default: 'cardsgreen', // Maps to theme-announcement-green
+			choices: getRoundCardThemeChoices()
 		});
 		// -- Round Icon --
 		game.settings.register(MODULE.ID, CRIER.roundIconStyle, {
@@ -168,16 +206,15 @@ export const registerSettings = async () => {
 			default: 'full',
 		});
 		// -- Turn Card Color --
+		// Updated to use Blacksmith theme choices for turn cards
 		game.settings.register(MODULE.ID, CRIER.turnCardStyle, {
 			name: MODULE.ID + '.turnCardStyle-Label',
 			hint: MODULE.ID + '.turnCardStyle-Hint',
 			scope: 'world',
 			config: true,
 			type: String,
-			default: constants?.strDefaultCardTheme || constants?.THEMEDARK || 'cardsdark',
-			choices: constants?.arrThemeChoices || {
-				'error': 'Failed to load themes - check Blacksmith module'
-			},
+			default: 'cardsdark',
+			choices: getTurnCardThemeChoices(),
 		});
 		// -- Turn Card Color --
 		game.settings.register(MODULE.ID, CRIER.turnIconStyle, {

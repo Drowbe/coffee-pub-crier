@@ -17,9 +17,19 @@
 /* *****          ROUND CARDS             ***** */
 /* ******************************************** */
 
+/* DEPRECATED: Round card CSS - Now using Blacksmith framework
+   Commented out for reference and easy rollback if needed.
+   Migration date: 2026-01-25
+   
+   Old round cards used custom CSS classes. New implementation uses:
+   - .blacksmith-card with theme classes (theme-default, theme-announcement-green, etc.)
+   - .card-header for the round message
+   - Template now includes icon directly
+   
+   See templates/rounds.hbs for new structure.
+*/
 
-
-/* Common */
+/*
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalred .message-header,
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalplain .message-header,
 .chat-message[data-message-id].coffee-pub.round-cycling-cardssimple .message-header,
@@ -80,7 +90,6 @@
     padding-left: 0px;
     padding-right: 3px; 
 }
-/* hides the GM Icon in the round number */
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalred .message-header img,
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalplain .message-header img,
 .chat-message[data-message-id].coffee-pub.round-cycling-cardssimple .message-header img,
@@ -89,7 +98,6 @@
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsred .message-header img {
     display: none;
 }
-/* Removes the timestamp and delete icon */
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalred .message-metadata,
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalplain .message-metadata,
 .chat-message[data-message-id].coffee-pub.round-cycling-cardssimple .message-metadata,
@@ -101,7 +109,6 @@
     display: none;
 }
 
-/* --- COMMON Minimal OVERRIDES --- */
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalred div.round-message, 
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalplain div.round-message {
 	font-weight:510;
@@ -111,8 +118,6 @@
     padding-left: 5px;
     padding-right: 5px;	
 }
-/* --- COLORS --- */
-/* --- Minimal Normal CARDS --- */
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsminimalplain div.round-message {
     border-left: 2px solid #4b4a45;
     border-right: 2px solid #4b4a45;
@@ -128,14 +133,12 @@
     border-bottom: 2px solid #771410;
 }
 
-/* --- SIMPLE CARDS --- */
 .chat-message[data-message-id].coffee-pub.round-cycling-cardssimple div.round-message {
     border-left: 2px solid #4b4a45;
     border-right: 2px solid #4b4a45;
     border-top: 2px solid #4b4a45;
     border-bottom: 2px solid #4b4a45;
 }
-/* --- DARK CARDS --- */
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsdark div.round-message {
     color: #EBE9E1 !important;
     background: #0F0F0F;
@@ -144,7 +147,6 @@
     border-top: 2px solid #4E4B4B;
     border-bottom: 2px solid #4E4B4B;
 }
-/* --- RED CARDS --- */
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsred div.round-message {
     color: #EBE9E1 !important;
     background: #2D0607;
@@ -153,7 +155,6 @@
     border-top: 2px solid #771410;
     border-bottom: 2px solid #771410;
 }
-/* --- GREEN CARDS --- */
 .chat-message[data-message-id].coffee-pub.round-cycling-cardsgreen div.round-message {
     color: #EBE9E1 !important;
     background: #525F1F;
@@ -162,6 +163,7 @@
     border-top: 2px solid #798740;
     border-bottom: 2px solid #798740;
 }
+*/
 
 /* ******************************************** */
 /* *****     MISSED TURN CARDS            ***** */
@@ -231,568 +233,189 @@ span.missed-turn-text {
 /* *****           TURN CARDS             ***** */
 /* ******************************************** */
 
-/* ------------------------------------------ */
-/* -----          COLORED CARDS         ----- */
-/* ------------------------------------------ */
+/* Turn cards use .blacksmith-card + theme. Chrome (bg, border) from Blacksmith.
+   Scoped below to .blacksmith-card.crier for layout and custom features. */
 
-/* ----- Set the style and shape ----- */
-
-/* Wrapper */
-#crier-cards-wrapper-cardsgreen,
-#crier-cards-wrapper-cardsblue,
-#crier-cards-wrapper-cardsdark,
-#crier-cards-wrapper-cardsred {
-    font-size: 1.0em;
-    font-style: normal;
-    border-radius: 5px 5px 5px 5px;
-    padding-top: 8px;
-    padding-bottom: 8px;
-    padding-left: 5px;
-    padding-right: 5px;
-    margin-top: var(--intCardMarginTop);
-    margin-bottom: var(--intCardMarginBottom);
-    margin-left: var(--intCardMarginLeft);
-    margin-right: var(--intCardMarginRight);
-}
 /* Icon */
-#crier-cards-icon-cardsgreen,
-#crier-cards-icon-cardsblue,
-#crier-cards-icon-cardsdark,
-#crier-cards-icon-cardsred {
-	font-weight:550;
-    font-size: 1.0em;
-	margin-top: 0px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	margin-right: 5px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
+.blacksmith-card.crier [id^="crier-cards-icon-"] {
+	font-weight: 550;
+	font-size: 1.0em;
+	margin: 0 5px 0 0;
+	padding: 0;
 }
-/* Title */
-#crier-cards-title-cardsgreen,
-#crier-cards-title-cardsblue,
-#crier-cards-title-cardsdark,
-#crier-cards-title-cardsred {
-    border-radius: 4px 4px 4px 4px;
-	padding-top: 5px;
-    padding-bottom: 5px;
-    padding-left: 10px;
-    padding-right: 10px;
-    margin-top: 0px;
-    margin-bottom: 0px;
-    margin-left: 0px;
-    margin-right: 0px;
+/* Title / card-header */
+.blacksmith-card.crier [id^="crier-cards-title-"] {
+	border-radius: 4px;
+	padding: 5px 10px;
+	margin: 0;
 }
 /* Description / Player */
-#crier-cards-description-cardsgreen,
-#crier-cards-description-cardsblue,
-#crier-cards-description-cardsdark,
-#crier-cards-description-cardsred {
-    border-radius: 4px 4px 4px 4px;
-	padding-top: 5px;
-    padding-bottom: 5px;
-    padding-left: 10px;
-    padding-right: 10px;
-    margin-top: 10px;
-    margin-bottom: 0px;
-    margin-left: 0px;
-    margin-right: 0px;
+.blacksmith-card.crier [id^="crier-cards-description-"] {
+	border-radius: 4px;
+	padding: 5px 10px;
+	margin-top: 10px;
+	margin-bottom: 0;
 }
-/* Content */
-#crier-cards-content-cardsgreen,
-#crier-cards-content-cardsblue,
-#crier-cards-content-cardsdark,
-#crier-cards-content-cardsred {
-
-    border-radius: 5px 5px 5px 5px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
-    margin-top: 10px;
-    margin-bottom: 0px;
-    margin-left: 0px;
-    margin-right: 0px;
+/* Content block */
+.blacksmith-card.crier [id^="crier-cards-content-"] {
+	border-radius: 5px;
+	padding: 0;
+	margin-top: 10px;
+	margin-bottom: 0;
 }
 /* Image */
-#crier-cards-wrapper-cardsgreen img,
-#crier-cards-wrapper-cardsblue img,
-#crier-cards-wrapper-cardsdark img,
-#crier-cards-wrapper-cardsred img {
-    /* width: 100% !important; */
-    border-radius: 4px 4px 4px 4px !important;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 0px;
-    margin-bottom: -4px;
-    padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
+.blacksmith-card.crier .section-content img {
+	border-radius: 4px !important;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 0;
+	margin-bottom: -4px;
+	padding: 0;
 }
 /* Portrait Overlay */
-.image-stack {
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    position: relative;
+.blacksmith-card.crier .image-stack {
+	display: grid;
+	grid-template-columns: repeat(1, 1fr);
+	position: relative;
 }
-.image-stack__item--bottom {
-    grid-column: 1 / span 1;
-    grid-row: 1; /*  must be on the same row as the other image */
-    z-index: 1; /*  make this image render on top of the bottom */
+.blacksmith-card.crier .image-stack__item--bottom {
+	grid-column: 1 / span 1;
+	grid-row: 1;
+	z-index: 1;
 }
-.image-stack__item--top {
-grid-column: 1 / -1;
-grid-row: 1; /* make this image be on the same row */
+.blacksmith-card.crier .image-stack__item--top {
+	grid-column: 1 / -1;
+	grid-row: 1;
 }
-/* H1 */
-#crier-cards-wrapper-cardsgreen h1,
-#crier-cards-wrapper-cardsblue h1,
-#crier-cards-wrapper-cardsdark h1,
-#crier-cards-wrapper-cardsred h1 {
-    font-weight:550;
-    font-size: 1.1em;
-    font-style: normal;
-    text-transform: uppercase;
-	display: inline; 
-    margin-top: 0px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
+/* Typography – layout only; theme colors from Blacksmith */
+.blacksmith-card.crier h1 {
+	font-weight: 550;
+	font-size: 1.1em;
+	text-transform: uppercase;
+	display: inline;
+	margin: 0;
+	padding: 0;
 }
-/* H2 */
-#crier-cards-wrapper-cardsgreen h2,
-#crier-cards-wrapper-cardsblue h2,
-#crier-cards-wrapper-cardsdark h2,
-#crier-cards-wrapper-cardsred h2 {
-	font-weight:400;
-    font-size: 1.0em;
-    margin-top: 0px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
+.blacksmith-card.crier h2 {
+	font-weight: 400;
+	font-size: 1.0em;
+	margin: 0;
+	padding: 0;
 }
-/* H3 */
-#crier-cards-wrapper-cardsgreen h3,
-#crier-cards-wrapper-cardsblue h3,
-#crier-cards-wrapper-cardsdark h3,
-#crier-cards-wrapper-cardsred h3 {
-	font-weight:400;
-    font-size: 0.85em;
-    margin-top: 10px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
-	padding-top: 5px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
+.blacksmith-card.crier h3 {
+	font-weight: 400;
+	font-size: 0.85em;
+	margin: 10px 0 0;
+	padding: 5px 0 0;
 }
-/* Lists */
-#crier-cards-wrapper-cardsgreen ol,
-#crier-cards-wrapper-cardsgreen ul,
-#crier-cards-wrapper-cardsblue ol,
-#crier-cards-wrapper-cardsblue ul,
-#crier-cards-wrapper-cardsdark ol,
-#crier-cards-wrapper-cardsdark ul,
-#crier-cards-wrapper-cardsred ol,
-#crier-cards-wrapper-cardsred ul {
-	font-weight:400;
-    font-size: 1.0em;
-    margin-top: 5px;
-	margin-bottom: 5px;
-	margin-left: 20px;
-	margin-right: 0px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;	
+.blacksmith-card.crier .crier-cards-user-cardsgreen,
+.blacksmith-card.crier .crier-cards-user-cardsblue,
+.blacksmith-card.crier .crier-cards-user-cardsdark,
+.blacksmith-card.crier .crier-cards-user-cardsred {
+	font-weight: 550;
+	font-size: 0.9em;
+	text-transform: uppercase;
 }
-/* List Items */
-#crier-cards-wrapper-cardsgreen li,
-#crier-cards-wrapper-cardsblue li,
-#crier-cards-wrapper-cardsdark li,
-#crier-cards-wrapper-cardsred li {
-	font-weight:400;
-    font-size: 0.9em;
-    margin-top: 2px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;	
+/* Grid (small layout) */
+.blacksmith-card.crier .grid-container {
+	display: grid;
+	grid-template-columns: 3fr 1fr;
+	grid-gap: 10px;
+	margin: 0;
+	padding: 0;
 }
-/* Paragraph */
-#crier-cards-wrapper-cardsgreen p,
-#crier-cards-wrapper-cardsblue p,
-#crier-cards-wrapper-cardsdark p,
-#crier-cards-wrapper-cardsred p {
-	font-weight:400;
-    font-size: 1.0em;
-    margin-top: 0px;
-	margin-bottom: 0px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;	
-}
-/* Table */
-#crier-cards-wrapper-cardsgreen table,
-#crier-cards-wrapper-cardsblue table,
-#crier-cards-wrapper-cardsdark table, 
-#crier-cards-wrapper-cardsred table {
-    font-size: 0.8em;
-	margin-top: 8px;
-	margin-bottom: 8px;
-	margin-left: 0px;
-	margin-right: 0px;
-}
-/* Table Heading */
-#crier-cards-wrapper-cardsgreen table th,
-#crier-cards-wrapper-cardsblue table th,
-#crier-cards-wrapper-cardsdark table th,
-#crier-cards-wrapper-cardsred table th {
-    font-size: 1.0em;
-	vertical-align: bottom;
-	padding-top: 3px;
-    padding-bottom: 3px;
-    padding-left: 8px;
-    padding-right: 8px;	
-}
-/* Table Row */
-#crier-cards-wrapper-cardsgreen table tr,
-#crier-cards-wrapper-cardsblue table tr,
-#crier-cards-wrapper-cardsdark table tr,
-#crier-cards-wrapper-cardsred table tr {
-    font-size: 1.0em;
-	padding-top: 3px;
-    padding-bottom: 3px;
-    padding-left: 4px;
-    padding-right: 4px;	
-}
-/* Table Cell */
-#crier-cards-wrapper-cardsgreen table td,
-#crier-cards-wrapper-cardsblue table td,
-#crier-cards-wrapper-cardsdark table td,
-#crier-cards-wrapper-cardsred table td {
-    font-size: 1.0em;
-	padding-top: 3px;
-    padding-bottom: 3px;
-    padding-left: 8px;
-    padding-right: 8px;	
-}
-/* Preformatted */
-#crier-cards-wrapper-cardsgreen pre,
-#crier-cards-wrapper-cardsblue pre,
-#crier-cards-wrapper-cardsdark pre,
-#crier-cards-wrapper-cardsred pre {
-    white-space: pre-wrap;
-	font-size: 0.8em;
-	font-family: var(--font-primary);
-	margin-top: 0px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
-	padding-top: 3px;
-    padding-bottom: 3px;
-    padding-left: 0px;
-    padding-right: 0px;	
-}
-/* Username Layout */
-.crier-cards-user-cardsgreen,
-.crier-cards-user-cardsblue,
-.crier-cards-user-cardsdark, 
-.crier-cards-user-cardsred {
-    font-weight:550;
-    font-size: 0.9em;
-    font-style: normal;
-    text-transform: uppercase;
+.blacksmith-card.crier .grid-container .grid-child.left,
+.blacksmith-card.crier .grid-container .grid-child.right {
+	margin: 0;
+	padding: 0;
 }
 /* HP Layout */
-.grid-container {
-	display: grid;
-    grid-template-columns: 3fr 1fr;
-    grid-gap: 10px;
-	margin-top: 0px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
+.blacksmith-card.crier [id^="hp-container-"] {
+	border-radius: 4px;
+	padding: 3px;
+	margin-top: 10px;
+	margin-bottom: 0;
 }
-.grid-container .grid-child .left {
-	margin-top: 0px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
+.blacksmith-card.crier [id^="hp-container-"] [id^="hp-progress-"] {
+	height: 10px;
+	border-radius: 2px;
+	margin: 0;
+	padding: 0;
 }
-.grid-container .grid-child .right {
-	margin-top: 0px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
-}
-#hp-container-cardsgreen,
-#hp-container-cardsblue,
-#hp-container-cardsdark,
-#hp-container-cardsred {
-    border-radius: 4px 4px 4px 4px;
-	padding-top: 3px;
-    padding-bottom: 3px;
-    padding-left: 3px;
-    padding-right:3px;
-    margin-top: 10px;
-    margin-bottom: 0px;
-    margin-left: 0px;
-    margin-right: 0px;
-}
-#hp-container-cardsgreen #hp-progress-healthy-cardsgreen,
-#hp-container-cardsgreen #hp-progress-hurt-cardsgreen,
-#hp-container-cardsgreen #hp-progress-dying-cardsgreen,
-#hp-container-cardsgreen #hp-progress-critical-cardsgreen,
-#hp-container-cardsgreen #hp-progress-dead-cardsgreen,
-#hp-container-cardsblue #hp-progress-healthy-cardsblue,
-#hp-container-cardsblue #hp-progress-hurt-cardsblue,
-#hp-container-cardsblue #hp-progress-dying-cardsblue,
-#hp-container-cardsblue #hp-progress-critical-cardsblue,
-#hp-container-cardsblue #hp-progress-dead-cardsblue,
-#hp-container-cardsdark #hp-progress-healthy-cardsdark,
-#hp-container-cardsdark #hp-progress-hurt-cardsdark,
-#hp-container-cardsdark #hp-progress-dying-cardsdark,
-#hp-container-cardsdark #hp-progress-critical-cardsdark,
-#hp-container-cardsdark #hp-progress-dead-cardsdark,
-#hp-container-cardsred #hp-progress-healthy-cardsred,
-#hp-container-cardsred #hp-progress-hurt-cardsred,
-#hp-container-cardsred #hp-progress-dying-cardsred,
-#hp-container-cardsred #hp-progress-critical-cardsred,
-#hp-container-cardsred #hp-progress-dead-cardsred  {
-	height:10px;
-    border-radius: 2px 2px 2px 2px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
-    margin-top: 0px;
-    margin-bottom: 0px;
-    margin-left: 0px;
-    margin-right: 0px;
-}
-#hp-container-cardsgreen #hp-progress-critical-cardsgreen,
-#hp-container-cardsblue #hp-progress-critical-cardsblue,
-#hp-container-cardsdark #hp-progress-critical-cardsdark,
-#hp-container-cardsred #hp-progress-critical-cardsred {
-    animation-name: hp-pulse-color;
-    animation-duration: 2s;
-    animation-iteration-count: 10;
-    animation-fill-mode: forwards;
+.blacksmith-card.crier [id^="hp-container-"] [id*="hp-progress-critical-"] {
+	animation: hp-pulse-color 2s 10 forwards;
 }
 /* Abilities Layout */
-#ability-container-cardsgreen,
-#ability-container-cardsblue, 
-#ability-container-cardsdark, 
-#ability-container-cardsred {
+.blacksmith-card.crier [id^="ability-container-"] {
 	display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
-    grid-gap: 5px;
-	margin-top: 0px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
+	grid-template-columns: repeat(6, 1fr);
+	grid-gap: 5px;
+	margin: 0;
+	padding: 0;
 }
-#ability-container-cardsgreen #ability-child-cardsgreen,
-#ability-container-cardsblue #ability-child-cardsblue,
-#ability-container-cardsdark #ability-child-cardsdark,
-#ability-container-cardsred #ability-child-cardsred {
-    border-radius: 4px 4px 4px 4px;
-	padding-top: 5px;
-    padding-bottom: 5px;
-    padding-left: 10px;
-    padding-right: 10px;
-    margin-top: 10px;
-    margin-bottom: 0px;
-    margin-left: 0px;
-    margin-right: 0px;
+.blacksmith-card.crier [id^="ability-container-"] [id^="ability-child-"] {
+	border-radius: 4px;
+	padding: 5px 10px;
+	margin-top: 10px;
+	margin-bottom: 0;
 }
-#ability-title-cardsgreen,
-#ability-title-cardsblue,
-#ability-title-cardsdark,
-#ability-title-cardsred  {
-    font-weight:400;
-    font-size: 0.6em;
-    font-style: normal;
-    text-transform: uppercase;
+.blacksmith-card.crier [id^="ability-title-"] {
+	font-weight: 400;
+	font-size: 0.6em;
+	text-transform: uppercase;
 	text-align: center;
-	display: block; 
-    margin-top: 0px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
+	display: block;
+	margin: 0;
+	padding: 0;
 }
-#ability-content-cardsgreen,
-#ability-content-cardsblue,
-#ability-content-cardsdark,
-#ability-content-cardsred  {
-    font-weight:550;
-    font-size: 1.1em;
-    font-style: normal;
-    text-transform: uppercase;
+.blacksmith-card.crier [id^="ability-content-"] {
+	font-weight: 550;
+	font-size: 1.1em;
+	text-transform: uppercase;
 	text-align: center;
-	display: block; 
-    margin-top: 0px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
+	display: block;
+	margin: 0;
+	padding: 0;
 }
 /* Death Save Layout */
-.crier-deathsave-wrapper-cardsdark,
-.crier-deathsave-wrapper-cardsred,
-.crier-deathsave-wrapper-cardsgreen,
-.crier-deathsave-wrapper-cardsblue {
+.blacksmith-card.crier [class*="crier-deathsave-wrapper-"] {
 	display: grid;
 	grid-template-columns: auto auto auto;
-    position: relative;
+	position: relative;
 	text-align: center;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;  
+	padding: 0;
 }
-
-.crier-deathsave-wrapper-icon-cardsdark,
-.crier-deathsave-wrapper-successes-cardsdark,
-.crier-deathsave-wrapper-failures-cardsdark,
-
-.crier-deathsave-wrapper-icon-cardsred,
-.crier-deathsave-wrapper-successes-cardsred,
-.crier-deathsave-wrapper-failures-cardsred,
-
-.crier-deathsave-wrapper-icon-cardsgreen,
-.crier-deathsave-wrapper-successes-cardsgreen,
-.crier-deathsave-wrapper-failures-cardsgreen,
-
-.crier-deathsave-wrapper-icon-cardsblue,
-.crier-deathsave-wrapper-successes-cardsblue,
-.crier-deathsave-wrapper-failures-cardsblue {
+.blacksmith-card.crier [class*="crier-deathsave-wrapper-icon-"],
+.blacksmith-card.crier [class*="crier-deathsave-wrapper-successes-"],
+.blacksmith-card.crier [class*="crier-deathsave-wrapper-failures-"] {
 	grid-column: auto;
 	font-size: 1.2em;
-    font-style: normal;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    padding-left: 0px;
-    padding-right: 0px;
-    margin-top: 0px;
-    margin-bottom: 0px;
-    margin-left: 0px;
-    margin-right: 0px;	
+	padding: 2px 0;
+	margin: 0;
 	display: flex;
 	align-items: center;
-    
 }
-.crier-deathsave-wrapper-icon-cardsdark,
-.crier-deathsave-wrapper-icon-cardsred,
-.crier-deathsave-wrapper-icon-cardsblue,
-.crier-deathsave-wrapper-icon-cardsgreen {
-    justify-content: center;
+.blacksmith-card.crier [class*="crier-deathsave-wrapper-icon-"] {
+	justify-content: center;
 }
-.crier-deathsave-icon-cardsdark {
-	animation-name: death-save-pulse-color-cardsdark;
-    animation-duration: 3.0s;
-    animation-iteration-count: infinite;	
+.blacksmith-card.crier [class*="crier-deathsave-wrapper-successes-"] {
+	justify-content: right;
 }
-.crier-deathsave-icon-cardsred {
-	animation-name: death-save-pulse-color-cardsred;
-    animation-duration: 3.0s;
-    animation-iteration-count: infinite;	
+.blacksmith-card.crier [class*="crier-deathsave-wrapper-failures-"] {
+	justify-content: left;
 }
-.crier-deathsave-icon-cardsblue {
-	animation-name: death-save-pulse-color-cardsblue;
-    animation-duration: 3.0s;
-    animation-iteration-count: infinite;	
+.blacksmith-card.crier [class*="crier-deathsave-icon-"] {
+	animation: death-save-pulse 3s infinite;
 }
-.crier-deathsave-icon-cardsgreen {
-	animation-name: death-save-pulse-color-cardsgreen;
-    animation-duration: 3.0s;
-    animation-iteration-count: infinite;	
-}
-.crier-deathsave-wrapper-successes-cardsdark,
-.crier-deathsave-wrapper-successes-cardsred,
-.crier-deathsave-wrapper-successes-cardsblue,
-.crier-deathsave-wrapper-successes-cardsgreen {
-    justify-content: right;
-}
-.crier-deathsave-wrapper-failures-cardsdark,
-.crier-deathsave-wrapper-failures-cardsred,
-.crier-deathsave-wrapper-failures-cardsblue,
-.crier-deathsave-wrapper-failures-cardsgreen {
-    justify-content: left;
-}
-
-.crier-deathsuccessdot-off-cardsdark,
-.crier-deathsuccessdot-on-cardsdark,
-.crier-deathfailuredot-off-cardsdark,
-.crier-deathfailuredot-on-cardsdark,
-
-.crier-deathsuccessdot-off-cardsred,
-.crier-deathsuccessdot-on-cardsred,
-.crier-deathfailuredot-off-cardsred,
-.crier-deathfailuredot-on-cardsred,
-
-.crier-deathsuccessdot-off-cardsblue,
-.crier-deathsuccessdot-on-cardsblue,
-.crier-deathfailuredot-off-cardsblue,
-.crier-deathfailuredot-on-cardsblue,
-
-.crier-deathsuccessdot-off-cardsgreen,
-.crier-deathsuccessdot-on-cardsgreen,
-.crier-deathfailuredot-off-cardsgreen,
-.crier-deathfailuredot-on-cardsgreen {
-  	display: inline-block;
+.blacksmith-card.crier [class*="crier-deathsuccessdot-"],
+.blacksmith-card.crier [class*="crier-deathfailuredot-"] {
+	display: inline-block;
 	border-radius: 25%;
 	height: 13px;
-  	width: 13px;
-	padding-top: 0px;
-    padding-bottom: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
-    margin-top: 0px;
-    margin-bottom: 0px;
-    margin-left: 6px;
-    margin-right: 6px;	
+	width: 13px;
+	margin: 0 6px;
+	padding: 0;
 }
 
 
@@ -803,638 +426,86 @@ grid-row: 1; /* make this image be on the same row */
 
 /******** Common Colors ********/
 @keyframes hp-pulse-color {
-	0% {
-		background: rgb(119, 20, 16);
-	}
-
-	50% {
-		background: rgb(209, 18, 12);
-	}
-
-	100% {
-		background: rgb(119, 20, 16);
-	}
+	0% { background: rgb(119, 20, 16); }
+	50% { background: rgb(209, 18, 12); }
+	100% { background: rgb(119, 20, 16); }
 }
-.crier-token-background-themecolor,
-.crier-token-background-brick,
-.crier-token-background-cobblestone,
-.crier-token-background-dessert,
-.crier-token-background-parchment,
-.crier-token-background-rock,
-.crier-token-background-stone,
-.crier-token-background-clothdark,
-.crier-token-background-clothlight,
-.crier-token-background-stonefloor,
-.crier-token-background-grass,
-.crier-token-background-dirt {
-    background-repeat: repeat;
-    background-size: cover;
+@keyframes death-save-pulse {
+	0%, 40%, 60%, 100% { opacity: 1; }
+	45%, 55% { opacity: 0.6; }
 }
-.crier-token-background-themecolor {
+/* Token backgrounds – scoped to turn cards */
+.blacksmith-card.crier .crier-token-background-themecolor,
+.blacksmith-card.crier .crier-token-background-brick,
+.blacksmith-card.crier .crier-token-background-cobblestone,
+.blacksmith-card.crier .crier-token-background-dessert,
+.blacksmith-card.crier .crier-token-background-parchment,
+.blacksmith-card.crier .crier-token-background-rock,
+.blacksmith-card.crier .crier-token-background-stone,
+.blacksmith-card.crier .crier-token-background-clothdark,
+.blacksmith-card.crier .crier-token-background-clothlight,
+.blacksmith-card.crier .crier-token-background-stonefloor,
+.blacksmith-card.crier .crier-token-background-grass,
+.blacksmith-card.crier .crier-token-background-dirt {
+	background-repeat: repeat;
+	background-size: cover;
+}
+.blacksmith-card.crier .crier-token-background-themecolor {
 	background-color: transparent;
 }
-.crier-token-background-dirt {
+.blacksmith-card.crier .crier-token-background-dirt {
 	background-image: url(../images/tile-dirt.webp);
 }
-.crier-token-background-grass {
+.blacksmith-card.crier .crier-token-background-grass {
 	background-image: url(../images/tile-grass.webp);
 }
-.crier-token-background-parchment {
+.blacksmith-card.crier .crier-token-background-parchment {
 	background-image: url(../images/tile-parchment.webp);
 }
-.crier-token-background-clothlight {
+.blacksmith-card.crier .crier-token-background-clothlight {
 	background-image: url(../images/tile-clothlight.webp);
 }
-.crier-token-background-clothdark {
+.blacksmith-card.crier .crier-token-background-clothdark {
 	background-image: url(../images/tile-clothdark.webp);
 }
-
-.crier-token-background-brick {
+.blacksmith-card.crier .crier-token-background-brick {
 	background-image: url(../images/tile-brick.webp);
 }
-.crier-token-background-cobblestone {
+.blacksmith-card.crier .crier-token-background-cobblestone {
 	background-image: url(../images/tile-cobblestone.webp);
 }
-.crier-token-background-dessert {
+.blacksmith-card.crier .crier-token-background-dessert {
 	background-image: url(../images/tile-dessert.webp);
 }
-.crier-token-background-stonefloor {
+.blacksmith-card.crier .crier-token-background-stonefloor {
 	background-image: url(../images/tile-stonefloor.webp);
 }
-.crier-token-background-rock {
+.blacksmith-card.crier .crier-token-background-rock {
 	background-image: url(../images/tile-rock.webp);
 }
-.crier-token-background-stone {
+.blacksmith-card.crier .crier-token-background-stone {
 	background-image: url(../images/tile-stone.webp);
 }
 
-/******** DARK CARDS ********/
-#crier-cards-wrapper-cardsdark {
-    color:#323030;
-    background: #222121;
-    border-left: 2px solid #504A4A;
-    border-right: 2px solid #504A4A;
-    border-top: 2px solid #504A4A;
-    border-bottom: 2px solid #504A4A;
-}
-#crier-cards-title-cardsdark {
-	background: #121212;
-}
-#crier-cards-description-cardsdark {
-	background: #121212;
-}
-#crier-cards-wrapper-cardsdark img {
-    border-left: 4px solid #180505;
-    border-right: 4px solid #180505;
-    border-top: 4px solid #180505;
-    border-bottom: 4px solid #180505;
-}
-#crier-cards-content-cardsdark {
-    background: #201F1F;
-}
-#crier-cards-wrapper-cardsdark h1 {
-	color: #BAAFAF;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-#crier-cards-wrapper-cardsdark h2 {
-	color: #BAAFAF;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-#crier-cards-wrapper-cardsdark h3 {
-	color: #8B845A;
-    border-top: 1px dotted #8B845A;
-	border-bottom: 0px;
-}
-#crier-cards-wrapper-cardsdark .fa-solid {
-	color: #BAAFAF;
-}
-#crier-cards-wrapper-cardsdark p {
-    color: #3e3b30;
-}
-#crier-cards-wrapper-cardsdark li {
-    color: #3e3b30;
-}
-#crier-cards-wrapper-cardsdark table {
-	border-top: 1px solid #7A7972;
-	border-bottom: 1px solid #7A7972;
-	border-left: 1px dotted #BDB7A0;
-	border-right: 1px dotted #BDB7A0;
-}
-#crier-cards-wrapper-cardsdark table tr {
-	background: #F3F1E9;
-    border-bottom: 1px dotted #CAC5B0;
-}
-#crier-cards-wrapper-cardsdark table th {
-	background: #E5E1D5;
-	border-bottom: 1px solid #BDB7A0;
-}
-#crier-cards-wrapper-cardsdark pre {
-	border-top: 0px solid #7A7972;
-	border-bottom: 0px solid #7A7972;
-	border-left: 0px dotted #BDB7A0;
-	border-right: 0px dotted #BDB7A0;
-}
-.crier-cards-user-cardsdark {
-	color: #BAAFAF;
-}
-#hp-container-cardsdark {
-    background: #121212;
-}
-#hp-progress-healthy-cardsdark {
-    background: #629602;
-}
-#hp-progress-hurt-cardsdark {
-    background: #df8601;
-}
-#hp-progress-dying-cardsdark {
-    background: #772810;
-}
-#hp-progress-critical-cardsdark {
-    background: #771410;
-}
-#hp-progress-dead-cardsdark {
-    background: #424242;
-}
-#ability-container-cardsdark #ability-child-cardsdark {
-    background: #121212;
-}
-#ability-title-cardsdark {
-	color: #BAAFAF;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-#ability-content-cardsdark  {
-	color: #BAAFAF;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-/* cardsdark death save */
-@keyframes death-save-pulse-color-cardsdark {
-	0% {color: #7B7373;}
-	40% {color: #7B7373;}
-	45% {color: #504A4A;}
-	50% {color: #7B7373;}
-	55% {color: #504A4A;}
-	60% {color: #7B7373;}
-	100% {color: #7B7373;}
-}
-.crier-deathsave-wrapper-cardsdark {
-	border: 0px solid #ffffff;
-}
-.crier-deathsave-wrapper-icon-cardsdark {
-	border: 0px solid #ffffff;
-}
-.crier-deathsave-wrapper-successes-cardsdark {
-	border: 0px solid #ffffff;
-}
-.crier-deathsave-wrapper-failures-cardsdark {
-	border: 0px solid #ffffff;
-}
-.crier-deathsuccessdot-off-cardsdark {
-  	background-color: #121212;
-	border: 1px solid #504A4A;
-}
-.crier-deathsuccessdot-on-cardsdark {
-  	background-color: #7B7373;
-	border: 1px solid #7B7373;
-}
-.crier-deathfailuredot-off-cardsdark {
-  	background-color: #121212;
-	border: 1px solid #504A4A;
-}
-.crier-deathfailuredot-on-cardsdark {
-  	background-color: #7B7373;
-	border: 1px solid #7B7373;
-}
-
-/******** RED CARDS ********/
-#crier-cards-wrapper-cardsred {
-    color:#323030;
-    background: #511314;
-    border-left: 2px solid #771410;
-    border-right: 2px solid #771410;
-    border-top: 2px solid #771410;
-    border-bottom: 2px solid #771410;
-}
-#crier-cards-title-cardsred {
-	background: #35100F;
-}
-#crier-cards-description-cardsred {
-	background: #35100F;
-}
-#crier-cards-wrapper-cardsred img {
-    border-left: 4px solid #35100F;
-    border-right: 4px solid #35100F;
-    border-top: 4px solid #35100F;
-    border-bottom: 4px solid #35100F;
-}
-
-#crier-cards-content-cardsred {
-    background: #511314;
-}
-#crier-cards-wrapper-cardsred h1 {
-	color: #E8D5D5;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-#crier-cards-wrapper-cardsred h2 {
-	color: #E8D5D5;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-#crier-cards-wrapper-cardsred h3 {
-	color: #8B845A;
-    border-top: 1px dotted #8B845A;
-	border-bottom: 0px;
-}
-#crier-cards-wrapper-cardsred .fa-solid {
-	color: #E8D5D5;
-}
-#crier-cards-wrapper-cardsred p {
-    color: #3e3b30;
-}
-#crier-cards-wrapper-cardsred li {
-    color: #3e3b30;
-}
-#crier-cards-wrapper-cardsred table {
-	border-top: 1px solid #7A7972;
-	border-bottom: 1px solid #7A7972;
-	border-left: 1px dotted #BDB7A0;
-	border-right: 1px dotted #BDB7A0;
-}
-#crier-cards-wrapper-cardsred table tr {
-	background: #F3F1E9;
-    border-bottom: 1px dotted #CAC5B0;
-}
-#crier-cards-wrapper-cardsred table th {
-	background: #E5E1D5;
-	border-bottom: 1px solid #BDB7A0;
-}
-#crier-cards-wrapper-cardsred pre {
-	border-top: 0px solid #7A7972;
-	border-bottom: 0px solid #7A7972;
-	border-left: 0px dotted #BDB7A0;
-	border-right: 0px dotted #BDB7A0;
-}
-.crier-cards-user-cardsred {
-	color: #E8D5D5;
-}
-#hp-container-cardsred {
-    background: #35100F;
-}
-#hp-progress-healthy-cardsred {
-    background: #629602;
-}
-#hp-progress-hurt-cardsred {
-    background: #df8601;
-}
-#hp-progress-dying-cardsred {
-    background: #772810;
-}
-#hp-progress-critical-cardsred {
-    background: #771410;
-}
-#hp-progress-dead-cardsred {
-    background: #424242;
-}
-#ability-container-cardsred #ability-child-cardsred {
-    background: #35100F;
-}
-#ability-title-cardsred  {
-	color: #E8D5D5;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-#ability-content-cardsred  {
-	color: #E8D5D5;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-/* Death Save */
-@keyframes death-save-pulse-color-cardsred {
-	0% {color: #771410;}
-	40% {color: #771410;}
-	45% {color: #511314;}
-	50% {color: #771410;}
-	55% {color: #511314;}
-	60% {color: #771410;}
-	100% {color: #771410;}
-}
-.crier-deathsave-wrapper-cardsred {
-	border: 0px solid #ffffff;
-}
-.crier-deathsave-wrapper-icon-cardsred {
-	border: 0px solid #ffffff;
-}
-.crier-deathsave-wrapper-successes-cardsred {
-	border: 0px solid #ffffff;
-}
-.crier-deathsave-wrapper-failures-cardsred {
-	border: 0px solid #ffffff;
-}
-.crier-deathsuccessdot-off-cardsred {
-  	background-color: #35100f;
+/******** Turn card semantic colors (HP, death saves) – theme from Blacksmith ********/
+.blacksmith-card.crier [id*="hp-progress-healthy-"] { background: #629602; }
+.blacksmith-card.crier [id*="hp-progress-hurt-"] { background: #df8601; }
+.blacksmith-card.crier [id*="hp-progress-dying-"] { background: #772810; }
+.blacksmith-card.crier [id*="hp-progress-critical-"] { background: #771410; }
+.blacksmith-card.crier [id*="hp-progress-dead-"] { background: #424242; }
+.blacksmith-card.crier [class*="crier-deathsuccessdot-off-"] {
+	background-color: rgba(0,0,0,0.2);
+	border: 1px solid #504a4a;
+}
+.blacksmith-card.crier [class*="crier-deathsuccessdot-on-"] {
+	background-color: #629602;
+	border: 1px solid #629602;
+}
+.blacksmith-card.crier [class*="crier-deathfailuredot-off-"] {
+	background-color: rgba(0,0,0,0.2);
 	border: 1px solid #771410;
 }
-.crier-deathsuccessdot-on-cardsred {
-  	background-color: #771410;
+.blacksmith-card.crier [class*="crier-deathfailuredot-on-"] {
+	background-color: #771410;
 	border: 1px solid #771410;
-}
-.crier-deathfailuredot-off-cardsred {
-  	background-color: #35100f;
-	border: 1px solid #771410;
-}
-.crier-deathfailuredot-on-cardsred {
-  	background-color: #771410;
-	border: 1px solid #771410;
-}
-/******** GREEN CARDS ********/
-#crier-cards-wrapper-cardsgreen {
-    color:#323030;
-    background: #3A4A03;
-    border-left: 2px solid #688507;
-    border-right: 2px solid #688507;
-    border-top: 2px solid #688507;
-    border-bottom: 2px solid #688507;
-}
-#crier-cards-title-cardsgreen {
-	background: #222C02;
-}
-#crier-cards-description-cardsgreen {
-	background: #222C02;
-}
-#crier-cards-wrapper-cardsgreen img {
-    border-left: 4px solid #222C02;
-    border-right: 4px solid #222C02;
-    border-top: 4px solid #222C02;
-    border-bottom: 4px solid #222C02;
-}
-
-#crier-cards-content-cardsgreen {
-    background: #3A4A03;
-
-}
-#crier-cards-wrapper-cardsgreen h1 {
-	color: #E8D5D5;
-    border-top: 0px;
-    border-bottom: 0px;
-
-}
-#crier-cards-wrapper-cardsgreen h2 {
-	color: #E8D5D5;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-#crier-cards-wrapper-cardsgreen h3 {
-	color: #8B845A;
-    border-top: 1px dotted #8B845A;
-	border-bottom: 0px;
-}
-#crier-cards-wrapper-cardsgreen .fa-solid {
-	color: #E8D5D5;
-}
-#crier-cards-wrapper-cardsgreen p {
-    color: #3e3b30;
-}
-#crier-cards-wrapper-cardsgreen li {
-    color: #3e3b30;
-}
-#crier-cards-wrapper-cardsgreen table {
-	border-top: 1px solid #7A7972;
-	border-bottom: 1px solid #7A7972;
-	border-left: 1px dotted #BDB7A0;
-	border-right: 1px dotted #BDB7A0;
-}
-#crier-cards-wrapper-cardsgreen table tr {
-	background: #F3F1E9;
-    border-bottom: 1px dotted #CAC5B0;
-}
-#crier-cards-wrapper-cardsgreen table th {
-	background: #E5E1D5;
-	border-bottom: 1px solid #BDB7A0;
-}
-#crier-cards-wrapper-cardsgreen pre {
-	border-top: 0px solid #7A7972;
-	border-bottom: 0px solid #7A7972;
-	border-left: 0px dotted #BDB7A0;
-	border-right: 0px dotted #BDB7A0;
-}
-.crier-cards-user-cardsgreen {
-	color: #E8D5D5;
-}
-#hp-container-cardsgreen {
-    background: #222C02;
-}
-#hp-progress-healthy-cardsgreen {
-    background: #629602;
-}
-#hp-progress-hurt-cardsgreen {
-    background: #df8601;
-}
-#hp-progress-dying-cardsgreen {
-    background: #772810;
-}
-#hp-progress-critical-cardsgreen {
-    background: #771410;
-}
-#hp-progress-dead-cardsgreen {
-    background: #424242;
-}
-#ability-container-cardsgreen #ability-child-cardsgreen {
-    background: #222C02;
-}
-#ability-title-cardsgreen  {
-	color: #E8D5D5;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-#ability-content-cardsgreen  {
-	color: #E8D5D5;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-/* Death Saves */
-@keyframes death-save-pulse-color-cardsgreen {
-	0% {color: #526807;}
-	40% {color: #526807;}
-	45% {color: #3a4a03;}
-	50% {color: #526807;}
-	55% {color: #3a4a03;}
-	60% {color: #526807;}
-	100% {color: #526807;}
-}
-.crier-deathsave-wrapper-cardsgreen {
-	border: 0px solid #ffffff;
-}
-.crier-deathsave-wrapper-icon-cardsgreen {
-	border: 0px solid #ffffff;
-}
-.crier-deathsave-wrapper-successes-cardsgreen {
-	border: 0px solid #ffffff;
-}
-.crier-deathsave-wrapper-failures-cardsgreen {
-	border: 0px solid #ffffff;
-}
-.crier-deathsuccessdot-off-cardsgreen {
-  	background-color: #222c02;
-	border: 1px solid #526807;
-}
-.crier-deathsuccessdot-on-cardsgreen {
-  	background-color: #526807;
-	border: 1px solid #526807;
-}
-.crier-deathfailuredot-off-cardsgreen {
-  	background-color: #222c02;
-	border: 1px solid #526807;
-}
-.crier-deathfailuredot-on-cardsgreen {
-  	background-color: #526807;
-	border: 1px solid #526807;
-}
-/******** BLUE CARDS ********/
-#crier-cards-wrapper-cardsblue {
-    color:#323030;
-    background: #003F58;
-    border-left: 2px solid #026E99;
-    border-right: 2px solid #026E99;
-    border-top: 2px solid #026E99;
-    border-bottom: 2px solid #026E99;
-}
-#crier-cards-title-cardsblue {
-	background: #022838;
-}
-#crier-cards-description-cardsblue {
-	background: #022838;
-}
-#crier-cards-wrapper-cardsblue img {
-    border-left: 4px solid #022838;
-    border-right: 4px solid #022838;
-    border-top: 4px solid #022838;
-    border-bottom: 4px solid #022838;
-}
-
-#crier-cards-content-cardsblue {
-    background: #003F58;
-
-}
-#crier-cards-wrapper-cardsblue h1 {
-	color: #E8D5D5;
-    border-top: 0px;
-    border-bottom: 0px;
-
-}
-#crier-cards-wrapper-cardsblue h2 {
-	color: #E8D5D5;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-#crier-cards-wrapper-cardsblue h3 {
-	color: #8B845A;
-    border-top: 1px dotted #8B845A;
-	border-bottom: 0px;
-}
-#crier-cards-wrapper-cardsblue .fa-solid {
-	color: #E8D5D5;
-}
-
-#crier-cards-wrapper-cardsblue p {
-    color: #3e3b30;
-}
-#crier-cards-wrapper-cardsblue li {
-    color: #3e3b30;
-}
-#crier-cards-wrapper-cardsblue table {
-	border-top: 1px solid #7A7972;
-	border-bottom: 1px solid #7A7972;
-	border-left: 1px dotted #BDB7A0;
-	border-right: 1px dotted #BDB7A0;
-}
-#crier-cards-wrapper-cardsblue table tr {
-	background: #F3F1E9;
-    border-bottom: 1px dotted #CAC5B0;
-}
-#crier-cards-wrapper-cardsblue table th {
-	background: #E5E1D5;
-	border-bottom: 1px solid #BDB7A0;
-}
-#crier-cards-wrapper-cardsblue pre {
-	border-top: 0px solid #7A7972;
-	border-bottom: 0px solid #7A7972;
-	border-left: 0px dotted #BDB7A0;
-	border-right: 0px dotted #BDB7A0;
-}
-.crier-cards-user-cardsblue {
-	color: #E8D5D5;
-}
-
-#hp-container-cardsblue {
-    background: #022838;
-}
-#hp-progress-healthy-cardsblue {
-    background: #629602;
-}
-#hp-progress-hurt-cardsblue {
-    background: #df8601;
-}
-#hp-progress-dying-cardsblue {
-    background: #772810;
-}
-#hp-progress-critical-cardsblue {
-    background: #771410;
-}
-#hp-progress-dead-cardsblue {
-    background: #310504;
-}
-#ability-container-cardsblue #ability-child-cardsblue {
-    background: #022838;
-}
-#ability-title-cardsblue {
-	color: #E8D5D5;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-#ability-content-cardsblue  {
-	color: #E8D5D5;
-    border-top: 0px;
-    border-bottom: 0px;
-}
-/* Death Saves */
-@keyframes death-save-pulse-color-cardsblue {
-	0% {color: #026e99;}
-	40% {color: #026e99;}
-	45% {color: #003f58;}
-	50% {color: #026e99;}
-	55% {color: #003f58;}
-	60% {color: #026e99;}
-	100% {color: #026e99;}
-}
-.crier-deathsave-wrapper-cardsblue {
-	border: 0px solid #ffffff;
-}
-.crier-deathsave-wrapper-icon-cardsblue {
-	border: 0px solid #ffffff;
-}
-.crier-deathsave-wrapper-successes-cardsblue {
-	border: 0px solid #ffffff;
-}
-.crier-deathsave-wrapper-failures-cardsblue {
-	border: 0px solid #ffffff;
-}
-.crier-deathsuccessdot-off-cardsblue {
-  	background-color: #022838;
-	border: 1px solid #026e99;
-}
-.crier-deathsuccessdot-on-cardsblue {
-  	background-color: #026e99;
-	border: 1px solid #026e99;
-}
-.crier-deathfailuredot-off-cardsblue {
-  	background-color: #022838;
-	border: 1px solid #026e99;
-}
-.crier-deathfailuredot-on-cardsblue {
-  	background-color: #026e99;
-	border: 1px solid #026e99;
 }

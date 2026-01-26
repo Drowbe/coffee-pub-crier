@@ -326,36 +326,19 @@ function interceptNewTurnMessage(cm, html, main) {
  * @param {Element} main
  */
 function interceptNewRoundMessage(cm, html, main) {
-    // Set the card and icon styles
-
-    var strCardStyle = "cardsdark"
-    var strRoundIcon = "fa-chess-queen"
-
+    // Round cards now use Blacksmith framework - template handles structure
+    // This function is kept for compatibility but no longer manipulates DOM
+    // The template (rounds.hbs) now includes:
+    // - hide-header span
+    // - .blacksmith-card with theme
+    // - .card-header with icon and message
+    // - data attributes for combat/round
+    
+    // Data attributes are already in the template, so no migration needed
+    // Blacksmith framework handles styling
     if (!main) return;
-    main.classList.add('coffee-pub', 'round-cycling-' + strCardStyle);
-
-    const header = html.querySelector('.message-header');
-    if (!header) return;
-    // Remove sender
-    header.querySelector('.message-sender')?.remove();
-
-    const content = html.querySelector('.message-content');
-    if (!content) return;
-    const msg = content.querySelector('.round-message');
-
-    header.prepend(msg);
-    const icon = document.createElement('i');
-    icon.classList.add('fa-solid', strRoundIcon);
-    msg?.prepend(icon, ' ');
-
-    // Migrate data attributes
-    const data = content.querySelector('.round-cycling-' + strCardStyle);
-    if (data?.dataset) {
-        main.dataset.combatId = data.dataset.combatId;
-        main.dataset.round = data.dataset.round;
-    }
-    // Remove old content
-    hideContent(content);
+    // Ensure crier class is present (already added in chatMessageEvent, but keep for safety)
+    main.classList.add('coffee-pub');
 }
 
 // ************************************
@@ -583,14 +566,53 @@ async function generateCards(info, context) {
 }
 
 // ************************************
+// ** MAP ROUND CARD STYLE TO BLACKSMITH THEME
+// ************************************
+function mapRoundCardStyleToTheme(roundCardStyle) {
+    const themeMap = {
+        'cardsdark': 'theme-default',
+        'cardsgreen': 'theme-announcement-green',
+        'cardsred': 'theme-announcement-red',
+        'cardsminimalred': 'theme-announcement-red',
+        'cardsminimalplain': 'theme-default',
+        'cardssimple': 'theme-default'
+    };
+    return themeMap[roundCardStyle] || 'theme-default';
+}
+
+// ************************************
+// ** MAP TURN CARD STYLE TO BLACKSMITH THEME
+// ************************************
+function mapTurnCardStyleToTheme(turnCardStyle) {
+    const themeMap = {
+        'cardsdark': 'theme-default',
+        'cardsgreen': 'theme-green',
+        'cardsred': 'theme-red',
+        'cardsblue': 'theme-blue',
+        'cardsbrown': 'theme-default',
+        'cardsminimalred': 'theme-red',
+        'cardsminimalplain': 'theme-default',
+        'cardssimple': 'theme-default'
+    };
+    return themeMap[turnCardStyle] || 'theme-default';
+}
+
+// ************************************
 // ** CREATE NEW ROUND CARD
 // ************************************
 async function createNewRoundCard(combat) {
     const speaker = ChatMessage.getSpeaker('GM');
-    	    const override = await getSettingSafely(MODULE.ID, CRIER.roundLabel);
-    const data = { combat };
-    if (override) data.message = override.replace('{round}', combat.round);
-    else data.message = game.i18n.format('coffee-pub-crier.RoundCycling', { round: combat.round });
+    const override = await getSettingSafely(MODULE.ID, CRIER.roundLabel);
+    const roundCardStyle = await getSettingSafely(MODULE.ID, CRIER.roundCardStyle, 'cardsgreen');
+    const roundIconStyle = await getSettingSafely(MODULE.ID, CRIER.roundIconStyle, 'fa-chess-queen');
+    
+    const data = { 
+        combat,
+        message: override ? override.replace('{round}', combat.round) : game.i18n.format('coffee-pub-crier.RoundCycling', { round: combat.round }),
+        roundCardStyle,
+        roundIconStyle,
+        theme: mapRoundCardStyleToTheme(roundCardStyle)
+    };
     
     if (!roundTemplate) {
         debugLog('CREATE NEW ROUND CARD: ERROR - roundTemplate is not loaded');
@@ -602,7 +624,7 @@ async function createNewRoundCard(combat) {
         speaker,
         rollMode: 'publicroll',
         flags: {
-            [MODULE.ID]: { roundCycling: true, round: combat.round, combat: combat.id }
+            [MODULE.ID]: { roundCycling: true, round: combat.round, combat: combat.id, roundCardStyle, roundIconStyle }
         },
     };
         // Play Round sound
@@ -718,6 +740,7 @@ async function postNewTurnCard(combat, context) {
 	info.turnLayout = cardSettings.turnLayout ?? 'full';
 	info.turnIconStyle = cardSettings.turnIconStyle ?? 'fa-shield';
 	info.turnCardStyle = cardSettings.turnCardStyle ?? 'cardsdark';
+	info.theme = mapTurnCardStyleToTheme(info.turnCardStyle);
 	info.roundIconStyle = cardSettings.roundIconStyle ?? 'fa-chess-queen';
 	info.roundCardStyle = cardSettings.roundCardStyle ?? 'cardsgreen';
 	info.portraitStyle = cardSettings.portraitStyle ?? 'portrait';
