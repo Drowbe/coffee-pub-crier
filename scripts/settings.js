@@ -16,8 +16,7 @@ import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api
 
 /**
  * Get Blacksmith theme choices for round cards using Chat Cards API
- * Returns choices that map to Blacksmith announcement themes
- * New themes listed first, legacy themes with "(Legacy)" suffix
+ * Returns only announcement themes (round cards are announcements)
  */
 async function getRoundCardThemeChoices() {
 	try {
@@ -29,25 +28,8 @@ async function getRoundCardThemeChoices() {
 			return getRoundCardThemeChoicesFallback();
 		}
 		
-		// Get announcement themes from API with CSS class names as keys (round cards are announcements)
-		const newThemes = chatCardsAPI.getAnnouncementThemeChoicesWithClassNames();
-		
-		// Also include card themes for round cards (some users may want regular card themes)
-		const cardThemes = chatCardsAPI.getCardThemeChoicesWithClassNames();
-		
-		// Combine: announcements first, then card themes
-		const allNewThemes = { ...newThemes, ...cardThemes };
-		
-		// Legacy themes (mapped to new themes for backward compatibility)
-		// Only the main legacy themes - minimal/simple variants removed (they map to same themes)
-		const legacyThemes = {
-			'cardsgreen': 'Green Moss (Announcement) (Legacy)',
-			'cardsred': 'Red Wine (Announcement) (Legacy)',
-			'cardsdark': 'Dark And Stormy (Legacy)',
-			'cardsblue': 'Blue Velvet (Legacy)'
-		};
-		
-		return { ...allNewThemes, ...legacyThemes };
+		// Get only announcement themes from API with CSS class names as keys (round cards are announcements)
+		return chatCardsAPI.getAnnouncementThemeChoicesWithClassNames();
 	} catch (error) {
 		console.error('Coffee Pub Crier: Error getting round card themes from API:', error);
 		return getRoundCardThemeChoicesFallback();
@@ -55,29 +37,19 @@ async function getRoundCardThemeChoices() {
 }
 
 /**
- * Fallback theme choices if API is unavailable
+ * Fallback theme choices if API is unavailable (only announcement themes)
  */
 function getRoundCardThemeChoicesFallback() {
-	// Fallback returns CSS class names as keys (matching API format)
 	return {
 		'theme-announcement-green': 'Announcement Green',
 		'theme-announcement-red': 'Announcement Red',
-		'theme-announcement-blue': 'Announcement Blue',
-		'theme-default': 'Default',
-		'theme-blue': 'Blue',
-		'theme-green': 'Green',
-		'theme-red': 'Red',
-		'cardsgreen': 'Green Moss (Announcement) (Legacy)',
-		'cardsred': 'Red Wine (Announcement) (Legacy)',
-		'cardsdark': 'Dark And Stormy (Legacy)',
-		'cardsblue': 'Blue Velvet (Legacy)'
+		'theme-announcement-blue': 'Announcement Blue'
 	};
 }
 
 /**
  * Get Blacksmith theme choices for turn cards using Chat Cards API
- * Returns choices that map to Blacksmith card themes
- * New themes listed first, legacy themes with "(Legacy)" suffix
+ * Returns only themes from the API (card themes)
  */
 async function getTurnCardThemeChoices() {
 	try {
@@ -90,19 +62,7 @@ async function getTurnCardThemeChoices() {
 		}
 		
 		// Get card themes from API with CSS class names as keys (turn cards are regular cards)
-		const newThemes = chatCardsAPI.getCardThemeChoicesWithClassNames();
-		
-		// Legacy themes (mapped to new themes for backward compatibility)
-		// Only the main legacy themes - minimal/simple variants removed (they map to same themes)
-		const legacyThemes = {
-			'cardsdark': 'Dark And Stormy (Legacy)',
-			'cardsgreen': 'Green Moss (Legacy)',
-			'cardsred': 'Red Wine (Legacy)',
-			'cardsblue': 'Blue Velvet (Legacy)',
-			'cardsbrown': 'Brown Earth (Legacy)'
-		};
-		
-		return { ...newThemes, ...legacyThemes };
+		return chatCardsAPI.getCardThemeChoicesWithClassNames();
 	} catch (error) {
 		console.error('Coffee Pub Crier: Error getting turn card themes from API:', error);
 		return getTurnCardThemeChoicesFallback();
@@ -110,21 +70,15 @@ async function getTurnCardThemeChoices() {
 }
 
 /**
- * Fallback theme choices if API is unavailable
+ * Fallback theme choices if API is unavailable (only API themes, no legacy)
  */
 function getTurnCardThemeChoicesFallback() {
-	// Fallback returns CSS class names as keys (matching API format)
 	return {
 		'theme-default': 'Default',
 		'theme-blue': 'Blue',
 		'theme-green': 'Green',
 		'theme-red': 'Red',
-		'theme-orange': 'Orange',
-		'cardsdark': 'Dark And Stormy (Legacy)',
-		'cardsgreen': 'Green Moss (Legacy)',
-		'cardsred': 'Red Wine (Legacy)',
-		'cardsblue': 'Blue Velvet (Legacy)',
-		'cardsbrown': 'Brown Earth (Legacy)'
+		'theme-orange': 'Orange'
 	};
 }
 
@@ -191,7 +145,7 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			default: 'cardsgreen', // Legacy key - maps to 'theme-announcement-green'. New themes use CSS class names directly (e.g., 'theme-announcement-green')
+			default: 'theme-announcement-green', // CSS class name from API
 			choices: roundCardThemeChoices
 		});
 		// -- Round Icon --
@@ -297,7 +251,7 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			default: 'cardsdark', // Legacy key - maps to 'theme-default'. New themes use CSS class names directly (e.g., 'theme-default')
+			default: 'theme-default', // CSS class name from API
 			choices: turnCardThemeChoices,
 		});
 		// -- Turn Card Color --

@@ -574,21 +574,7 @@ async function mapRoundCardStyleToTheme(roundCardStyle) {
         return roundCardStyle;
     }
     
-    // If it's a legacy key (starts with 'cards'), map it to CSS class name
-    if (roundCardStyle?.startsWith('cards')) {
-        const themeMap = {
-            'cardsdark': 'theme-default',
-            'cardsgreen': 'theme-announcement-green',
-            'cardsred': 'theme-announcement-red',
-            'cardsblue': 'theme-announcement-blue',
-            'cardsminimalred': 'theme-announcement-red',
-            'cardsminimalplain': 'theme-default',
-            'cardssimple': 'theme-default'
-        };
-        return themeMap[roundCardStyle] || 'theme-default';
-    }
-    
-    // If it's a theme ID (not a class name), try to convert it using API
+    // If it's a theme ID (not a class name), convert it using API
     try {
         const blacksmith = await BlacksmithAPI.get();
         const chatCardsAPI = blacksmith?.chatCards;
@@ -612,22 +598,7 @@ async function mapTurnCardStyleToTheme(turnCardStyle) {
         return turnCardStyle;
     }
     
-    // If it's a legacy key (starts with 'cards'), map it to CSS class name
-    if (turnCardStyle?.startsWith('cards')) {
-        const themeMap = {
-            'cardsdark': 'theme-default',
-            'cardsgreen': 'theme-green',
-            'cardsred': 'theme-red',
-            'cardsblue': 'theme-blue',
-            'cardsbrown': 'theme-default',
-            'cardsminimalred': 'theme-red',
-            'cardsminimalplain': 'theme-default',
-            'cardssimple': 'theme-default'
-        };
-        return themeMap[turnCardStyle] || 'theme-default';
-    }
-    
-    // If it's a theme ID (not a class name), try to convert it using API
+    // If it's a theme ID (not a class name), convert it using API
     try {
         const blacksmith = await BlacksmithAPI.get();
         const chatCardsAPI = blacksmith?.chatCards;
@@ -648,7 +619,7 @@ async function mapTurnCardStyleToTheme(turnCardStyle) {
 async function createNewRoundCard(combat) {
     const speaker = ChatMessage.getSpeaker('GM');
     const override = await getSettingSafely(MODULE.ID, CRIER.roundLabel);
-    const roundCardStyle = await getSettingSafely(MODULE.ID, CRIER.roundCardStyle, 'cardsgreen');
+    const roundCardStyle = await getSettingSafely(MODULE.ID, CRIER.roundCardStyle, 'theme-announcement-green');
     const roundIconStyle = await getSettingSafely(MODULE.ID, CRIER.roundIconStyle, 'fa-chess-queen');
     
     const theme = await mapRoundCardStyleToTheme(roundCardStyle);
@@ -785,10 +756,10 @@ async function postNewTurnCard(combat, context) {
 	const cardSettings = await getTurnCardSettings();
 	info.turnLayout = cardSettings.turnLayout ?? 'full';
 	info.turnIconStyle = cardSettings.turnIconStyle ?? 'fa-shield';
-	info.turnCardStyle = cardSettings.turnCardStyle ?? 'cardsdark';
+	info.turnCardStyle = cardSettings.turnCardStyle ?? 'theme-default';
 	info.theme = await mapTurnCardStyleToTheme(info.turnCardStyle);
 	info.roundIconStyle = cardSettings.roundIconStyle ?? 'fa-chess-queen';
-	info.roundCardStyle = cardSettings.roundCardStyle ?? 'cardsgreen';
+	info.roundCardStyle = cardSettings.roundCardStyle ?? 'theme-announcement-green';
 	info.portraitStyle = cardSettings.portraitStyle ?? 'portrait';
 	info.tokenBackground = cardSettings.tokenBackground ?? 'dirt';
 	info.tokenScale = cardSettings.tokenScale ?? 100;
