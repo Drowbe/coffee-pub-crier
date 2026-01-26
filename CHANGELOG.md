@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Round cards**: Template uses Blacksmith structure (hide-header span, `blacksmith-card` + theme, `card-header` with icon). Round icon and message come from template; `createNewRoundCard` passes `roundCardStyle`, `roundIconStyle`, and `theme`.
 - **Turn cards**: Template wrapped in `blacksmith-card` + theme; title blocks use `card-header`, body uses `section-content`. Full, small, and none layouts preserved.
-- **CSS**: Turn card styles scoped to `.blacksmith-card.crier`. Wrapper-level chrome (background, border) removed; Blacksmith themes provide card styling. HP bars, abilities, death saves, image-stack, and token backgrounds kept and scoped.
+- **Missed turn cards**: Now use Blacksmith framework (`blacksmith-card theme-orange`) with hide-header span. Removed JavaScript manipulation of Foundry's `.message-header`; no longer overriding core chat template styles.
+- **CSS**: Turn card styles scoped to `.blacksmith-card.crier`. Wrapper-level chrome (background, border) removed; Blacksmith themes provide card styling. HP bars, abilities, death saves, image-stack, and token backgrounds kept and scoped. Missed turn card CSS simplified and scoped to `.blacksmith-card.crier.missed-crier`.
 - **Settings**: Round and Turn Card Style dropdowns use `getRoundCardThemeChoices()` and `getTurnCardThemeChoices()` instead of Blacksmith constants.
 
 ### Deprecated

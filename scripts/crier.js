@@ -351,35 +351,19 @@ function interceptNewRoundMessage(cm, html, main) {
  * @param {Element} main
  */
 function interceptMissedTurnMessage(cm, html, main) {
-	// DEBUG: TURNING OFF MISSED TURNS FOR NOW
-	//return;
-	main.classList.add('coffee-pub', 'missed-crier');
-
-	const content = html.querySelector('.message-content > .crier');
-
-	// Remove things to enforce formatting
-	const header = main.querySelector('.message-header');
-	if (!header) return;
-	header.classList.remove('message-header');
-	const wh = header.querySelector('.whisper-to');
-	if (wh) {
-		main.title = wh.textContent;
-		wh.remove();
-	}
-	const timestamp = header.querySelectorAll('.message-sender,.message-timestamp');
-	timestamp?.forEach(el => el.style.display = 'none');
-	const msgb = document.createElement('div');
-	msgb.classList.add('missed-token');
-	const missedIcon = content.querySelector('.missed-turn-icon'),
-		missedText = content.querySelector('.missed-turn-text'),
-		missedCombatant = content.querySelector('.missed-combatant'),
-		missedName = document.createElement('span');
-	missedName.classList.add('missed-turn-name');
-	missedName.textContent = missedCombatant?.textContent?.trim() ?? '...';
-	msgb.append(missedIcon, ' ', missedName, ' ', missedText);
-	header.prepend(msgb);
-
-	if (content) hideContent(content);
+	// Missed turn cards now use Blacksmith framework - template handles structure
+	// This function is kept for compatibility but no longer manipulates DOM
+	// The template (created in createMissedTurnCard) now includes:
+	// - hide-header span
+	// - .blacksmith-card with theme-orange
+	// - .card-header with icon and message
+	// - Blacksmith framework handles styling
+	
+	// Data attributes are already in the template, so no migration needed
+	// Blacksmith framework handles styling
+	if (!main) return;
+	// Ensure crier class is present (already added in chatMessageEvent, but keep for safety)
+	main.classList.add('coffee-pub');
 }
 
 // ************************************
@@ -483,8 +467,15 @@ async function createMissedTurnCard(data, context) {
 	if (await getSettingSafely(MODULE.ID, CRIER.missedTurnNotification, false)) {
         ui.notifications.info("Did " + strMissedTurnPlayer + " miss their turn?", {permanent: false, console: false});
     }
+    // Use Blacksmith framework for missed turn cards
+    const content = `<span style="visibility: hidden">coffeepub-hide-header</span>
+<div class="blacksmith-card theme-orange crier missed-crier">
+	<div class="card-header">
+		<i class="fa-solid fa-fire"></i> <span class="missed-combatant">${data.last.combatant.name}</span> <span class="missed-turn-text">may have missed a turn.</span>
+	</div>
+</div>`;
     const msgData = {
-        content: `<div class="coffee-pub crier"><span class="missed-turn-icon"><i class="fa-solid fa-fire"></i></span><span class="missed-combatant">${data.last.combatant.name}</span> <span class="missed-turn-text"> may have missed a turn.</span></div>`,
+        content: content,
         rollMode: 'selfroll',
         whisper: [...game.users.filter(u => u.isGM)],
         speaker: { scene, actor, token, alias },
