@@ -1,0 +1,262 @@
+/* ******************************************** */
+/* *****          ALL CARDS             ***** */
+/* ******************************************** */
+
+:root {
+	--intCardMarginTop: 0px;
+	--intCardMarginBottom: 0px;
+	--intCardMarginLeft: 0px;
+	--intCardMarginRight: 0px;
+}
+
+/* ******************************************** */
+/* *****     SECTION-CONTENT ONLY       ***** */
+/* ******************************************** */
+
+/* Card structure: hide-header span → blacksmith-card + theme → card-header (Blacksmith) → section-content (we style this only). */
+
+/* ----- Missed turn (section-content) ----- */
+.blacksmith-card .section-content .missed-combatant {
+	font-weight: 550;
+	font-size: 1.0em;
+	text-transform: uppercase;
+}
+.blacksmith-card .section-content .missed-turn-text {
+	font-weight: 100;
+	font-size: 1.0em;
+	text-transform: uppercase;
+}
+
+
+/* ----- Turn cards: content in .section-content ----- */
+.blacksmith-card .section-content [id^="crier-cards-description-"] {
+	border-radius: 4px;
+	padding: 5px 10px;
+	margin-top: 10px;
+	margin-bottom: 0;
+}
+.blacksmith-card .section-content [id^="crier-cards-content-"] {
+	border-radius: 5px;
+	padding: 0;
+	margin-top: 10px;
+	margin-bottom: 0;
+}
+.blacksmith-card .section-content img {
+	border-radius: 4px !important;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 0;
+	margin-bottom: -4px;
+	padding: 0;
+}
+.blacksmith-card .section-content .image-stack {
+	display: grid;
+	grid-template-columns: repeat(1, 1fr);
+	position: relative;
+}
+.blacksmith-card .section-content .image-stack__item--bottom {
+	grid-column: 1 / span 1;
+	grid-row: 1;
+	z-index: 1;
+}
+.blacksmith-card .section-content .image-stack__item--top {
+	grid-column: 1 / -1;
+	grid-row: 1;
+}
+.blacksmith-card .section-content [id^="crier-cards-description-"] h2 {
+	font-weight: 400;
+	font-size: 1.0em;
+	margin: 0;
+	padding: 0;
+}
+.blacksmith-card .section-content .crier-cards-user-cardsgreen,
+.blacksmith-card .section-content .crier-cards-user-cardsblue,
+.blacksmith-card .section-content .crier-cards-user-cardsdark,
+.blacksmith-card .section-content .crier-cards-user-cardsred {
+	font-weight: 550;
+	font-size: 0.9em;
+	text-transform: uppercase;
+}
+.blacksmith-card .section-content .grid-container {
+	display: grid;
+	grid-template-columns: 3fr 1fr;
+	grid-gap: 10px;
+	margin: 0;
+	padding: 0;
+}
+.blacksmith-card .section-content .grid-container .grid-child.left,
+.blacksmith-card .section-content .grid-container .grid-child.right {
+	margin: 0;
+	padding: 0;
+}
+.blacksmith-card .section-content [id^="hp-container-"] {
+	border-radius: 4px;
+	padding: 3px;
+	margin-top: 10px;
+	margin-bottom: 0;
+}
+.blacksmith-card .section-content [id^="hp-container-"] [id^="hp-progress-"] {
+	height: 10px;
+	border-radius: 2px;
+	margin: 0;
+	padding: 0;
+}
+.blacksmith-card .section-content [id^="hp-container-"] [id*="hp-progress-critical-"] {
+	animation: hp-pulse-color 2s 10 forwards;
+}
+.blacksmith-card .section-content [id^="ability-container-"] {
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+	grid-gap: 5px;
+	margin: 0;
+	padding: 0;
+}
+.blacksmith-card .section-content [id^="ability-container-"] [id^="ability-child-"] {
+	border-radius: 4px;
+	padding: 5px 10px;
+	margin-top: 10px;
+	margin-bottom: 0;
+}
+.blacksmith-card .section-content [id^="ability-title-"] {
+	font-weight: 400;
+	font-size: 0.6em;
+	text-transform: uppercase;
+	text-align: center;
+	display: block;
+	margin: 0;
+	padding: 0;
+}
+.blacksmith-card .section-content [id^="ability-content-"] {
+	font-weight: 550;
+	font-size: 1.1em;
+	text-transform: uppercase;
+	text-align: center;
+	display: block;
+	margin: 0;
+	padding: 0;
+}
+.blacksmith-card .section-content [class*="crier-deathsave-wrapper-"] {
+	display: grid;
+	grid-template-columns: auto auto auto;
+	position: relative;
+	text-align: center;
+	padding: 0;
+}
+.blacksmith-card .section-content [class*="crier-deathsave-wrapper-icon-"],
+.blacksmith-card .section-content [class*="crier-deathsave-wrapper-successes-"],
+.blacksmith-card .section-content [class*="crier-deathsave-wrapper-failures-"] {
+	grid-column: auto;
+	font-size: 1.2em;
+	padding: 2px 0;
+	margin: 0;
+	display: flex;
+	align-items: center;
+}
+.blacksmith-card .section-content [class*="crier-deathsave-wrapper-icon-"] {
+	justify-content: center;
+}
+.blacksmith-card .section-content [class*="crier-deathsave-wrapper-successes-"] {
+	justify-content: right;
+}
+.blacksmith-card .section-content [class*="crier-deathsave-wrapper-failures-"] {
+	justify-content: left;
+}
+.blacksmith-card .section-content [class*="crier-deathsave-icon-"] {
+	animation: death-save-pulse 3s infinite;
+}
+.blacksmith-card .section-content [class*="crier-deathsuccessdot-"],
+.blacksmith-card .section-content [class*="crier-deathfailuredot-"] {
+	display: inline-block;
+	border-radius: 25%;
+	height: 13px;
+	width: 13px;
+	margin: 0 6px;
+	padding: 0;
+}
+
+@keyframes hp-pulse-color {
+	0% { background: rgb(119, 20, 16); }
+	50% { background: rgb(209, 18, 12); }
+	100% { background: rgb(119, 20, 16); }
+}
+@keyframes death-save-pulse {
+	0%, 40%, 60%, 100% { opacity: 1; }
+	45%, 55% { opacity: 0.6; }
+}
+
+/* Token backgrounds (section-content only) */
+.blacksmith-card .section-content .crier-token-background-themecolor,
+.blacksmith-card .section-content .crier-token-background-brick,
+.blacksmith-card .section-content .crier-token-background-cobblestone,
+.blacksmith-card .section-content .crier-token-background-dessert,
+.blacksmith-card .section-content .crier-token-background-parchment,
+.blacksmith-card .section-content .crier-token-background-rock,
+.blacksmith-card .section-content .crier-token-background-stone,
+.blacksmith-card .section-content .crier-token-background-clothdark,
+.blacksmith-card .section-content .crier-token-background-clothlight,
+.blacksmith-card .section-content .crier-token-background-stonefloor,
+.blacksmith-card .section-content .crier-token-background-grass,
+.blacksmith-card .section-content .crier-token-background-dirt {
+	background-repeat: repeat;
+	background-size: cover;
+}
+.blacksmith-card .section-content .crier-token-background-themecolor {
+	background-color: transparent;
+}
+.blacksmith-card .section-content .crier-token-background-dirt {
+	background-image: url(../images/tile-dirt.webp);
+}
+.blacksmith-card .section-content .crier-token-background-grass {
+	background-image: url(../images/tile-grass.webp);
+}
+.blacksmith-card .section-content .crier-token-background-parchment {
+	background-image: url(../images/tile-parchment.webp);
+}
+.blacksmith-card .section-content .crier-token-background-clothlight {
+	background-image: url(../images/tile-clothlight.webp);
+}
+.blacksmith-card .section-content .crier-token-background-clothdark {
+	background-image: url(../images/tile-clothdark.webp);
+}
+.blacksmith-card .section-content .crier-token-background-brick {
+	background-image: url(../images/tile-brick.webp);
+}
+.blacksmith-card .section-content .crier-token-background-cobblestone {
+	background-image: url(../images/tile-cobblestone.webp);
+}
+.blacksmith-card .section-content .crier-token-background-dessert {
+	background-image: url(../images/tile-dessert.webp);
+}
+.blacksmith-card .section-content .crier-token-background-stonefloor {
+	background-image: url(../images/tile-stonefloor.webp);
+}
+.blacksmith-card .section-content .crier-token-background-rock {
+	background-image: url(../images/tile-rock.webp);
+}
+.blacksmith-card .section-content .crier-token-background-stone {
+	background-image: url(../images/tile-stone.webp);
+}
+
+/* HP bar and death-save semantic colors (section-content only) */
+.blacksmith-card .section-content [id*="hp-progress-healthy-"] { background: #629602; }
+.blacksmith-card .section-content [id*="hp-progress-hurt-"] { background: #df8601; }
+.blacksmith-card .section-content [id*="hp-progress-dying-"] { background: #772810; }
+.blacksmith-card .section-content [id*="hp-progress-critical-"] { background: #771410; }
+.blacksmith-card .section-content [id*="hp-progress-dead-"] { background: #424242; }
+.blacksmith-card .section-content [class*="crier-deathsuccessdot-off-"] {
+	background-color: rgba(0,0,0,0.2);
+	border: 1px solid #504a4a;
+}
+.blacksmith-card .section-content [class*="crier-deathsuccessdot-on-"] {
+	background-color: #629602;
+	border: 1px solid #629602;
+}
+.blacksmith-card .section-content [class*="crier-deathfailuredot-off-"] {
+	background-color: rgba(0,0,0,0.2);
+	border: 1px solid #771410;
+}
+.blacksmith-card .section-content [class*="crier-deathfailuredot-on-"] {
+	background-color: #771410;
+	border: 1px solid #771410;
+}

@@ -469,9 +469,12 @@ async function createMissedTurnCard(data, context) {
     }
     // Use Blacksmith framework for missed turn cards
     const content = `<span style="visibility: hidden">coffeepub-hide-header</span>
-<div class="blacksmith-card theme-orange crier missed-crier">
+<div class="blacksmith-card theme-orange">
 	<div class="card-header">
-		<i class="fa-solid fa-fire"></i> <span class="missed-combatant">${data.last.combatant.name}</span> <span class="missed-turn-text">may have missed a turn.</span>
+		<i class="fa-solid fa-fire"></i> Missed Turn
+	</div>
+	<div class="section-content">
+		<span class="missed-combatant">${data.last.combatant.name}</span> <span class="missed-turn-text">may have missed a turn.</span>
 	</div>
 </div>`;
     const msgData = {

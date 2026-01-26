@@ -55,7 +55,7 @@
     }
   ],
   "styles": [
-    "styles/module.css"
+    "styles/default.css"
   ],
   "esmodules": [
     "scripts/crier.js"

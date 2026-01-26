@@ -1,11 +1,11 @@
 <span style="visibility: hidden">coffeepub-hide-header</span>
-<div class="blacksmith-card {{theme}} crier" data-actor-id="{{actor.id}}" data-user-id="{{user.id}}" data-token-id="{{token.id}}">
+<div class="blacksmith-card {{theme}}" data-actor-id="{{actor.id}}" data-user-id="{{user.id}}" data-token-id="{{token.id}}">
 	{{#if blnLayoutFull}}
-		<div class="card-header" id="crier-cards-title-{{turnCardStyle}}">
+		<div class="card-header">
 			{{#unless blnHideTurnIcon}}
-				<i class="fa-solid {{turnIconStyle}}" id="crier-cards-icon-{{turnCardStyle}}"></i>
+				<i class="fa-solid {{turnIconStyle}}"></i>
 			{{/unless}}
-			<h1>{{{label}}}</h1>
+			{{{label}}}
 		</div>
 		<div class="section-content">
 		{{#unless hidePortrait}}
@@ -107,11 +107,11 @@
 		</div>
 	{{/if}}
 	{{#if blnLayoutSmall}}
-		<div class="card-header" id="crier-cards-title-{{turnCardStyle}}">
+		<div class="card-header">
 			{{#unless blnHideTurnIcon}}
-				<i class="fa-solid {{turnIconStyle}}" id="crier-cards-icon-{{turnCardStyle}}"></i>
+				<i class="fa-solid {{turnIconStyle}}"></i>
 			{{/unless}}
-			<h1>{{{label}}}</h1>
+			{{{label}}}
 		</div>
 		<div class="section-content">
 			<div class="grid-container">
@@ -134,8 +134,9 @@
 		</div>
 	{{/if}}
 	{{#if blnLayoutNone}}
-		<div class="card-header" id="crier-cards-title-{{turnCardStyle}}">
-			{{#unless blnHideTurnIcon}}<i class="fa-solid {{turnIconStyle}}" id="crier-cards-icon-{{turnCardStyle}}"></i>{{/unless}}<h1>{{{label}}}</h1>
+		<div class="card-header">
+			{{#unless blnHideTurnIcon}}<i class="fa-solid {{turnIconStyle}}"></i>{{/unless}}
+			{{{label}}}
 		</div>
 		<div class="section-content">
 			{{#unless hidePortrait}}
