@@ -16,36 +16,62 @@ import { MODULE, CRIER  } from './const.js';
 /**
  * Get Blacksmith theme choices for round cards
  * Returns choices that map to Blacksmith announcement themes
+ * New themes listed first, legacy themes with "(Legacy)" suffix
  */
 function getRoundCardThemeChoices() {
-	// Map old style values to new Blacksmith theme names for round cards
-	// We keep the old values as keys for backward compatibility, but show Blacksmith theme names
-	return {
-		'cardsgreen': 'Green Moss (Announcement)',
-		'cardsred': 'Red Wine (Announcement)',
-		'cardsdark': 'Dark And Stormy',
-		'cardsblue': 'Blue Velvet',
-		'cardsminimalred': 'Red Wine (Minimal)',
-		'cardsminimalplain': 'Simple (Minimal)',
-		'cardssimple': 'Simple'
+	// New Blacksmith themes (listed first)
+	const newThemes = {
+		'theme-announcement-green': 'Green Moss (Announcement)',
+		'theme-announcement-red': 'Red Wine (Announcement)',
+		'theme-announcement-blue': 'Blue Velvet (Announcement)',
+		'theme-default': 'Simple',
+		'theme-blue': 'Blue Velvet',
+		'theme-green': 'Green Moss',
+		'theme-red': 'Red Wine'
 	};
+	
+	// Legacy themes (mapped to new themes for backward compatibility)
+	const legacyThemes = {
+		'cardsgreen': 'Green Moss (Announcement) (Legacy)',
+		'cardsred': 'Red Wine (Announcement) (Legacy)',
+		'cardsdark': 'Dark And Stormy (Legacy)',
+		'cardsblue': 'Blue Velvet (Legacy)',
+		'cardsminimalred': 'Red Wine (Minimal) (Legacy)',
+		'cardsminimalplain': 'Simple (Minimal) (Legacy)',
+		'cardssimple': 'Simple (Legacy)'
+	};
+	
+	return { ...newThemes, ...legacyThemes };
 }
 
 /**
  * Get Blacksmith theme choices for turn cards
  * Returns choices that map to Blacksmith card themes
+ * New themes listed first, legacy themes with "(Legacy)" suffix
  */
 function getTurnCardThemeChoices() {
-	return {
-		'cardsdark': 'Dark And Stormy',
-		'cardsgreen': 'Green Moss',
-		'cardsred': 'Red Wine',
-		'cardsblue': 'Blue Velvet',
-		'cardsbrown': 'Brown Earth',
-		'cardsminimalred': 'Red Wine (Minimal)',
-		'cardsminimalplain': 'Simple (Minimal)',
-		'cardssimple': 'Simple'
+	// New Blacksmith themes (listed first)
+	const newThemes = {
+		'theme-default': 'Simple',
+		'theme-blue': 'Blue Velvet',
+		'theme-green': 'Green Moss',
+		'theme-red': 'Red Wine',
+		'theme-orange': 'Orange'
 	};
+	
+	// Legacy themes (mapped to new themes for backward compatibility)
+	const legacyThemes = {
+		'cardsdark': 'Dark And Stormy (Legacy)',
+		'cardsgreen': 'Green Moss (Legacy)',
+		'cardsred': 'Red Wine (Legacy)',
+		'cardsblue': 'Blue Velvet (Legacy)',
+		'cardsbrown': 'Brown Earth (Legacy)',
+		'cardsminimalred': 'Red Wine (Minimal) (Legacy)',
+		'cardsminimalplain': 'Simple (Minimal) (Legacy)',
+		'cardssimple': 'Simple (Legacy)'
+	};
+	
+	return { ...newThemes, ...legacyThemes };
 }
 
 export const registerSettings = async () => {

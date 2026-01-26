@@ -70,10 +70,8 @@
 	margin: 0;
 	padding: 0;
 }
-.blacksmith-card .section-content .crier-cards-user-cardsgreen,
-.blacksmith-card .section-content .crier-cards-user-cardsblue,
-.blacksmith-card .section-content .crier-cards-user-cardsdark,
-.blacksmith-card .section-content .crier-cards-user-cardsred {
+/* Player name styling - generic for all themes (new and legacy) */
+.blacksmith-card .section-content [class^="crier-cards-user-"] {
 	font-weight: 550;
 	font-size: 0.9em;
 	text-transform: uppercase;

@@ -563,10 +563,16 @@ async function generateCards(info, context) {
 // ** MAP ROUND CARD STYLE TO BLACKSMITH THEME
 // ************************************
 function mapRoundCardStyleToTheme(roundCardStyle) {
+    // If already a new theme key (starts with 'theme-'), return as-is
+    if (roundCardStyle?.startsWith('theme-')) {
+        return roundCardStyle;
+    }
+    // Map legacy keys to new themes
     const themeMap = {
         'cardsdark': 'theme-default',
         'cardsgreen': 'theme-announcement-green',
         'cardsred': 'theme-announcement-red',
+        'cardsblue': 'theme-announcement-blue',
         'cardsminimalred': 'theme-announcement-red',
         'cardsminimalplain': 'theme-default',
         'cardssimple': 'theme-default'
@@ -578,6 +584,11 @@ function mapRoundCardStyleToTheme(roundCardStyle) {
 // ** MAP TURN CARD STYLE TO BLACKSMITH THEME
 // ************************************
 function mapTurnCardStyleToTheme(turnCardStyle) {
+    // If already a new theme key (starts with 'theme-'), return as-is
+    if (turnCardStyle?.startsWith('theme-')) {
+        return turnCardStyle;
+    }
+    // Map legacy keys to new themes
     const themeMap = {
         'cardsdark': 'theme-default',
         'cardsgreen': 'theme-green',
