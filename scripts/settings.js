@@ -31,14 +31,12 @@ function getRoundCardThemeChoices() {
 	};
 	
 	// Legacy themes (mapped to new themes for backward compatibility)
+	// Only the main legacy themes - minimal/simple variants removed (they map to same themes)
 	const legacyThemes = {
 		'cardsgreen': 'Green Moss (Announcement) (Legacy)',
 		'cardsred': 'Red Wine (Announcement) (Legacy)',
 		'cardsdark': 'Dark And Stormy (Legacy)',
-		'cardsblue': 'Blue Velvet (Legacy)',
-		'cardsminimalred': 'Red Wine (Minimal) (Legacy)',
-		'cardsminimalplain': 'Simple (Minimal) (Legacy)',
-		'cardssimple': 'Simple (Legacy)'
+		'cardsblue': 'Blue Velvet (Legacy)'
 	};
 	
 	return { ...newThemes, ...legacyThemes };
@@ -60,15 +58,13 @@ function getTurnCardThemeChoices() {
 	};
 	
 	// Legacy themes (mapped to new themes for backward compatibility)
+	// Only the main legacy themes - minimal/simple variants removed (they map to same themes)
 	const legacyThemes = {
 		'cardsdark': 'Dark And Stormy (Legacy)',
 		'cardsgreen': 'Green Moss (Legacy)',
 		'cardsred': 'Red Wine (Legacy)',
 		'cardsblue': 'Blue Velvet (Legacy)',
-		'cardsbrown': 'Brown Earth (Legacy)',
-		'cardsminimalred': 'Red Wine (Minimal) (Legacy)',
-		'cardsminimalplain': 'Simple (Minimal) (Legacy)',
-		'cardssimple': 'Simple (Legacy)'
+		'cardsbrown': 'Brown Earth (Legacy)'
 	};
 	
 	return { ...newThemes, ...legacyThemes };
