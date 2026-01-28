@@ -29,11 +29,13 @@
 
 
 /* ----- Turn cards: content in .section-content ----- */
+
 .blacksmith-card .section-content [id^="crier-cards-description-"] {
 	border-radius: 4px;
 	padding: 5px 10px;
 	margin-top: 10px;
 	margin-bottom: 0;
+	background-color: rgba(0, 0, 0, 0.1);
 }
 .blacksmith-card .section-content [id^="crier-cards-content-"] {
 	border-radius: 5px;
@@ -49,6 +51,7 @@
 	margin-top: 0;
 	margin-bottom: -4px;
 	padding: 0;
+	border: 1px solid rgba(0, 0, 0, 0.05);
 }
 .blacksmith-card .section-content .image-stack {
 	display: grid;
@@ -69,6 +72,7 @@
 	font-size: 1.0em;
 	margin: 0;
 	padding: 0;
+	
 }
 /* Player name styling - generic for all themes (new and legacy) */
 .blacksmith-card .section-content [class^="crier-cards-user-"] {
@@ -93,6 +97,7 @@
 	padding: 3px;
 	margin-top: 10px;
 	margin-bottom: 0;
+	background-color: rgba(0, 0, 0, 0.1);
 }
 .blacksmith-card .section-content [id^="hp-container-"] [id^="hp-progress-"] {
 	height: 10px;
@@ -115,6 +120,7 @@
 	padding: 5px 10px;
 	margin-top: 10px;
 	margin-bottom: 0;
+	background-color: rgba(0, 0, 0, 0.1);
 }
 .blacksmith-card .section-content [id^="ability-title-"] {
 	font-weight: 400;
@@ -237,24 +243,24 @@
 }
 
 /* HP bar and death-save semantic colors (section-content only) */
-.blacksmith-card .section-content [id*="hp-progress-healthy-"] { background: #629602; }
-.blacksmith-card .section-content [id*="hp-progress-hurt-"] { background: #df8601; }
-.blacksmith-card .section-content [id*="hp-progress-dying-"] { background: #772810; }
-.blacksmith-card .section-content [id*="hp-progress-critical-"] { background: #771410; }
-.blacksmith-card .section-content [id*="hp-progress-dead-"] { background: #424242; }
+.blacksmith-card .section-content [id*="hp-progress-healthy-"] { background: rgba(98, 150, 2, 0.9); }
+.blacksmith-card .section-content [id*="hp-progress-hurt-"] { background: rgba(223, 134, 1, 0.9); }
+.blacksmith-card .section-content [id*="hp-progress-dying-"] { background: rgba(119, 40, 16, 0.9); }
+.blacksmith-card .section-content [id*="hp-progress-critical-"] { background: rgba(119, 20, 16, 0.9); }
+.blacksmith-card .section-content [id*="hp-progress-dead-"] { background: rgba(66, 66, 66, 0.9); }
 .blacksmith-card .section-content [class*="crier-deathsuccessdot-off-"] {
-	background-color: rgba(0,0,0,0.2);
-	border: 1px solid #504a4a;
+	background-color: rgba(0, 0, 0, 0.2);
+	border: 1px solid rgba(27, 63, 31, 0.02);
 }
 .blacksmith-card .section-content [class*="crier-deathsuccessdot-on-"] {
-	background-color: #629602;
-	border: 1px solid #629602;
+        background-color: rgba(27, 63, 31, 0.9);
+	border: 1px solid rgba(27, 63, 31, 0.02);
 }
 .blacksmith-card .section-content [class*="crier-deathfailuredot-off-"] {
-	background-color: rgba(0,0,0,0.2);
-	border: 1px solid #771410;
+	background-color: rgba(0, 0, 0, 0.2);
+	border: 1px solid rgba(119, 20, 16, 0.02);
 }
 .blacksmith-card .section-content [class*="crier-deathfailuredot-on-"] {
-	background-color: #771410;
-	border: 1px solid #771410;
+	background-color: rgba(119, 20, 16, 0.9);
+	border: 1px solid rgba(119, 20, 16, 0.02);
 }

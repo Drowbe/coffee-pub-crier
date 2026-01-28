@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.0.5]
+
+- **Turn cards**: 
+  - Completed migration to Blacksmith framework
+
+### Added
+- **Cursor subagents**: Project-specific subagents in `.cursor/agents/` for Cursor Agent delegation
+  - **verifier** – Validates completed work, runs tests, and reports what passed vs what’s incomplete
+  - **performance-and-memory** – Optimizes runtime performance and identifies or fixes potential memory leaks (listeners, timers, subscriptions, long-lived refs)
+  - **README** – Documents subagent format (YAML frontmatter, name/description, prompt body), project vs user scope, and when to use subagents vs skills
 
 ## [13.0.4]
 

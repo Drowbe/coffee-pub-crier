@@ -2,7 +2,7 @@
   "id": "coffee-pub-crier",
   "title": "Coffee Pub Crier",
   "description": "Enhances combat turn announcements with rich visual and audio features, including customizable turn cards, round announcements, and combat status tracking.",
-  "version": "13.0.4",
+  "version": "13.0.5",
 
   "manifest": "https://github.com/Drowbe/coffee-pub-crier/releases/latest/download/module.json",
   "download": "https://github.com/Drowbe/coffee-pub-crier/releases/latest/download/coffee-pub-crier.zip",
