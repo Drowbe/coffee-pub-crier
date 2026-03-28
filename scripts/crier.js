@@ -144,34 +144,25 @@ Hooks.once('ready', async () => {
         // Initialize templates
         debugLog('READY: Loading templates', () => ({ turn: turn_template_file, round: round_template_file }));
         
-        // Check if foundry.utils.getTemplate exists
-        debugLog('READY: Checking foundry.utils.getTemplate', () => ({
+        const getTemplateAsync = foundry.applications?.handlebars?.getTemplate;
+        debugLog('READY: Checking foundry.applications.handlebars.getTemplate', () => ({
             hasFoundry: !!foundry,
-            hasUtils: !!foundry?.utils,
-            hasGetTemplate: !!foundry?.utils?.getTemplate
+            hasGetTemplate: typeof getTemplateAsync === 'function'
         }));
-        
+
         try {
-            if (foundry?.utils?.getTemplate) {
-                turnTemplate = await foundry.utils.getTemplate(turn_template_file);
-                debugLog('READY: Turn template loaded via foundry.utils.getTemplate', () => ({ success: !!turnTemplate, type: typeof turnTemplate }));
-            } else {
-                // Fallback to global getTemplate
-                turnTemplate = await getTemplate(turn_template_file);
-                debugLog('READY: Turn template loaded via global getTemplate', () => ({ success: !!turnTemplate, type: typeof turnTemplate }));
+            if (typeof getTemplateAsync === 'function') {
+                turnTemplate = await getTemplateAsync(turn_template_file);
+                debugLog('READY: Turn template loaded', () => ({ success: !!turnTemplate, type: typeof turnTemplate }));
             }
         } catch (err) {
             debugLog('READY: Turn template failed', () => ({ error: err.message }));
         }
-        
+
         try {
-            if (foundry?.utils?.getTemplate) {
-                roundTemplate = await foundry.utils.getTemplate(round_template_file);
-                debugLog('READY: Round template loaded via foundry.utils.getTemplate', () => ({ success: !!roundTemplate, type: typeof roundTemplate }));
-    } else {
-                // Fallback to global getTemplate
-                roundTemplate = await getTemplate(round_template_file);
-                debugLog('READY: Round template loaded via global getTemplate', () => ({ success: !!roundTemplate, type: typeof roundTemplate }));
+            if (typeof getTemplateAsync === 'function') {
+                roundTemplate = await getTemplateAsync(round_template_file);
+                debugLog('READY: Round template loaded', () => ({ success: !!roundTemplate, type: typeof roundTemplate }));
             }
         } catch (err) {
             debugLog('READY: Round template failed', () => ({ error: err.message }));
