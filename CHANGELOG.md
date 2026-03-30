@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [13.0.6]
+
+### Fixed
+
+- **Foundry v13**: Round and turn card templates now load via `foundry.applications.handlebars.getTemplate` instead of the deprecated global `getTemplate`, which removes compatibility warnings during `ready` (global removal planned for Foundry v15).
+
 ## [13.0.5]
 
 - **Turn cards**: 
