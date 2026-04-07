@@ -67,6 +67,23 @@
 	grid-column: 1 / -1;
 	grid-row: 1;
 }
+/* Portrait tile: path from Blacksmith assetLookup (inline style) or themecolor (class only) */
+.blacksmith-card .section-content .crier-token-frame {
+	display: block;
+	width: fit-content;
+	max-width: 100%;
+	margin-left: auto;
+	margin-right: auto;
+	line-height: 0;
+	border-radius: 4px;
+	overflow: hidden;
+}
+.blacksmith-card .section-content .crier-token-frame img {
+	vertical-align: bottom;
+}
+.blacksmith-card .section-content .crier-token-background-themecolor {
+	background-color: transparent;
+}
 .blacksmith-card .section-content [id^="crier-cards-description-"] h2 {
 	font-weight: 400;
 	font-size: 1.0em;
@@ -187,59 +204,6 @@
 @keyframes death-save-pulse {
 	0%, 40%, 60%, 100% { opacity: 1; }
 	45%, 55% { opacity: 0.6; }
-}
-
-/* Token backgrounds (section-content only) */
-.blacksmith-card .section-content .crier-token-background-themecolor,
-.blacksmith-card .section-content .crier-token-background-brick,
-.blacksmith-card .section-content .crier-token-background-cobblestone,
-.blacksmith-card .section-content .crier-token-background-dessert,
-.blacksmith-card .section-content .crier-token-background-parchment,
-.blacksmith-card .section-content .crier-token-background-rock,
-.blacksmith-card .section-content .crier-token-background-stone,
-.blacksmith-card .section-content .crier-token-background-clothdark,
-.blacksmith-card .section-content .crier-token-background-clothlight,
-.blacksmith-card .section-content .crier-token-background-stonefloor,
-.blacksmith-card .section-content .crier-token-background-grass,
-.blacksmith-card .section-content .crier-token-background-dirt {
-	background-repeat: repeat;
-	background-size: cover;
-}
-.blacksmith-card .section-content .crier-token-background-themecolor {
-	background-color: transparent;
-}
-.blacksmith-card .section-content .crier-token-background-dirt {
-	background-image: url(../images/tile-dirt.webp);
-}
-.blacksmith-card .section-content .crier-token-background-grass {
-	background-image: url(../images/tile-grass.webp);
-}
-.blacksmith-card .section-content .crier-token-background-parchment {
-	background-image: url(../images/tile-parchment.webp);
-}
-.blacksmith-card .section-content .crier-token-background-clothlight {
-	background-image: url(../images/tile-clothlight.webp);
-}
-.blacksmith-card .section-content .crier-token-background-clothdark {
-	background-image: url(../images/tile-clothdark.webp);
-}
-.blacksmith-card .section-content .crier-token-background-brick {
-	background-image: url(../images/tile-brick.webp);
-}
-.blacksmith-card .section-content .crier-token-background-cobblestone {
-	background-image: url(../images/tile-cobblestone.webp);
-}
-.blacksmith-card .section-content .crier-token-background-dessert {
-	background-image: url(../images/tile-dessert.webp);
-}
-.blacksmith-card .section-content .crier-token-background-stonefloor {
-	background-image: url(../images/tile-stonefloor.webp);
-}
-.blacksmith-card .section-content .crier-token-background-rock {
-	background-image: url(modules/coffee-pub-crier/images/tile-rock.webp);
-}
-.blacksmith-card .section-content .crier-token-background-stone {
-	background-image: url(../images/tile-stone.webp);
 }
 
 /* HP bar and death-save semantic colors (section-content only) */

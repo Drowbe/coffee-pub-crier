@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.0.7]
+
+### Fixed
+
+- **Blacksmith registration**: Register with Blacksmith only after `await BlacksmithAPI.waitForReady()`, using `game.modules.get('coffee-pub-blacksmith').api` (`registerModule` / `ModuleManager.registerModule`) with a `BlacksmithModuleManager` fallback. Removes `Cannot read properties of null (reading 'registerModule')` when Crier’s `ready` runs before Blacksmith exposes globals.
+- **Token portrait tiles**: Background textures now use **Blacksmith merged asset `path`** (via `api.assetLookup.dataCollections.backgroundImages` and `foundry.utils.getRoute`), matching the **Image Background** setting’s stored `value` instead of a duplicate file map in Crier.
+- **Chat HTML sanitization**: Foundry strips inline `style` from message content, so tile URLs are stored on the message as **`flags.coffee-pub-crier.tokenBackgroundImageUrl`** and applied in **`renderChatMessage`** to `.crier-token-frame` with the DOM API so cobblestone (and other tiles) actually render.
+
+### Changed
+
+- **Turn card template**: Portrait area uses a `.crier-token-frame` wrapper; **themecolor** still uses `.crier-token-background-themecolor` only (no tile file).
+
+### Removed
+
+- **Legacy token tile CSS**: Removed per-choice `url(../images/tile-*.webp)` rules and the old class-per-tile image map; Crier no longer ships parallel tile assets for those backgrounds (Blacksmith is the source of truth).
+
 ## [13.0.6]
 
 ### Fixed

@@ -318,7 +318,7 @@ export const registerSettings = async () => {
 			},
 			default: 'portrait',
 		});
-		// -- Image Background --
+		// -- Image Background (stored value = Blacksmith asset `value`; file comes from Blacksmith merged assets) --
 		game.settings.register(MODULE.ID, CRIER.tokenBackground, {
 			name: MODULE.ID + '.tokenBackground-Label',
 			hint: MODULE.ID + '.tokenBackground-Hint',

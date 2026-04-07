@@ -7,29 +7,7 @@ import { wrapNumber, getDocData, getDefaultPermission, getProtoToken, getUsers, 
 
 // -- Import MODULE variables --
 import { MODULE, CRIER  } from './const.js';
-
-
-// ================================================================== 
-// ===== BEGIN: BLACKSMITH API REGISTRATIONS ========================
-// ================================================================== 
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
-Hooks.once('ready', () => {
-    try {
-        // Register your module with Blacksmith
-        BlacksmithModuleManager.registerModule(MODULE.ID, {
-            name: MODULE.NAME,
-            version: MODULE.VERSION
-        });
-    } catch (error) {
-        console.error('❌ Failed to register ' + MODULE.NAME + ' with Blacksmith:', error);
-    }
-});
-// ================================================================== 
-// ===== END: BLACKSMITH API REGISTRATIONS ==========================
-// ================================================================== 
-
-
-
 
 
 
@@ -141,6 +119,25 @@ function debugLog(message, payloadFactory) {
 // REQUIRED: Access Blacksmith API and initialize your module
 Hooks.once('ready', async () => {
     try {
+        const blacksmithMod = game.modules.get('coffee-pub-blacksmith');
+        if (blacksmithMod?.active) {
+            await BlacksmithAPI.waitForReady();
+            try {
+                const api = blacksmithMod.api;
+                const register =
+                    (typeof api?.registerModule === 'function' && api.registerModule.bind(api)) ||
+                    (typeof api?.ModuleManager?.registerModule === 'function' &&
+                        api.ModuleManager.registerModule.bind(api.ModuleManager)) ||
+                    (typeof BlacksmithModuleManager?.registerModule === 'function' &&
+                        BlacksmithModuleManager.registerModule.bind(BlacksmithModuleManager));
+                if (register) {
+                    register(MODULE.ID, { name: MODULE.NAME, version: MODULE.VERSION });
+                }
+            } catch (regError) {
+                console.error('❌ Failed to register ' + MODULE.NAME + ' with Blacksmith:', regError);
+            }
+        }
+
         // Initialize templates
         debugLog('READY: Loading templates', () => ({ turn: turn_template_file, round: round_template_file }));
         
@@ -281,6 +278,41 @@ Hooks.once('ready', async () => {
 // ===== FUNCTIONS ==================================================
 // ================================================================== 
 
+/**
+ * Setting stores Blacksmith asset `value`. Resolve `path` from api.assetLookup.
+ * Chat HTML is sanitized — inline `style` is stripped — so we store `imageUrl` on message flags and apply in `renderChatMessage`.
+ * No path (themecolor) → CSS class .crier-token-background-themecolor only.
+ * @param {string} value
+ * @returns {{ imageUrl: string|null, useClass: boolean }}
+ */
+function getTokenBackgroundPresentation(value) {
+	const lookup = game.modules.get('coffee-pub-blacksmith')?.api?.assetLookup;
+	const images = lookup?.dataCollections?.backgroundImages;
+	if (Array.isArray(images)) {
+		const entry = images.find((img) => String(img.value) === String(value));
+		if (entry?.path) {
+			return {
+				imageUrl: foundry.utils.getRoute(entry.path),
+				useClass: false
+			};
+		}
+	}
+	return { imageUrl: null, useClass: true };
+}
+
+/**
+ * @param {ParentNode|null|undefined} scope
+ * @param {string} imageUrl
+ */
+function applyCrierTokenBackgroundFrames(scope, imageUrl) {
+	if (!scope || !imageUrl) return;
+	const safe = String(imageUrl).replace(/\\/g, '/').replace(/"/g, '\\"');
+	scope.querySelectorAll?.('.crier-token-frame')?.forEach((el) => {
+		el.style.setProperty('background-image', `url("${safe}")`);
+		el.style.setProperty('background-repeat', 'repeat');
+		el.style.setProperty('background-size', 'cover');
+	});
+}
 
 // ************************************
 // ** HIDE CONTENT
@@ -433,6 +465,13 @@ function chatMessageEvent(cm, html, _options) {
 			nativeHtml.classList.add('obfuscated');
 		}
 	}
+
+	// Sanitized chat HTML strips inline styles; apply tile URL from flags after DOM exists.
+	const bgUrl = flags.tokenBackgroundImageUrl ?? cm.getFlag(MODULE.ID, 'tokenBackgroundImageUrl');
+	if (bgUrl) {
+		const scope = main ?? nativeHtml?.closest?.('.message') ?? nativeHtml;
+		applyCrierTokenBackgroundFrames(scope, bgUrl);
+	}
 }
 
 // ************************************
@@ -545,7 +584,10 @@ async function generateCards(info, context) {
 				turnCardStyle: info.turnCardStyle,
 				turnIconStyle: info.turnIconStyle,
 				roundCardStyle: info.roundCardStyle,
-				roundIconStyle: info.roundIconStyle
+				roundIconStyle: info.roundIconStyle,
+				...(info.tokenBackgroundImageUrl
+					? { tokenBackgroundImageUrl: info.tokenBackgroundImageUrl }
+					: {})
 			}
 		},
 	};
@@ -753,6 +795,9 @@ async function postNewTurnCard(combat, context) {
 	info.roundCardStyle = cardSettings.roundCardStyle ?? 'theme-announcement-green';
 	info.portraitStyle = cardSettings.portraitStyle ?? 'portrait';
 	info.tokenBackground = cardSettings.tokenBackground ?? 'dirt';
+	const tokenBgPres = getTokenBackgroundPresentation(info.tokenBackground);
+	info.tokenBackgroundImageUrl = tokenBgPres.imageUrl;
+	info.tokenBackgroundUseClass = tokenBgPres.useClass;
 	info.tokenScale = cardSettings.tokenScale ?? 100;
     //	Hide the player name if needed
     if (cardSettings.hidePlayer)

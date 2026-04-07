@@ -11,12 +11,16 @@
 		{{#unless hidePortrait}}
 			<div id="crier-cards-content-{{turnCardStyle}}">
 				{{#if hideBloodyPortrait}}
-					<img class="crier-token-background-{{tokenBackground}} under" style="width: {{tokenScale}}%;" src="{{portrait}}" />
+					<div class="crier-token-frame{{#if tokenBackgroundUseClass}} crier-token-background-{{tokenBackground}}{{/if}}">
+						<img class="under" style="width: {{tokenScale}}%;" src="{{portrait}}" />
+					</div>
 				{{/if}}
 				{{#unless hideBloodyPortrait}}
 				<div class="image-stack">
 					<div class="image-stack__item image-stack__item--top">
-						<img class="crier-token-background-{{tokenBackground}} under" style="width: {{tokenScale}}%;" src="{{portrait}}" />
+						<div class="crier-token-frame{{#if tokenBackgroundUseClass}} crier-token-background-{{tokenBackground}}{{/if}}">
+							<img class="under" style="width: {{tokenScale}}%;" src="{{portrait}}" />
+						</div>
 					</div>
 					{{#unless isNPC}}
 						<div class="image-stack__item image-stack__item--bottom">
