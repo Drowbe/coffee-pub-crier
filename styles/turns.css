@@ -236,7 +236,7 @@
 	background-image: url(../images/tile-stonefloor.webp);
 }
 .blacksmith-card .section-content .crier-token-background-rock {
-	background-image: url(../images/tile-rock.webp);
+	background-image: url(modules/coffee-pub-crier/images/tile-rock.webp);
 }
 .blacksmith-card .section-content .crier-token-background-stone {
 	background-image: url(../images/tile-stone.webp);
