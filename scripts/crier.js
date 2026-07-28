@@ -379,12 +379,17 @@ async function buildActiveEffectGroups(actor) {
 		const conditions = [...statusIds].map(conditionLabel).filter(Boolean).join(', ');
 		const duration = effect.duration;
 		const durationLabel = duration?.type && duration.type !== 'none' && duration.label ? duration.label : '';
-		let detail = conditions;
+		let context = conditions;
 		if (kind === 'other') {
 			const source = conveyedBy(effect);
-			detail = source ? `via ${source}` : '';
+			context = source ? `via ${source}` : '';
 		}
-		if (durationLabel) detail = detail ? `${detail} · ${durationLabel}` : durationLabel;
+		const typeKey = kind === 'injury' ? 'Injury'
+			: kind === 'crit' ? 'Critical'
+			: kind === 'fumble' ? 'Fumble'
+			: 'Effect';
+		const typeLabel = game.i18n.localize(`${MODULE.ID}.ActiveEffectType.${typeKey}`);
+		const detail = [typeLabel, context, durationLabel].filter(Boolean).join(' · ');
 
 		let description = String(effect.description ?? '').trim();
 		if (description) {
@@ -408,15 +413,10 @@ async function buildActiveEffectGroups(actor) {
 		};
 	}));
 
-	return [
-		{ key: 'injury', label: game.i18n.localize(`${MODULE.ID}.ActiveEffectsGroup.Injuries`) },
-		{ key: 'crit', label: game.i18n.localize(`${MODULE.ID}.ActiveEffectsGroup.Criticals`) },
-		{ key: 'fumble', label: game.i18n.localize(`${MODULE.ID}.ActiveEffectsGroup.Fumbles`) },
-		{ key: 'other', label: game.i18n.localize(`${MODULE.ID}.ActiveEffectsGroup.Effects`) }
-	].map((group) => ({
-		label: group.label,
-		rows: rows.filter((row) => row.kind === group.key)
-	})).filter((group) => group.rows.length);
+	return rows.length ? [{
+		label: game.i18n.localize(`${MODULE.ID}.ActiveEffectsGroup.StatusAndConditions`),
+		rows
+	}] : [];
 }
 
 // ************************************

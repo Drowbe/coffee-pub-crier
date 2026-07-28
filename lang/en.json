@@ -107,10 +107,13 @@
 			"Both": "Both"
 		},
 		"ActiveEffectsGroup": {
-			"Injuries": "Injuries",
-			"Criticals": "Criticals",
-			"Fumbles": "Fumbles",
-			"Effects": "Effects & Conditions"
+			"StatusAndConditions": "Status and Conditions"
+		},
+		"ActiveEffectType": {
+			"Injury": "Injury",
+			"Critical": "Critical",
+			"Fumble": "Fumble",
+			"Effect": "Effect"
 		},
 
 		"hideHealth-Label": "Hide Health",

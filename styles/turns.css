@@ -245,8 +245,7 @@
 	display: grid;
 	grid-template-columns: 34px minmax(0, 1fr);
 	gap: 7px;
-	align-items: center;
-	min-height: 38px;
+	align-items: start;
 	margin: 3px 0;
 }
 .blacksmith-card .section-content .crier-effect-icon {
@@ -262,17 +261,18 @@
 	cursor: help;
 }
 .blacksmith-card .crier-effect-text {
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
+	display: block;
 	min-width: 0;
-	height: 100%;
+	max-width: 100%;
+	padding-top: 1px;
+	overflow: hidden;
 }
 .blacksmith-card .crier-effect-name,
 .blacksmith-card .crier-effect-detail {
 	margin: 0;
 	padding: 0;
 	line-height: 1.2;
+	max-width: 100%;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -281,7 +281,7 @@
 	font-size: 0.95em;
 }
 .blacksmith-card .crier-effect-detail {
-	margin-top: 2px;
+	margin-top: 3px;
 	font-size: 0.85em;
 	opacity: 0.8;
 }
