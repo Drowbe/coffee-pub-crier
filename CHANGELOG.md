@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.0.8]
+
+### Added
+
+- **Status and Conditions reminders**: Turn cards can now include a compact, read-only list of the combatant's active injuries, criticals, fumbles, conditions, buffs, and other temporary effects.
+- **Effect details**: Each row shows a 34px effect icon, effect name, localized type (`Injury`, `Critical`, `Fumble`, or `Effect`), conveyed condition or source context, and remaining duration when available.
+- **Rules tooltips**: Hovering an effect icon displays enriched rules text, including dnd5e descriptions stored as `@Embed` content.
+- **Turn-card settings**: Added a default-on **Show Active Effects & Conditions** toggle and a **Show Active Effects For** selector with Players, NPCs & Monsters, and Both options.
+
+### Changed
+
+- **Unified status section**: All qualifying effects appear under one **Status and Conditions** heading rather than separate category headings.
+- **Bibliosoph integration**: Bibliosoph `outcomeBurst` effects retain their injury, critical, and fumble identity while remaining display-only; loose conditions can identify the injury that conveyed them.
+- **Compact layout**: Status rows use fixed icon and text columns, consistent top alignment, and single-line ellipsis for long names and details.
+
+### Technical
+
+- **Effect filtering**: Excludes disabled and suppressed effects while including Bibliosoph outcomes, temporary effects, effects carrying status IDs, and hand-authored effects whose names match registered dnd5e conditions.
+- **Actor targeting**: The Players/NPCs selector classifies dnd5e `character` actors as players and other actor types as NPCs or monsters.
+
 
 ## [13.0.7]
 

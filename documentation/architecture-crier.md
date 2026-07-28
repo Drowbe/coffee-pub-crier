@@ -11,7 +11,7 @@ Coffee Pub Crier is a FoundryVTT module that automatically posts turn and round 
 - **Settings**: `scripts/settings.js` - Module configuration
 - **Constants**: `scripts/const.js` - Module constants
 - **Templates**: `templates/turns.hbs` and `templates/rounds.hbs` - Handlebars templates for cards
-- **Styles**: `styles/module.css` - Visual styling
+- **Styles**: `styles/default.css` with component imports such as `styles/turns.css` - Visual styling
 
 ### 2. Blacksmith API Integration
 
@@ -97,6 +97,19 @@ const updateCombatHookId = BlacksmithHookManager.registerHook({
 - Triggered by turn changes (when round is initialized)
 - Uses `postNewTurnCard()` → `generateCards()` → Handlebars template
 - Includes combatant info, token data, and styling
+- Optionally builds a read-only Status and Conditions list from the combatant actor at card-post time
+
+#### Status and Conditions
+
+`buildActiveEffectGroups(actor)` includes active Bibliosoph outcomes, temporary effects, effects carrying status IDs, and effects whose localized names match registered dnd5e conditions. Disabled and suppressed effects are excluded.
+
+The template renders all qualifying rows beneath one **Status and Conditions** heading. Each row contains:
+
+- A compact effect icon with enriched rules text on hover
+- A single-line effect name
+- A single-line detail containing the localized type, context, and remaining duration
+
+Bibliosoph `outcomeBurst` flags distinguish injuries, criticals, and fumbles. Unflagged dnd5e conditions and temporary effects use the `Effect` type. Long names and details are truncated visually without changing the content stored in the chat message.
 
 ### 2. Round Cards
 - Triggered by round changes
@@ -134,6 +147,7 @@ const updateCombatHookId = BlacksmithHookManager.registerHook({
 
 Settings are registered using Blacksmith's system:
 - Turn card display toggle
+- Active effects display toggle and Players/NPCs & Monsters/Both selector
 - Round card display toggle
 - Sound settings (using Blacksmith constants)
 - Visual styling options

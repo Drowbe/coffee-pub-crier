@@ -6,4 +6,5 @@
 - [x] Replace the bulk `ChatMessage.create(msgs)` call in `processTurn` with awaited per-message creation (matching the logic already used elsewhere) to avoid promise rejections and duplicate renders.
 - [x] Gate the verbose `BlacksmithUtils.postConsoleAndNotification` telemetry (especially the initiative dumps in `processCombatChange`) behind a debug flag to prevent constant object allocations during combat.
 - [x] Provide a non-animated style (or auto-disable animations after a timeout) for `missed-crier` and HP critical indicators so old chat cards are not running infinite CSS animations forever.
+- [x] Add an optional, display-only Status and Conditions section to turn cards, with player/NPC targeting, Bibliosoph outcome support, durations, source attribution, and enriched rules tooltips.
 

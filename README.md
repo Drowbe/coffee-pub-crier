@@ -50,6 +50,7 @@ Coffee Pub Crier enhances your Foundry VTT combat experience with rich visual an
   - Armor Class
   - Movement speed
   - Death saving throws status
+- Optional read-only Status and Conditions reminders with effect type, context, duration, and rules text on hover
 - Three layout options: full, small, or none
 
 ### Round Management
@@ -126,6 +127,8 @@ https://github.com/Drowbe/coffee-pub-crier/releases/latest/download/module.json
 - **Turn Icon**: Customizable icon from comprehensive Font Awesome selection
 - **Turn Sound**: Choose from extensive sound effect library
 - **Turn Label**: Customize the turn announcement text (default: "{name}")
+- **Show Active Effects & Conditions**: Include active injuries, criticals, fumbles, conditions, buffs, and temporary effects on turn cards
+- **Show Active Effects For**: Limit status reminders to Players, NPCs & Monsters, or Both
 
 All settings are configurable through the module settings menu in Foundry VTT's configuration panel. **Settings automatically update in real-time when new themes, icons, sounds, and backgrounds are added to the Coffee Pub Blacksmith module.**
 
@@ -166,4 +169,3 @@ This module is licensed under the [MIT License](./LICENSE).
 
 ## Credits
 Created by drowbe
-
