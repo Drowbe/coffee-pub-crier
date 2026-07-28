@@ -412,6 +412,28 @@ export const registerSettings = async () => {
 			scope: 'world',
 			default: false,
 		});
+		// -- Active Effects & Conditions --
+		game.settings.register(MODULE.ID, CRIER.showActiveEffects, {
+			name: MODULE.ID + '.showActiveEffects-Label',
+			hint: MODULE.ID + '.showActiveEffects-Hint',
+			type: Boolean,
+			config: true,
+			scope: 'world',
+			default: true,
+		});
+		game.settings.register(MODULE.ID, CRIER.activeEffectsAudience, {
+			name: MODULE.ID + '.activeEffectsAudience-Label',
+			hint: MODULE.ID + '.activeEffectsAudience-Hint',
+			type: String,
+			config: true,
+			scope: 'world',
+			choices: {
+				players: MODULE.ID + '.ActiveEffectsAudience.Players',
+				npcs: MODULE.ID + '.ActiveEffectsAudience.NPCs',
+				both: MODULE.ID + '.ActiveEffectsAudience.Both',
+			},
+			default: 'both',
+		});
 		// -- Health --
 		game.settings.register(MODULE.ID, CRIER.hideHealth, {
 			name: MODULE.ID + '.hideHealth-Label',

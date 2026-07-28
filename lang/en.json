@@ -97,6 +97,22 @@
 		"hideAbilities-Label": "Hide Abilities",
 		"hideAbilities-Hint": "Do not display str, dex, con, int, wis, and cha in the turn card.",
 
+		"showActiveEffects-Label": "Show Active Effects & Conditions",
+		"showActiveEffects-Hint": "Remind the table what's riding on this combatant — conditions, injuries, buffs, and other temporary effects — with rules text on hover.",
+		"activeEffectsAudience-Label": "Show Active Effects For",
+		"activeEffectsAudience-Hint": "Choose which combatants include active effects and conditions on their turn cards.",
+		"ActiveEffectsAudience": {
+			"Players": "Players",
+			"NPCs": "NPCs & Monsters",
+			"Both": "Both"
+		},
+		"ActiveEffectsGroup": {
+			"Injuries": "Injuries",
+			"Criticals": "Criticals",
+			"Fumbles": "Fumbles",
+			"Effects": "Effects & Conditions"
+		},
+
 		"hideHealth-Label": "Hide Health",
 		"hideHealth-Hint": "Do not show the health bar in the turn card.",
 

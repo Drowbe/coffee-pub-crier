@@ -155,4 +155,22 @@
 			{{/unless}}
 		</div>
 	{{/if}}
+	{{#if activeEffectGroups}}
+		<div class="section-content crier-active-effects">
+			{{#each activeEffectGroups}}
+				<div class="crier-effect-group">
+					<p class="crier-effect-group-title">{{this.label}}</p>
+					{{#each this.rows}}
+						<div class="crier-effect-row">
+							<img class="crier-effect-icon" src="{{this.img}}" alt="" data-tooltip="{{this.tooltip}}" data-tooltip-direction="LEFT" />
+							<div class="crier-effect-text">
+								<p class="crier-effect-name"><strong>{{this.name}}</strong></p>
+								{{#if this.detail}}<p class="crier-effect-detail">{{this.detail}}</p>{{/if}}
+							</div>
+						</div>
+					{{/each}}
+				</div>
+			{{/each}}
+		</div>
+	{{/if}}
 </div>

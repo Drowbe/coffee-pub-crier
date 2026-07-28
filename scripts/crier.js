@@ -61,6 +61,8 @@ const TURN_SETTING_KEYS = {
     tokenScale: CRIER.tokenScale,
     hidePlayer: CRIER.hidePlayer,
     hideAbilities: CRIER.hideAbilities,
+    showActiveEffects: CRIER.showActiveEffects,
+    activeEffectsAudience: CRIER.activeEffectsAudience,
     hideHealth: CRIER.hideHealth,
     hideBloodyPortrait: CRIER.hideBloodyPortrait,
     turnLabel: CRIER.turnLabel,
@@ -312,6 +314,109 @@ function applyCrierTokenBackgroundFrames(scope, imageUrl) {
 		el.style.setProperty('background-repeat', 'repeat');
 		el.style.setProperty('background-size', 'cover');
 	});
+}
+
+/**
+ * Build display-only active-effect rows for a turn card.
+ * Mirrors Bibliosoph's Check-Up filtering and grouping without treatment actions.
+ * @param {Actor|null|undefined} actor
+ * @returns {Promise<Array<{label: string, rows: Array<object>}>>}
+ */
+async function buildActiveEffectGroups(actor) {
+	if (!actor) return [];
+
+	const conditionNames = new Set([
+		...(CONFIG.statusEffects ?? []).map((status) => game.i18n.localize(status.name ?? '').toLowerCase()),
+		...Object.values(CONFIG.DND5E?.conditionTypes ?? {}).map((condition) =>
+			game.i18n.localize(condition.name ?? '').toLowerCase()
+		)
+	].filter(Boolean));
+	const allEffects = Array.from(actor.effects ?? []);
+	const effects = allEffects.filter((effect) => {
+		try {
+			return !effect.disabled && !effect.isSuppressed && (
+				!!effect.getFlag('coffee-pub-bibliosoph', 'outcomeBurst')
+				|| effect.isTemporary
+				|| effect.statuses?.size > 0
+				|| conditionNames.has(String(effect.name ?? '').toLowerCase())
+			);
+		} catch (_) {
+			return false;
+		}
+	});
+
+	const conditionLabel = (id) => {
+		const status = CONFIG.statusEffects?.find((entry) => entry.id === id);
+		if (status?.name) return game.i18n.localize(status.name);
+		const condition = CONFIG.DND5E?.conditionTypes?.[id];
+		if (condition?.name) return game.i18n.localize(condition.name);
+		const text = String(id ?? '');
+		return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+	};
+	const conveyedBy = (effect) => {
+		if (!effect.statuses?.size) return null;
+		for (const other of effects) {
+			if (other === effect) continue;
+			const flag = other.getFlag('coffee-pub-bibliosoph', 'outcomeBurst');
+			if (!['injury', 'crit', 'fumble'].includes(flag?.kind)) continue;
+			const conveyed = new Set(other.statuses ?? []);
+			if (flag.condition) conveyed.add(flag.condition);
+			for (const statusId of effect.statuses) {
+				if (conveyed.has(statusId)) return other.name;
+			}
+		}
+		return null;
+	};
+	const TextEditorImpl = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
+	const rows = await Promise.all(effects.map(async (effect) => {
+		const flag = effect.getFlag('coffee-pub-bibliosoph', 'outcomeBurst');
+		const kind = ['injury', 'crit', 'fumble'].includes(flag?.kind) ? flag.kind : 'other';
+		const name = kind === 'crit' ? String(effect.name ?? '').replace(/^Critical:\s*/i, '')
+			: kind === 'fumble' ? String(effect.name ?? '').replace(/^Fumble:\s*/i, '')
+			: effect.name;
+		const statusIds = new Set(effect.statuses ?? []);
+		if (flag?.condition) statusIds.add(flag.condition);
+		const conditions = [...statusIds].map(conditionLabel).filter(Boolean).join(', ');
+		const duration = effect.duration;
+		const durationLabel = duration?.type && duration.type !== 'none' && duration.label ? duration.label : '';
+		let detail = conditions;
+		if (kind === 'other') {
+			const source = conveyedBy(effect);
+			detail = source ? `via ${source}` : '';
+		}
+		if (durationLabel) detail = detail ? `${detail} · ${durationLabel}` : durationLabel;
+
+		let description = String(effect.description ?? '').trim();
+		if (description) {
+			try {
+				description = String(await TextEditorImpl.enrichHTML(description, {
+					relativeTo: effect,
+					rollData: actor.getRollData?.() ?? {}
+				})).trim();
+			} catch (_) { /* A malformed embed should not prevent the turn card. */ }
+		}
+		const tooltip = `<section class="crier-effect-tooltip"><strong>${effect.name}</strong>`
+			+ (detail ? `<br><em>${detail}</em>` : '')
+			+ (description ? `<hr>${description}` : '')
+			+ `</section>`;
+		return {
+			kind,
+			name,
+			img: effect.img || 'icons/svg/aura.svg',
+			detail,
+			tooltip
+		};
+	}));
+
+	return [
+		{ key: 'injury', label: game.i18n.localize(`${MODULE.ID}.ActiveEffectsGroup.Injuries`) },
+		{ key: 'crit', label: game.i18n.localize(`${MODULE.ID}.ActiveEffectsGroup.Criticals`) },
+		{ key: 'fumble', label: game.i18n.localize(`${MODULE.ID}.ActiveEffectsGroup.Fumbles`) },
+		{ key: 'other', label: game.i18n.localize(`${MODULE.ID}.ActiveEffectsGroup.Effects`) }
+	].map((group) => ({
+		label: group.label,
+		rows: rows.filter((row) => row.kind === group.key)
+	})).filter((group) => group.rows.length);
 }
 
 // ************************************
@@ -839,6 +944,14 @@ async function postNewTurnCard(combat, context) {
      } else {
         info.isNPC = false;
      }
+	const effectsAudience = cardSettings.activeEffectsAudience ?? 'both';
+	const isPlayerActor = info.actor?.type === 'character';
+	const audienceMatches = effectsAudience === 'both'
+		|| (effectsAudience === 'players' && isPlayerActor)
+		|| (effectsAudience === 'npcs' && !isPlayerActor);
+	if (cardSettings.showActiveEffects !== false && audienceMatches) {
+		info.activeEffectGroups = await buildActiveEffectGroups(info.actor);
+	}
     // Set the kind of image to set in the turn card
     if (info.portraitStyle == "portrait") {
         // Try to get portrait image for all actors (both players and NPCs)
