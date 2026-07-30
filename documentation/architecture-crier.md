@@ -32,31 +32,41 @@ Hooks.once('ready') → Register hooks, load templates, initialize lastCombatant
 
 ### 2. Combat Change Detection
 
-The module uses the `updateCombat` hook to detect combat changes:
+The module uses the `updateCombat` hook to detect combat changes, and the combatant hooks to notice when a held announcement can go out:
 
 ```javascript
 updateCombat hook → processCombatChange() → {
-    if (roundChanged) → Create round card + set roundInitialized = false
-    if (turnChanged) → Check roundInitialized flag → Create turn card
+    if (!isOrderSettled) → hold the due cards, return
+    else                 → announceCombatChange({roundCard, turnCard})
 }
+
+updateCombatant (initiative) ┐
+deleteCombatant             ─┴→ flushHeldAnnouncement() → announceCombatChange()
 ```
 
 ### 3. Round Initialization System
 
-**Key Innovation**: The `roundInitialized` flag prevents premature turn cards.
+No card — round or turn — is posted until combat has started and every combatant has rolled initiative. `isOrderSettled(combat)` is that condition, and it reads live combat state:
 
-#### Round Change Logic:
-1. Set `roundInitialized = false`
-2. Create round card (if enabled)
-3. Exit (don't process turn changes)
+- `allInitiativesRolled(combat)` — true when the tracker is non-empty and no combatant is missing a finite initiative. `0` and negative values are real rolls; `null`, `undefined`, `NaN`, and unparseable values are not.
+- `combatantsMissingInitiative(combat)` — who is being waited on, for the debug log.
 
-#### Turn Change Logic:
-1. If `roundInitialized = false`:
-   - Check if all initiatives are rolled
-   - If not: Skip turn card creation
-   - If yes: Set `roundInitialized = true` and create turn card
-2. If `roundInitialized = true`:
-   - Create turn card immediately (ignore initiative checks)
+A combatant added mid-round has no initiative, so cards pause until it rolls. This is deliberate: the turn we would announce is about to be re-sorted out from under it. `postNewTurnCard()` re-checks the same condition, since it is the one funnel every turn card passes through and no caller should be able to route around it.
+
+#### Holding and releasing
+
+Cards blocked by an unsettled order are **held, not dropped** — `heldAnnouncement` records which cards were due, on the one client that made the combat update, so a flush posts each exactly once.
+
+The release is the part that is easy to get wrong. Rolling initiative writes to **Combatant** documents, so `updateCombat` never fires for it; Foundry's own follow-up `combat.update({turn})` inside `rollInitiative` diffs down to nothing whenever the current combatant keeps its slot, and fires no hook either. `flushHeldAnnouncement()` therefore hangs off the combatant hooks instead:
+
+- `updateCombatant` — when an `initiative` change settles the order
+- `deleteCombatant` — when the combatant being waited on leaves the tracker
+
+Without those, a card held at the top of a fight waits for an event that never arrives.
+
+#### `roundInitialized`
+
+A persisted record that the order settled during this round, kept in step on every turn change. It is **not** a gate — an earlier version used it as one, and because it only reset on a round change, any combatant added mid-round was waved through unchecked. It is written only by a GM client; the setting is world-scoped, so a player writing it rejects unhandled and drifts from the local cache.
 
 ### 4. State Management
 
@@ -72,9 +82,9 @@ updateCombat hook → processCombatChange() → {
 
 #### State Transitions:
 ```
-Round Change → roundInitialized = false
-All Initiatives Rolled → roundInitialized = true
-Turn Changes (when initialized) → Create turn cards
+Round Change      → roundInitialized = false
+Turn Change       → roundInitialized = allInitiativesRolled(combat)
+Any Turn Card     → posted only if combat.started && allInitiativesRolled(combat)
 ```
 
 ## Hook Registration
@@ -134,8 +144,7 @@ The block is display-only and applies nothing. Bibliosoph owns applying, ticking
 ## Edge Case Handling
 
 ### 1. New Combatant Added Mid-Round
-- If `roundInitialized = true`: Honor actual turn order, show turn cards normally
-- If `roundInitialized = false`: Wait for all initiatives before showing any turn cards
+- Turn cards pause until the new combatant has rolled, then resume in the actual turn order
 
 ### 2. Initiative Roll Timing
 - Turn cards only appear after all combatants have rolled initiative

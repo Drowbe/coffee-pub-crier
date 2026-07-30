@@ -33,6 +33,14 @@ const lastCombatant = {
 // This is now stored as a persistent setting, but we keep a local cache for performance
 let roundInitialized = false;
 
+/**
+ * Cards withheld because the turn order had not settled, waiting for the last
+ * initiative to come in. Held on the one client that made the combat update,
+ * so flushing it posts each card exactly once.
+ * @type {{combatId: string, round: number, context: object, roundCard: boolean, turnCard: boolean}|null}
+ */
+let heldAnnouncement = null;
+
 // Helper functions to sync with persistent setting
 function getRoundInitialized() {
     try {
@@ -45,8 +53,13 @@ function getRoundInitialized() {
 }
 
 function setRoundInitialized(value) {
-    game.settings.set(MODULE.ID, CRIER.roundInitialized, value);
     roundInitialized = value; // Keep local cache in sync
+    // The setting is world-scoped, so only a GM can persist it. A player
+    // client writing it rejects unhandled and leaves the two out of step;
+    // its local cache is all it reads anyway.
+    if (!game.user?.isGM) return;
+    Promise.resolve(game.settings.set(MODULE.ID, CRIER.roundInitialized, value))
+        .catch((error) => debugLog('SET ROUND INITIALIZED: Could not persist', () => ({ error: error?.message ?? error })));
 }
 
 const TURN_SETTINGS_CACHE_TTL = 5000;
@@ -199,20 +212,10 @@ Hooks.once('ready', async () => {
                     combat: combat.id,
                 };
 
-                // Check if this is an initiative update and if all initiatives are now rolled
-                if (!getRoundInitialized() && updateData.initiative !== undefined) {
-                    const combatantsArray = Array.from(combat.combatants.values());
-                    const allHaveInitiative = combatantsArray.every(combatant => 
-                        combatant.initiative !== null && combatant.initiative !== undefined
-                    );
-                    
-                    // If all initiatives are now rolled, trigger turn card creation
-                    if (allHaveInitiative) {
-                        debugLog('HOOK: preUpdateCombat - all initiatives rolled, triggering turn card');
-                        // Process turn change to create the first turn card
-                        await processCombatChange(combat, updateData, context, game.user.id, true, false);
-                    }
-                }
+                // Initiative lands on Combatant documents, never in a Combat
+                // update, so this hook is the wrong place to watch for it —
+                // the combatant hooks below do that. Announcing from a
+                // preUpdate would also post ahead of the change it describes.
             }
         });
         
@@ -255,6 +258,31 @@ Hooks.once('ready', async () => {
             }
         });
         
+        // Rolling initiative updates Combatant documents, not the Combat, so
+        // `updateCombat` never fires for it — and when the roll leaves the
+        // current combatant in the same slot, Foundry's own follow-up
+        // `combat.update({turn})` diffs down to nothing and fires no hook at
+        // all. Without these two, a card held back at the top of a fight
+        // would wait for an event that never comes.
+        const updateCombatantHookId = BlacksmithHookManager.registerHook({
+            name: 'updateCombatant',
+            description: 'Coffee Pub Crier: Post held cards once the last initiative is in',
+            context: MODULE.ID,
+            priority: 2,
+            callback: (combatant, changed) => {
+                if (!('initiative' in (changed ?? {}))) return;
+                return flushHeldAnnouncement(combatant?.parent);
+            }
+        });
+
+        const deleteCombatantHookId = BlacksmithHookManager.registerHook({
+            name: 'deleteCombatant',
+            description: 'Coffee Pub Crier: Post held cards when the combatant being waited on leaves',
+            context: MODULE.ID,
+            priority: 2,
+            callback: (combatant) => flushHeldAnnouncement(combatant?.parent)
+        });
+
         const renderChatMessageHookId = BlacksmithHookManager.registerHook({
             name: 'renderChatMessage',
             description: 'Coffee Pub Crier: Intercept and modify chat messages',
@@ -1019,9 +1047,44 @@ async function postNewRound(combat, context) {
  * @param {Combat} combat
  * @param {String} userId
  */
+/**
+ * Combatants still waiting to roll. Foundry leaves `initiative` null until a
+ * combatant has rolled, and a combatant without one has no settled place in
+ * the order yet.
+ * @param {Combat} combat
+ * @returns {Array<Combatant>}
+ */
+function combatantsMissingInitiative(combat) {
+    return Array.from(combat?.combatants?.values() ?? []).filter((combatant) => {
+        const initiative = combatant?.initiative;
+        return initiative === null || initiative === undefined || !Number.isFinite(Number(initiative));
+    });
+}
+
+/**
+ * Has the whole tracker rolled? An empty combat counts as unsettled — there
+ * is no order to announce.
+ * @param {Combat} combat
+ * @returns {boolean}
+ */
+function allInitiativesRolled(combat) {
+    if (!combat?.combatants?.size) return false;
+    return combatantsMissingInitiative(combat).length === 0;
+}
+
+/**
+ * The fight is underway and the order is final — the one condition under
+ * which Crier announces anything.
+ * @param {Combat} combat
+ * @returns {boolean}
+ */
+function isOrderSettled(combat) {
+    return !!combat?.started && allInitiativesRolled(combat);
+}
+
 async function postNewTurnCard(combat, context) {
     debugLog('POST NEW TURN CARD: Starting', () => ({ combat: combat.id }));
-    
+
     // Only continue with first GM in the list
     // if (!game.user.isGM || game.users.filter(o => o.isGM && o.active).sort((a, b) => b.role - a.role)[0].id !== game.user.id) return;
     // Exit the function if they have enabled skipping turn cards
@@ -1029,6 +1092,24 @@ async function postNewTurnCard(combat, context) {
     debugLog('POST NEW TURN CARD: Turn cycling setting', () => ({ blnShowTurnCards }));
     if (blnShowTurnCards !== true) {
         debugLog('POST NEW TURN CARD: Skipping - turn cycling disabled');
+        return;
+    }
+
+    // Nothing is announced before the fight or before the order settles.
+    // Both checks live here, at the one funnel every turn card passes
+    // through, and both read live combat state rather than a remembered
+    // flag: `roundInitialized` records that the order settled once, which is
+    // not the same as it being settled now. A combatant added mid-round has
+    // no initiative, and the card we would post announces a turn that is
+    // about to be re-sorted out from under it.
+    if (!combat.started) {
+        debugLog('POST NEW TURN CARD: Skipping - combat has not started');
+        return;
+    }
+    if (!allInitiativesRolled(combat)) {
+        debugLog('POST NEW TURN CARD: Skipping - initiatives still outstanding', () => ({
+            waitingOn: combatantsMissingInitiative(combat).map((c) => c.name)
+        }));
         return;
     }
 
@@ -1068,8 +1149,6 @@ async function postNewTurnCard(combat, context) {
     }));
     lastCombatant.combatant = combatant;
     lastCombatant.spoke = false;
-
-    if (!combat.started) return;
 
     const info = {
         actor: combatant.actor,
@@ -1403,87 +1482,100 @@ async function processCombatChange(combat, _update, context, userId, turnChanged
         turnChanged,
         roundChanged
     }));
-    
+
     if (game.user.id !== userId) {
         debugLog('PROCESS COMBAT CHANGE: Skipping - wrong user', () => ({ gameUserId: game.user.id, userId }));
         return;
     }
 
+    const settled = isOrderSettled(combat);
+    if (settled !== getRoundInitialized()) setRoundInitialized(settled);
+
+    // Neither card goes out over an unsettled order. Hold them instead of
+    // dropping them: rolling initiative updates Combatant documents rather
+    // than the Combat, so this function is not called again for it and a
+    // discarded card would simply never appear. `flushHeldAnnouncement` is
+    // what brings them back, from the combatant hooks.
+    if (!settled) {
+        const held = heldAnnouncement?.combatId === combat.id ? heldAnnouncement : null;
+        heldAnnouncement = {
+            combatId: combat.id,
+            round: combat.round,
+            context,
+            roundCard: roundChanged || !!held?.roundCard,
+            turnCard: turnChanged || !!held?.turnCard
+        };
+        debugLog('PROCESS COMBAT CHANGE: Order not settled, holding cards', () => ({
+            started: !!combat.started,
+            holding: { roundCard: heldAnnouncement.roundCard, turnCard: heldAnnouncement.turnCard },
+            waitingOn: combatantsMissingInitiative(combat).map(c => c.name)
+        }));
+        return;
+    }
+
+    heldAnnouncement = null;
+    await announceCombatChange(combat, context, { roundCard: roundChanged, turnCard: turnChanged });
+}
+
+/**
+ * Build and post the cards for a change whose order has settled.
+ * @param {Combat} combat
+ * @param {object} context
+ * @param {{roundCard: boolean, turnCard: boolean}} what
+ */
+async function announceCombatChange(combat, context, { roundCard, turnCard }) {
     const msgs = [];
-    
-    // Handle round changes - create round card if enabled
-    if (roundChanged) {
-        debugLog('PROCESS COMBAT CHANGE: Processing round change');
+
+    if (roundCard) {
+        debugLog('ANNOUNCE: Processing round change');
         if (await getSettingSafely(MODULE.ID, CRIER.roundCycling)) {
-            debugLog('PROCESS COMBAT CHANGE: Round cycling enabled');
             const roundMsg = await postNewRound(combat, context);
             if (roundMsg) {
                 msgs.push(roundMsg);
-                debugLog('PROCESS COMBAT CHANGE: Round message created', () => ({ roundMsg }));
+                debugLog('ANNOUNCE: Round message created', () => ({ roundMsg }));
             }
-        }
-    }
-    
-    // Handle turn changes - create turn card if round is initialized or all initiatives are rolled
-    if (turnChanged) {
-        debugLog('PROCESS COMBAT CHANGE: Processing turn change', () => ({ roundInitialized }));
-        
-        // If round is not initialized, check if all initiatives are rolled
-        if (!roundInitialized) {
-            const combatantsArray = Array.from(combat.combatants.values());
-            const initiativeData = combatantsArray.map(c => ({
-                name: c.name,
-                initiative: c.initiative,
-                hasInitiative: c.initiative !== null && c.initiative !== undefined
-            }));
-            
-            const allHaveInitiative = combatantsArray.every(combatant => 
-                combatant.initiative !== null && combatant.initiative !== undefined
-            );
-            
-            debugLog('PROCESS COMBAT CHANGE: Checking initiatives', () => ({
-                allHaveInitiative,
-                initiativeData,
-                combatantsCount: combatantsArray.length,
-                detailedInitiativeData: combatantsArray.map(c => ({
-                    name: c.name,
-                    initiative: c.initiative,
-                    initiativeType: typeof c.initiative,
-                    isNull: c.initiative === null,
-                    isUndefined: c.initiative === undefined,
-                    hasInitiative: c.initiative !== null && c.initiative !== undefined
-                }))
-            }));
-            
-            if (!allHaveInitiative) {
-                debugLog('PROCESS COMBAT CHANGE: Round not initialized, skipping turn card', () => ({
-                    combatantsWithoutInitiative: combatantsArray.filter(c => c.initiative === null || c.initiative === undefined).map(c => c.name)
-                }));
-                return; // Don't create turn card yet
-            } else {
-                // All initiatives rolled, mark round as initialized
-                setRoundInitialized(true);
-                debugLog('PROCESS COMBAT CHANGE: Round initialized, all initiatives rolled');
-            }
-        }
-        
-        // Create turn card (either round is initialized or we just initialized it)
-        const turnMsgs = await postNewTurnCard(combat, context);
-        if (turnMsgs?.length) {
-            msgs.push(...turnMsgs);
-            debugLog('PROCESS COMBAT CHANGE: Turn messages created', () => ({ count: turnMsgs.length }));
+        } else {
+            debugLog('ANNOUNCE: Round cycling disabled');
         }
     }
 
-    // Post all messages
+    if (turnCard) {
+        const turnMsgs = await postNewTurnCard(combat, context);
+        if (turnMsgs?.length) {
+            msgs.push(...turnMsgs);
+            debugLog('ANNOUNCE: Turn messages created', () => ({ count: turnMsgs.length }));
+        }
+    }
+
     if (msgs.length) {
-        debugLog('PROCESS COMBAT CHANGE: Creating chat messages', () => ({ count: msgs.length, messageTypes: msgs.map(m => m.type) }));
+        debugLog('ANNOUNCE: Creating chat messages', () => ({ count: msgs.length, messageTypes: msgs.map(m => m.type) }));
         for (const msg of msgs) {
             await ChatMessage.create(msg);
         }
     } else {
-        debugLog('PROCESS COMBAT CHANGE: No messages to create');
+        debugLog('ANNOUNCE: No messages to create');
     }
+}
+
+/**
+ * Post whatever was held back, once the order settles. Only the client that
+ * held the announcement flushes it, which is the same client that made the
+ * combat update — so the cards still post exactly once.
+ * @param {Combat|null|undefined} combat
+ */
+async function flushHeldAnnouncement(combat) {
+    const held = heldAnnouncement;
+    if (!held || !combat || held.combatId !== combat.id) return;
+    if (!isOrderSettled(combat)) return;
+
+    heldAnnouncement = null;
+    setRoundInitialized(true);
+    debugLog('FLUSH HELD ANNOUNCEMENT: Order settled, posting held cards', () => ({
+        roundCard: held.roundCard,
+        turnCard: held.turnCard,
+        round: combat.round
+    }));
+    await announceCombatChange(combat, held.context, held);
 }
 
 async function processTurn(combat, _update, context, userId) {

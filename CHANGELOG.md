@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Relief countdown**: Effects driving a penalty or a tick list how long they have left, soonest first.
 - **Turn-card setting**: Added a default-on **Show Turn Penalties** toggle; the existing **Show Active Effects For** selector now governs both blocks.
 
+### Fixed
+
+- **Premature cards**: Neither the round card nor the turn card posts before combat has started and every combatant has rolled initiative. The check was previously skipped for the rest of the round once the round was marked initialized, so a combatant added mid-round — reinforcements, a summon, a late arrival — was waved through and announced a turn order that was about to re-sort. The round card was not checked at all.
+- **Missing cards after the last roll**: Cards blocked by an unsettled order are now held and posted when the order settles, rather than dropped. Rolling initiative writes to Combatant documents, so `updateCombat` never fires for it, and Foundry's follow-up turn update diffs to nothing when the current combatant keeps its slot — a blocked card was waiting on an event that never came. New `updateCombatant` and `deleteCombatant` hooks release them.
+- **Gate placement**: The combat-started and all-initiatives-rolled checks now live in `postNewTurnCard()`, the single funnel every turn card passes through, instead of in one of its callers.
+- **Premature announcement from `preUpdateCombat`**: Removed a branch that tried to post the first turn card from a *pre*-update hook, ahead of the change it described. It watched for initiative in a Combat update, where initiative never appears.
+- **Suppressed cards no longer consume turn state**: A card blocked by either check leaves `lastCombatant` untouched, so the next card that does post still sees the correct previous combatant.
+- **Round flag persistence**: `roundInitialized` is a world-scoped setting, so only GM clients write it now; player clients previously rejected the write unhandled and drifted from their local cache.
+
 ### Changed
 
 - **Readable durations**: Effect durations now read in the unit that means something at the table — rounds up to a minute, then minutes, hours, and days — instead of raw seconds. A ten-minute fumble reads `10 minutes` rather than `582 Seconds`, and never as "97 rounds remain". Applies to the status rows as well, so both blocks agree.
