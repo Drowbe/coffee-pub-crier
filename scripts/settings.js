@@ -421,6 +421,14 @@ export const registerSettings = async () => {
 			scope: 'world',
 			default: true,
 		});
+		game.settings.register(MODULE.ID, CRIER.showTurnPenalties, {
+			name: MODULE.ID + '.showTurnPenalties-Label',
+			hint: MODULE.ID + '.showTurnPenalties-Hint',
+			type: Boolean,
+			config: true,
+			scope: 'world',
+			default: true,
+		});
 		game.settings.register(MODULE.ID, CRIER.activeEffectsAudience, {
 			name: MODULE.ID + '.activeEffectsAudience-Label',
 			hint: MODULE.ID + '.activeEffectsAudience-Hint',

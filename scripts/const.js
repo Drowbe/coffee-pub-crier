@@ -53,6 +53,7 @@ export const CRIER = {
     hideHealth: 'hideHealth',
     hideAbilities: 'hideAbilities',
     showActiveEffects: 'showActiveEffects',
+    showTurnPenalties: 'showTurnPenalties',
     activeEffectsAudience: 'activeEffectsAudience',
     obfuscateNPCs: 'obfuscateNPCs',
     roundCycling: 'roundCycling',

@@ -111,6 +111,21 @@ The template renders all qualifying rows beneath one **Status and Conditions** h
 
 Bibliosoph `outcomeBurst` flags distinguish injuries, criticals, and fumbles. Unflagged dnd5e conditions and temporary effects use the `Effect` type. Long names and details are truncated visually without changing the content stored in the chat message.
 
+#### While This Lasts
+
+`buildTurnPenaltyReport(actor, effects)` reads the same effect set and reports what it costs the combatant on this turn. Up to three rows:
+
+1. **Roll penalties.** Numeric `effect.changes` totalled per stat across every listed effect, over the five dnd5e paths in `TURN_PENALTY_STATS` (`system.bonuses.All.attack`, `system.bonuses.All.damage`, `system.attributes.ac.bonus`, `system.bonuses.abilities.check`, `system.bonuses.abilities.save`). One summed line — the number they are about to roll with. Formula bonuses such as `1d4` cannot be summed and are skipped; they still appear on their own effect row above.
+2. **Bleed.** `flag.tick` is a percentage of max HP, resolved against the actor. The arithmetic mirrors Bibliosoph's `damageFor` — at least 1 HP, never the combatant's last point — and walks multiple ticks in order because Bibliosoph applies them sequentially against falling health.
+3. **Time remaining.** `remainingTimeLabel(effect)`, listed soonest-first and only for effects that contributed a penalty or a tick above. Permanent effects contribute no row, and the whole block is dropped when nothing costs the combatant anything — penalties that cancel out leave no bare countdown behind.
+
+`remainingTimeLabel()` reports each duration in the unit that means something at the table, and is shared with the status rows above so both blocks agree:
+
+- Combat durations (`duration.type` of `turns`) use Foundry's own `duration.label` (`3 Rounds`), since Foundry's encoding of `remaining` for turn-based effects is its own.
+- Time durations (`seconds`) — which is how Bibliosoph authors every affliction — read as rounds up to 60 seconds, then minutes, hours, and days. A flat `remaining / 6` would render a ten-minute wound as "97 rounds remain": true, and unusable.
+
+The block is display-only and applies nothing. Bibliosoph owns applying, ticking, expiring, and treating; ticks land on its own `updateCombat` handler on the active GM. The report is gated by **Show Turn Penalties** and shares the **Show Active Effects For** audience selector.
+
 ### 2. Round Cards
 - Triggered by round changes
 - Uses `createNewRoundCard()` → Handlebars template

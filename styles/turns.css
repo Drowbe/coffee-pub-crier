@@ -285,6 +285,27 @@
 	font-size: 0.85em;
 	opacity: 0.8;
 }
+.blacksmith-card .crier-turn-penalties {
+	padding-top: 2px;
+}
+.blacksmith-card .crier-penalty-row {
+	display: grid;
+	grid-template-columns: 18px minmax(0, 1fr);
+	gap: 7px;
+	align-items: baseline;
+	margin: 3px 0;
+}
+.blacksmith-card .crier-penalty-icon {
+	font-size: 0.9em;
+	text-align: center;
+	opacity: 0.75;
+}
+.blacksmith-card .crier-penalty-text {
+	min-width: 0;
+	font-size: 0.9em;
+	line-height: 1.25;
+	overflow-wrap: anywhere;
+}
 .crier-effect-tooltip {
 	max-width: 320px;
 	max-height: 420px;

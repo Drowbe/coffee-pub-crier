@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Turn penalty report**: Turn cards can now include a **While This Lasts** block under the status list, showing what the combatant's afflictions cost them right now — summed roll penalties, bleed damage, and rounds remaining.
+- **Summed roll penalties**: Numeric ActiveEffect changes are totalled per stat across every listed effect and rendered as one line (`−3 to attack rolls · −2 to ability checks`) covering attack rolls, damage rolls, AC, ability checks, and saving throws.
+- **Bleed preview**: Bibliosoph `outcomeBurst` ticks are resolved from percent-of-max-HP into the actual HP loss for this turn, matching Bibliosoph's own arithmetic.
+- **Relief countdown**: Effects driving a penalty or a tick list how long they have left, soonest first.
+- **Turn-card setting**: Added a default-on **Show Turn Penalties** toggle; the existing **Show Active Effects For** selector now governs both blocks.
+
+### Changed
+
+- **Readable durations**: Effect durations now read in the unit that means something at the table — rounds up to a minute, then minutes, hours, and days — instead of raw seconds. A ten-minute fumble reads `10 minutes` rather than `582 Seconds`, and never as "97 rounds remain". Applies to the status rows as well, so both blocks agree.
+- **Cleaner names**: Bibliosoph's `Critical:` and `Fumble:` name prefixes are stripped in the penalty block too, matching the status rows above.
+
+### Technical
+
+- **Display-only by design**: Crier reports ticks and never applies them — Bibliosoph applies them on `updateCombat` for the active GM.
+- **Single effect pass**: `collectDisplayEffects()` filters the actor's effects once and feeds both the status list and the penalty report.
+- **Empty-block suppression**: Formula bonuses (`1d4`) are excluded from totals, and the block is omitted entirely when penalties cancel out or nothing is costing the combatant anything.
+
+
 ## [13.0.8]
 
 ### Added
