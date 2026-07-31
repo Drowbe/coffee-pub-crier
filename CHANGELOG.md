@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [13.0.9]
 
 ### Added
 
@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Premature cards**: Neither the round card nor the turn card posts before combat has started and every combatant has rolled initiative. The check was previously skipped for the rest of the round once the round was marked initialized, so a combatant added mid-round — reinforcements, a summon, a late arrival — was waved through and announced a turn order that was about to re-sort. The round card was not checked at all.
 - **Missing cards after the last roll**: Cards blocked by an unsettled order are now held and posted when the order settles, rather than dropped. Rolling initiative writes to Combatant documents, so `updateCombat` never fires for it, and Foundry's follow-up turn update diffs to nothing when the current combatant keeps its slot — a blocked card was waiting on an event that never came. New `updateCombatant` and `deleteCombatant` hooks release them.
+- **Round card posting before the round had been rolled for**: On tables that reroll initiative every round, the clearing happens in reaction to the round update, so at the instant Crier was notified the combatants still carried the *outgoing* round's initiative. The round card builds quickly, won that race, and announced a round nobody had rolled for — ahead of the end-of-round summary. Round changes are now held briefly and reconsidered once the dust settles.
+- **Two turn cards at the top of a round**: After the last initiative came in, Crier posted for whoever `combat.combatant` was at that moment — but Foundry keeps whoever was current *before* the rolls, who may now be anywhere in the new order. The tracker corrects the pointer to the top slot a beat later, which read as another turn change, so a second card followed for the combatant who actually acts first. The settle window now covers the correction, and one card posts for the right combatant.
+- **Turn card vanishing for a whole round**: The same race, opposite outcome. The turn card builds slowly — settings, portrait, effects, `enrichHTML` — so by the time it reached its own initiative check the clearing had landed, the check correctly refused it, and it was then dropped because nothing was holding it. Cards that cannot be delivered are now put back on hold and post when the order settles.
+- **Turn card arriving without its round card**: A held round card kept the context of whichever change came last, and `postNewRound()` reads that context's `roundShift` to tell a real round change from a turn update. A turn re-sort landing between the round change and the last initiative roll overwrote it, so the round card tested as "not a round change" and silently vanished while the turn card posted. Each held card now keeps the context of the change that called for it.
+- **Held cards dropped by a settled update**: If the order settled via a turn update rather than an initiative roll, the held record was discarded and only the current change's cards posted. Held and current cards are now merged.
+- **Card ordering**: The round card is published before the turn card is built, not merely queued ahead of it.
 - **Gate placement**: The combat-started and all-initiatives-rolled checks now live in `postNewTurnCard()`, the single funnel every turn card passes through, instead of in one of its callers.
 - **Premature announcement from `preUpdateCombat`**: Removed a branch that tried to post the first turn card from a *pre*-update hook, ahead of the change it described. It watched for initiative in a Combat update, where initiative never appears.
 - **Suppressed cards no longer consume turn state**: A card blocked by either check leaves `lastCombatant` untouched, so the next card that does post still sees the correct previous combatant.

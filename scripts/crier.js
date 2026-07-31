@@ -36,10 +36,24 @@ let roundInitialized = false;
 /**
  * Cards withheld because the turn order had not settled, waiting for the last
  * initiative to come in. Held on the one client that made the combat update,
- * so flushing it posts each card exactly once.
- * @type {{combatId: string, round: number, context: object, roundCard: boolean, turnCard: boolean}|null}
+ * so flushing it posts each card exactly once. `roundCard` and `turnCard` are
+ * each the context of the change that called for that card, or null.
+ * @type {{combatId: string, roundCard: object|null, turnCard: object|null}|null}
  */
 let heldAnnouncement = null;
+let announceTimer = null;
+
+/**
+ * How long to let a round change settle before deciding anything.
+ *
+ * Tables that reroll initiative every round clear it in reaction to the round
+ * update, which arrives a beat later — so at the instant of the update the
+ * combatants still carry the *outgoing* round's initiative. Judging then
+ * announces a round nobody has rolled for. This is a grace period, not a
+ * guess at the answer: the check still has to pass when it expires, and the
+ * combatant hooks still cover anything slower than this.
+ */
+const ORDER_SETTLE_DELAY_MS = 250;
 
 // Helper functions to sync with persistent setting
 function getRoundInitialized() {
@@ -1488,6 +1502,37 @@ async function processCombatChange(combat, _update, context, userId, turnChanged
         return;
     }
 
+    // What is due, carrying each card's OWN context. postNewRound reads
+    // `context.crier.roundShift` to tell a real round change from a turn
+    // update, so a held round card must not inherit a later turn's context —
+    // it would test as "no round change" and vanish, leaving the turn card to
+    // announce a round nobody was told about.
+    const held = heldAnnouncement?.combatId === combat.id ? heldAnnouncement : null;
+    const due = {
+        combatId: combat.id,
+        roundCard: roundChanged ? context : (held?.roundCard ?? null),
+        turnCard: turnChanged ? context : (held?.turnCard ?? null)
+    };
+
+    // Two reasons never to decide in this instant:
+    //
+    // A round change is exactly when a reroll-every-round table clears
+    // initiative, and that clearing arrives after this update.
+    //
+    // And if a settle window is already open, this change is very likely part
+    // of the same commotion — most often the tracker correcting `turn` to the
+    // top of the freshly sorted order, because Foundry keeps whoever was
+    // current before the rolls. Announcing both that and what we were already
+    // holding is how two turn cards land back to back.
+    if (roundChanged || announceTimer) {
+        debugLog('PROCESS COMBAT CHANGE: Holding until the order settles', () => ({
+            roundChanged,
+            alreadyWaiting: !!announceTimer
+        }));
+        holdAnnouncement(combat, due, ORDER_SETTLE_DELAY_MS);
+        return;
+    }
+
     const settled = isOrderSettled(combat);
     if (settled !== getRoundInitialized()) setRoundInitialized(settled);
 
@@ -1497,42 +1542,68 @@ async function processCombatChange(combat, _update, context, userId, turnChanged
     // discarded card would simply never appear. `flushHeldAnnouncement` is
     // what brings them back, from the combatant hooks.
     if (!settled) {
-        const held = heldAnnouncement?.combatId === combat.id ? heldAnnouncement : null;
-        heldAnnouncement = {
-            combatId: combat.id,
-            round: combat.round,
-            context,
-            roundCard: roundChanged || !!held?.roundCard,
-            turnCard: turnChanged || !!held?.turnCard
-        };
         debugLog('PROCESS COMBAT CHANGE: Order not settled, holding cards', () => ({
             started: !!combat.started,
-            holding: { roundCard: heldAnnouncement.roundCard, turnCard: heldAnnouncement.turnCard },
+            holding: { roundCard: !!due.roundCard, turnCard: !!due.turnCard },
             waitingOn: combatantsMissingInitiative(combat).map(c => c.name)
         }));
+        holdAnnouncement(combat, due, null);
         return;
     }
 
     heldAnnouncement = null;
-    await announceCombatChange(combat, context, { roundCard: roundChanged, turnCard: turnChanged });
+    await announceCombatChange(combat, due);
 }
 
 /**
- * Build and post the cards for a change whose order has settled.
+ * Put cards on hold. With a delay, they are reconsidered when it expires;
+ * with null, they wait for a combatant hook to say the order settled.
  * @param {Combat} combat
- * @param {object} context
- * @param {{roundCard: boolean, turnCard: boolean}} what
+ * @param {{combatId: string, roundCard: object|null, turnCard: object|null}} due
+ * @param {number|null} delayMs
  */
-async function announceCombatChange(combat, context, { roundCard, turnCard }) {
-    const msgs = [];
+function holdAnnouncement(combat, due, delayMs) {
+    heldAnnouncement = due;
+    if (announceTimer) clearTimeout(announceTimer);
+    announceTimer = null;
+    if (delayMs === null) return;
+    announceTimer = setTimeout(() => {
+        announceTimer = null;
+        flushHeldAnnouncement(combat, { windowElapsed: true });
+    }, delayMs);
+}
 
+/**
+ * Post the cards for a change whose order has settled. `roundCard` and
+ * `turnCard` are each either the context of the change that called for that
+ * card, or null when it is not due.
+ * @param {Combat} combat
+ * @param {{roundCard: object|null, turnCard: object|null}} due
+ */
+async function announceCombatChange(combat, { roundCard, turnCard }) {
+    // Building a card is not instant — settings, portraits, effects and
+    // enrichHTML all await — and the order can come apart underneath us while
+    // it happens. Re-check before each post, and put anything we cannot
+    // deliver back on hold rather than dropping it on the floor. Dropping is
+    // how a turn card goes missing for a whole round.
+    const rearm = (due) => {
+        debugLog('ANNOUNCE: Order came apart mid-build, re-holding', () => ({
+            holding: { roundCard: !!due.roundCard, turnCard: !!due.turnCard },
+            waitingOn: combatantsMissingInitiative(combat).map(c => c.name)
+        }));
+        holdAnnouncement(combat, { combatId: combat.id, ...due }, null);
+    };
+
+    // The round card is published first and on its own. A turn card that
+    // arrives before the round it belongs to reads backwards.
     if (roundCard) {
+        if (!isOrderSettled(combat)) return rearm({ roundCard, turnCard });
         debugLog('ANNOUNCE: Processing round change');
         if (await getSettingSafely(MODULE.ID, CRIER.roundCycling)) {
-            const roundMsg = await postNewRound(combat, context);
+            const roundMsg = await postNewRound(combat, roundCard);
             if (roundMsg) {
-                msgs.push(roundMsg);
-                debugLog('ANNOUNCE: Round message created', () => ({ roundMsg }));
+                await ChatMessage.create(roundMsg);
+                debugLog('ANNOUNCE: Round message posted', () => ({ round: combat.round }));
             }
         } else {
             debugLog('ANNOUNCE: Round cycling disabled');
@@ -1540,20 +1611,16 @@ async function announceCombatChange(combat, context, { roundCard, turnCard }) {
     }
 
     if (turnCard) {
-        const turnMsgs = await postNewTurnCard(combat, context);
+        if (!isOrderSettled(combat)) return rearm({ roundCard: null, turnCard });
+        const turnMsgs = await postNewTurnCard(combat, turnCard);
         if (turnMsgs?.length) {
-            msgs.push(...turnMsgs);
-            debugLog('ANNOUNCE: Turn messages created', () => ({ count: turnMsgs.length }));
+            debugLog('ANNOUNCE: Posting turn messages', () => ({ count: turnMsgs.length }));
+            for (const msg of turnMsgs) {
+                await ChatMessage.create(msg);
+            }
+        } else {
+            debugLog('ANNOUNCE: No turn message to post');
         }
-    }
-
-    if (msgs.length) {
-        debugLog('ANNOUNCE: Creating chat messages', () => ({ count: msgs.length, messageTypes: msgs.map(m => m.type) }));
-        for (const msg of msgs) {
-            await ChatMessage.create(msg);
-        }
-    } else {
-        debugLog('ANNOUNCE: No messages to create');
     }
 }
 
@@ -1563,19 +1630,41 @@ async function announceCombatChange(combat, context, { roundCard, turnCard }) {
  * combat update — so the cards still post exactly once.
  * @param {Combat|null|undefined} combat
  */
-async function flushHeldAnnouncement(combat) {
+async function flushHeldAnnouncement(combat, { windowElapsed = false } = {}) {
     const held = heldAnnouncement;
     if (!held || !combat || held.combatId !== combat.id) return;
-    if (!isOrderSettled(combat)) return;
+    // Still not settled: keep holding. Whoever has yet to roll will bring us
+    // back here through the combatant hooks.
+    if (!isOrderSettled(combat)) {
+        debugLog('FLUSH HELD ANNOUNCEMENT: Still waiting', () => ({
+            waitingOn: combatantsMissingInitiative(combat).map(c => c.name)
+        }));
+        return;
+    }
+
+    // The order settled, but `combat.combatant` may not be who acts first yet:
+    // Foundry keeps whoever was current before the rolls, and the tracker
+    // moves the pointer to the top of the new order a beat later. Posting now
+    // announces the wrong combatant, and the correction then reads as another
+    // turn change — two cards, one turn. Open a window and post once it is
+    // quiet. `windowElapsed` marks the timer's own call, which is what breaks
+    // the loop.
+    if (!windowElapsed) {
+        debugLog('FLUSH HELD ANNOUNCEMENT: Order settled, waiting for the turn pointer');
+        holdAnnouncement(combat, held, ORDER_SETTLE_DELAY_MS);
+        return;
+    }
 
     heldAnnouncement = null;
+    if (announceTimer) clearTimeout(announceTimer);
+    announceTimer = null;
     setRoundInitialized(true);
     debugLog('FLUSH HELD ANNOUNCEMENT: Order settled, posting held cards', () => ({
-        roundCard: held.roundCard,
-        turnCard: held.turnCard,
+        roundCard: !!held.roundCard,
+        turnCard: !!held.turnCard,
         round: combat.round
     }));
-    await announceCombatChange(combat, held.context, held);
+    await announceCombatChange(combat, held);
 }
 
 async function processTurn(combat, _update, context, userId) {

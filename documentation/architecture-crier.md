@@ -64,6 +64,28 @@ The release is the part that is easy to get wrong. Rolling initiative writes to 
 
 Without those, a card held at the top of a fight waits for an event that never arrives.
 
+#### The settle window
+
+A round change on a reroll-every-round table is not one event, it is a cascade, and every step of it arrives *after* the `updateCombat` that announces the round:
+
+```
+updateCombat {round: N, turn: 0}     ← Crier hears about it here
+  → tracker clears initiative for the new round
+  → each combatant rolls (Combatant updates, not Combat)
+  → tracker sets turn to slot 0, because Foundry kept whoever
+    was current before the rolls — who may now be anywhere
+```
+
+Judging at any point before the end of that cascade gets it wrong, so three rules keep Crier out of it:
+
+1. **A round change is never judged on the spot.** It is held for `ORDER_SETTLE_DELAY_MS` (250 ms) and reconsidered when that expires.
+2. **A change arriving while a window is open joins it** rather than announcing on its own, and restarts the clock. The window closes when things have been quiet for 250 ms.
+3. **A card that cannot be delivered goes back on hold.** Building a card awaits settings, portraits, effects and `enrichHTML`, and the order can come apart during it. `announceCombatChange()` re-checks before each post and re-holds the remainder.
+
+None of this is a guess at the answer — `isOrderSettled()` still has to pass when the window closes, and the combatant hooks still cover anything slower than the delay. Turn advances outside a window announce immediately, with no delay.
+
+All three failure modes were observed in play. Without rule 1 the round card — which builds quickly — won the race and announced a round nobody had rolled for, ahead of the end-of-round stats. Without rule 3 the turn card — which builds slowly — lost the same race, was correctly refused at the funnel, then vanished because nothing held it. Without rule 2 the turn card posted for the pre-roll combatant and the tracker's correction then read as a second turn change: two cards, one turn.
+
 #### `roundInitialized`
 
 A persisted record that the order settled during this round, kept in step on every turn change. It is **not** a gate — an earlier version used it as one, and because it only reset on a round change, any combatant added mid-round was waved through unchecked. It is written only by a GM client; the setting is world-scoped, so a player writing it rejects unhandled and drifts from the local cache.
