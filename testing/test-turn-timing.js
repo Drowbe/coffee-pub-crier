@@ -1,6 +1,8 @@
 const MODULE_ID = 'coffee-pub-crier';
 const SETTLE_MS = 250;
 const QUIET_MS = SETTLE_MS * 4;
+const DELIVERY_TIMEOUT_MS = 10000;
+const POST_DELIVERY_QUIET_MS = 750;
 const TRACKER_REACTION_MS = 40;
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -56,10 +58,21 @@ export async function runTurnTimingTest() {
 
     const check = async (label, action, want = {}, { wantFirst = false, sequence = null } = {}) => {
         recorded = [];
-        await action();
-        await wait(QUIET_MS);
-
         const expected = { start: 0, round: 0, turn: 0, end: 0, other: 0, ...want };
+        const expectedTotal = Object.values(expected).reduce((sum, count) => sum + count, 0);
+        await action();
+
+        // Turn-card construction can include settings, portraits, effects and
+        // enrichHTML. On a module-heavy world that takes materially longer
+        // than the 250 ms order-settle window, so wait for the expected cards
+        // rather than letting a slow card spill into the next assertion.
+        if (expectedTotal === 0) await wait(QUIET_MS);
+        else {
+            const deadline = Date.now() + DELIVERY_TIMEOUT_MS;
+            while (recorded.length < expectedTotal && Date.now() < deadline) await wait(100);
+            await wait(POST_DELIVERY_QUIET_MS);
+        }
+
         const got = Object.fromEntries(Object.keys(expected).map(kind => [kind, recorded.filter(row => row.kind === kind).length]));
         const notes = [];
         let pass = Object.entries(expected).every(([kind, count]) => got[kind] === count);

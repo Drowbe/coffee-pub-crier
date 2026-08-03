@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Transactional delivery**: Round/turn identity is rechecked at the final chat-write boundary. Delivery markers and sounds now follow successful message creation, so rendering or chat failures do not consume an announcement.
 - **Multiple combats**: Held cards, settle timers, queues, and previous-combatant state are isolated by combat ID.
 - **End cleanup**: Foundry v13 combat deletion—including the confirmed `Combat#endCombat()` path—cancels obsolete held round/turn work and produces one end card; deleting an unstarted setup remains silent.
+- **Combat-start timing**: Treats Foundry's `combatStart` hook as authoritative even though Foundry emits it immediately before applying the round-one update.
+- **Top-of-round turns**: Round changes now schedule the current turn card even when Foundry diffs an unchanged `turn: 0` out of the update payload.
+- **Loaded-world timing tests**: The harness waits for expected deliveries with a bounded timeout, preventing slow effect enrichment from spilling cards into the next assertion.
+- **Foundry v13 chat rendering**: Uses `renderChatMessageHTML` instead of the deprecated `renderChatMessage` hook.
 
 ## [13.0.9]
 

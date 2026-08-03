@@ -292,7 +292,11 @@ Hooks.once('ready', async () => {
                 
                 // Determine if there's an actual change
                 // If update.turn exists, it means the turn was changed
-                const turnChanged = hasTurnUpdate;
+                // A new round always establishes a current turn even when the
+                // numeric turn index remains 0. Foundry diffs unchanged fields
+                // out of `update`, so relying on `update.turn` alone drops the
+                // top-of-round turn card whenever the pointer does not move.
+                const turnChanged = hasTurnUpdate || hasRoundUpdate;
                 const roundChanged = hasRoundUpdate;
                 
                 // Only process if there's an actual turn or round change
@@ -359,12 +363,12 @@ Hooks.once('ready', async () => {
         BlacksmithHookManager.registerHook({ name: 'deleteCombat', description: 'Coffee Pub Crier: Announce combat end on deletion', context: MODULE.ID, priority: 2, callback: announceDeletedCombat });
 
         const renderChatMessageHookId = BlacksmithHookManager.registerHook({
-            name: 'renderChatMessage',
+            name: 'renderChatMessageHTML',
             description: 'Coffee Pub Crier: Intercept and modify chat messages',
             context: MODULE.ID,
             priority: 2,
             callback: (cm, html, options) => {
-                debugLog('HOOK: renderChatMessage hook called', () => ({ messageId: cm.id }));
+                debugLog('HOOK: renderChatMessageHTML hook called', () => ({ messageId: cm.id }));
                 return chatMessageEvent(cm, html, options);
             }
         });
@@ -386,7 +390,7 @@ Hooks.once('ready', async () => {
 
 /**
  * Setting stores Blacksmith asset `value`. Resolve `path` from api.assetLookup.
- * Chat HTML is sanitized — inline `style` is stripped — so we store `imageUrl` on message flags and apply in `renderChatMessage`.
+ * Chat HTML is sanitized — inline `style` is stripped — so we store `imageUrl` on message flags and apply in `renderChatMessageHTML`.
  * No path (themecolor) → CSS class .crier-token-background-themecolor only.
  * @param {string} value
  * @returns {{ imageUrl: string|null, useClass: boolean }}
@@ -1131,7 +1135,9 @@ async function postLifecycleAnnouncement(combat, kind) {
     }
     const eventKey = `${combat.id}:${kind}`;
     if (deliveredLifecycleEvents.has(eventKey)) return;
-    if (isStart && !combat.started) return;
+    // Foundry v13 emits `combatStart` immediately before applying its
+    // {round: 1, turn: 0} update, so `combat.started` is still false inside
+    // the hook even though this is the authoritative start event.
     if (isStart) startedCombats.add(combat.id);
     if (!isStart && !startedCombats.has(combat.id) && !(Number(combat.round) > 0)) return;
 
