@@ -352,12 +352,11 @@ Hooks.once('ready', async () => {
             }
         });
 
-        const endCombat = (combat) => {
+        const announceDeletedCombat = (combat) => {
             if (!isAnnouncementAuthority()) return;
             return queueLifecycleAnnouncement(combat, 'end');
         };
-        BlacksmithHookManager.registerHook({ name: 'endCombat', description: 'Coffee Pub Crier: Announce combat end', context: MODULE.ID, priority: 2, callback: endCombat });
-        BlacksmithHookManager.registerHook({ name: 'deleteCombat', description: 'Coffee Pub Crier: Announce deleted combat end', context: MODULE.ID, priority: 2, callback: endCombat });
+        BlacksmithHookManager.registerHook({ name: 'deleteCombat', description: 'Coffee Pub Crier: Announce combat end on deletion', context: MODULE.ID, priority: 2, callback: announceDeletedCombat });
 
         const renderChatMessageHookId = BlacksmithHookManager.registerHook({
             name: 'renderChatMessage',

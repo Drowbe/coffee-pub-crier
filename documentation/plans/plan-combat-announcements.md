@@ -30,8 +30,8 @@ Each announcement is independently configurable. Blacksmith may continue to prov
 3. Replace singleton held announcement/timer state with per-combat state.
 4. Serialize delivery per combat and revalidate round, turn, and active-combatant identity at the final post boundary.
 5. Commit delivery markers after successful chat creation instead of during card construction.
-6. Clear pending round/turn work when combat ends or is deleted, while deduplicating `endCombat` and `deleteCombat` paths.
-7. Expand the live timing macro for lifecycle toggles, rerolled initiative, rapid updates, multiple combats, retry behavior, and end/delete paths.
+6. Clear pending round/turn work when the Combat is deleted. In Foundry v13, `Combat#endCombat()` confirms and performs that deletion; there is no separate `endCombat` hook.
+7. Maintain a `testing/test-harness.js` launcher and add focused suites for lifecycle toggles, rerolled initiative, rapid updates, multiple combats, retry behavior, and deletion paths.
 8. Update architecture documentation and the changelog after verification.
 
 ## Out of scope
@@ -42,9 +42,9 @@ Each announcement is independently configurable. Blacksmith may continue to prov
 ## Verification
 
 - Run JavaScript syntax/static checks.
-- Run the Foundry timing macro with all four announcement categories enabled.
+- Launch `testing/test-harness.js` from a Foundry Script Macro and run the lifecycle timing suite with all four announcement categories enabled.
 - Verify each category independently disabled.
 - Verify reroll-every-round combat produces exactly one round card followed by exactly one correct turn card.
-- Verify ending and deleting combat cannot duplicate the end card.
+- Verify deleting a started combat produces one end card and deleting an unstarted setup produces none.
 - Verify two combats can hold and release announcements independently.
 - Force a render/chat failure and confirm the event is not consumed.

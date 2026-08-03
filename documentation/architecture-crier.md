@@ -96,7 +96,7 @@ A persisted record that the order settled during this round, kept in step on eve
 - `lastCombatants`: Per-combat previous-combatant state used for duplicate and missed-turn detection
 - `heldAnnouncements` / `announceTimers`: Per-combat unsettled work
 - `deliveryQueues`: Per-combat serialization for hook and timer work
-- `deliveredLifecycleEvents`: Deduplication for overlapping end/delete hooks
+- `deliveredLifecycleEvents`: Deduplication for lifecycle deliveries and restarted encounters
 - `roundInitialized`: Boolean flag indicating if current round has all initiatives rolled (persistent setting)
 - `turnTemplate`, `roundTemplate`: Loaded Handlebars templates
 
@@ -112,7 +112,7 @@ Turn Change       → roundInitialized = allInitiativesRolled(combat)
 Any Turn Card     → posted only if combat.started && allInitiativesRolled(combat)
 ```
 
-Combat lifecycle cards use `combatStart` and both `endCombat`/`deleteCombat`. Only the highest-role active GM posts these table-wide events. Ending a combat clears held round/turn work; the end/delete pair is deduplicated. Sounds run only after the corresponding chat message is successfully created.
+Combat lifecycle cards use `combatStart` and `deleteCombat`. Foundry v13's `Combat#endCombat()` confirms and deletes the Combat document; it does not emit a separate `endCombat` hook. Only the highest-role active GM posts these table-wide events. Deletion clears held round/turn work, and deleting an unstarted setup is silent. Sounds run only after the corresponding chat message is successfully created.
 
 ## Hook Registration
 
