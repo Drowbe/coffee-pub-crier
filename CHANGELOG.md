@@ -5,12 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [13.1.0]
 
 ### Added
 
 - **Complete combat lifecycle announcements**: Crier can independently announce combat start, new rounds, turns, and combat end, with configurable labels and sounds. Start means the combat actually started; deleting an unstarted setup does not announce an end.
 - **Reusable test harness**: `testing/test-harness.js` is now the launcher for live Foundry suites. The lifecycle timing suite is isolated by combat ID, refuses to disturb an active encounter, verifies exact card order, and cleans up only its own messages.
+- **Dedicated combat template**: Combat-start and combat-end cards now render through `templates/combat.hbs` instead of borrowing the round-card template.
+- **Combat announcement appearance**: Added dedicated theme and icon pickers for combat-start and combat-end cards instead of inheriting the round-card appearance.
 
 ### Fixed
 
@@ -21,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Top-of-round turns**: Round changes now schedule the current turn card even when Foundry diffs an unchanged `turn: 0` out of the update payload.
 - **Loaded-world timing tests**: The harness waits for expected deliveries with a bounded timeout, preventing slow effect enrichment from spilling cards into the next assertion.
 - **Foundry v13 chat rendering**: Uses `renderChatMessageHTML` instead of the deprecated `renderChatMessage` hook.
+- **Settings organization and terminology**: Round and turn controls now sit under explicit Appearance, Announcement, Content, and Missed Turns subsections. Visible labels consistently use Announce, Theme, Icon, Sound, and Label terminology; the legacy nonfunctional Compact Messages control is hidden.
 
 ## [13.0.9]
 
