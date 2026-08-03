@@ -74,6 +74,8 @@ export const CRIER = {
     combatEndSound: 'combatEndSound',
     combatStartLabel: 'combatStartLabel',
     combatEndLabel: 'combatEndLabel',
+    combatCardStyle: 'combatCardStyle',
+    combatIconStyle: 'combatIconStyle',
     chatSpacing: 'chatSpacing',
     roundInitialized: 'roundInitialized',
 
@@ -86,4 +88,5 @@ export const CRIER = {
     headingH3simpleTurnStyle: 'headingH3simpleTurnStyle',
     headingH3simpleTurnSettings: 'headingH3simpleTurnSettings',
     headingH3simpleTurnElements: 'headingH3simpleTurnElements',
+    headingH3MissedTurns: 'headingH3MissedTurns',
 };

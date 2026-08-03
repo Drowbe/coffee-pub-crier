@@ -10,7 +10,7 @@ Coffee Pub Crier owns configurable combat-start, round-start, turn-start, and co
 - **Main Script**: `scripts/crier.js` - Core functionality
 - **Settings**: `scripts/settings.js` - Module configuration
 - **Constants**: `scripts/const.js` - Module constants
-- **Templates**: `templates/turns.hbs` and `templates/rounds.hbs` - Handlebars templates for cards
+- **Templates**: `templates/combat.hbs`, `templates/rounds.hbs`, and `templates/turns.hbs` - Handlebars templates for lifecycle, round, and turn cards
 - **Styles**: `styles/default.css` with component imports such as `styles/turns.css` - Visual styling
 
 ### 2. Blacksmith API Integration
@@ -192,6 +192,10 @@ The block is display-only and applies nothing. Bibliosoph owns applying, ticking
 ### Round Template (`templates/rounds.hbs`)
 - Renders round announcement cards
 - Shows current round number
+
+### Combat Template (`templates/combat.hbs`)
+- Renders combat-start and combat-end announcement cards
+- Uses dedicated combat announcement theme/icon settings with lifecycle-specific labels and flags
 - Uses Blacksmith styling constants
 
 ## Settings Integration

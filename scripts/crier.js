@@ -19,9 +19,10 @@ import { registerSettings } from './settings.js';
 // -- Set Page variables --
 // Grab the Templates
 const turn_template_file = `modules/${MODULE.ID}/templates/turns.hbs`,
-	round_template_file = `modules/${MODULE.ID}/templates/rounds.hbs`;
+	round_template_file = `modules/${MODULE.ID}/templates/rounds.hbs`,
+	combat_template_file = `modules/${MODULE.ID}/templates/combat.hbs`;
 
-let turnTemplate, roundTemplate;
+let turnTemplate, roundTemplate, combatTemplate;
 // Set the last combatant
 const lastCombatants = new Map();
 function getLastCombatantState(combatOrId = game.combat) {
@@ -207,7 +208,7 @@ Hooks.once('ready', async () => {
         }
 
         // Initialize templates
-        debugLog('READY: Loading templates', () => ({ turn: turn_template_file, round: round_template_file }));
+        debugLog('READY: Loading templates', () => ({ turn: turn_template_file, round: round_template_file, combat: combat_template_file }));
         
         const getTemplateAsync = foundry.applications?.handlebars?.getTemplate;
         debugLog('READY: Checking foundry.applications.handlebars.getTemplate', () => ({
@@ -231,6 +232,15 @@ Hooks.once('ready', async () => {
             }
         } catch (err) {
             debugLog('READY: Round template failed', () => ({ error: err.message }));
+        }
+
+        try {
+            if (typeof getTemplateAsync === 'function') {
+                combatTemplate = await getTemplateAsync(combat_template_file);
+                debugLog('READY: Combat template loaded', () => ({ success: !!combatTemplate, type: typeof combatTemplate }));
+            }
+        } catch (err) {
+            debugLog('READY: Combat template failed', () => ({ error: err.message }));
         }
         
         // Initialize last combatant
@@ -1076,8 +1086,6 @@ async function createNewRoundCard(combat) {
         message: override ? override.replace('{round}', combat.round) : game.i18n.format('coffee-pub-crier.RoundCycling', { round: combat.round }),
         roundCardStyle,
         roundIconStyle,
-        iconStyle: roundIconStyle,
-        kind: 'round',
         theme
     };
     
@@ -1153,14 +1161,14 @@ async function postLifecycleAnnouncement(combat, kind) {
     }
     const labelKey = isStart ? CRIER.combatStartLabel : CRIER.combatEndLabel;
     const soundKey = isStart ? CRIER.combatStartSound : CRIER.combatEndSound;
-    const [message, roundCardStyle, roundIconStyle] = await Promise.all([
+    const [message, combatCardStyle, combatIconStyle] = await Promise.all([
         getSettingSafely(MODULE.ID, labelKey, isStart ? 'Combat Begins' : 'Combat Ends'),
-        getSettingSafely(MODULE.ID, CRIER.roundCardStyle, 'theme-announcement-green'),
-        getSettingSafely(MODULE.ID, CRIER.roundIconStyle, 'fa-chess-queen')
+        getSettingSafely(MODULE.ID, CRIER.combatCardStyle, 'theme-announcement-green'),
+        getSettingSafely(MODULE.ID, CRIER.combatIconStyle, 'fa-shield')
     ]);
-    const theme = await mapRoundCardStyleToTheme(roundCardStyle);
-    if (!roundTemplate) throw new Error('Coffee Pub Crier: round announcement template is not loaded');
-    const content = roundTemplate({ combat, message, theme, iconStyle: roundIconStyle, kind }, { allowProtoMethodsByDefault: true, allowProtoPropertiesByDefault: true });
+    const theme = await mapRoundCardStyleToTheme(combatCardStyle);
+    if (!combatTemplate) throw new Error('Coffee Pub Crier: combat announcement template is not loaded');
+    const content = combatTemplate({ combat, message, theme, iconStyle: combatIconStyle, kind }, { allowProtoMethodsByDefault: true, allowProtoPropertiesByDefault: true });
     await ChatMessage.create({
         content,
         speaker: ChatMessage.getSpeaker('GM'),

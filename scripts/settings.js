@@ -107,6 +107,16 @@ export const registerSettings = async () => {
 			name: MODULE.ID + '.headingH2Lifecycle-Label', hint: MODULE.ID + '.headingH2Lifecycle-Hint',
 			type: String, config: true, scope: 'world', default: ''
 		});
+		game.settings.register(MODULE.ID, CRIER.combatCardStyle, {
+			name: MODULE.ID + '.combatCardStyle-Label', hint: MODULE.ID + '.combatCardStyle-Hint',
+			type: String, config: true, scope: 'world', default: 'theme-announcement-green',
+			choices: roundCardThemeChoices
+		});
+		game.settings.register(MODULE.ID, CRIER.combatIconStyle, {
+			name: MODULE.ID + '.combatIconStyle-Label', hint: MODULE.ID + '.combatIconStyle-Hint',
+			type: String, config: true, scope: 'world', default: constants?.ICONSHIELD || 'fa-shield',
+			choices: constants?.arrIconChoices || { error: 'Failed to load icons - check Blacksmith module' }
+		});
 		game.settings.register(MODULE.ID, CRIER.combatStartCycling, {
 			name: MODULE.ID + '.combatStartCycling-Label', hint: MODULE.ID + '.combatStartCycling-Hint',
 			type: Boolean, config: true, scope: 'world', default: true
@@ -159,16 +169,6 @@ export const registerSettings = async () => {
 		});
 		// ------------------------------------------------------------
 
-		// ===== ROUND SETTINGS =====
-		// -- Round Cycling --
-		game.settings.register(MODULE.ID, CRIER.roundCycling, {
-			name: MODULE.ID + '.roundCycling-Label',
-			hint: MODULE.ID + '.roundCycling-Hint',
-			type: Boolean,
-			config: true,
-			scope: 'world',
-			default: true
-		});
 		// -- Round Card Style --
 		// Updated to use Blacksmith Chat Cards API for round cards
 		game.settings.register(MODULE.ID, CRIER.roundCardStyle, {
@@ -205,6 +205,15 @@ export const registerSettings = async () => {
 		});
 		// ------------------------------------------------------------
 
+		// -- Announce New Rounds --
+		game.settings.register(MODULE.ID, CRIER.roundCycling, {
+			name: MODULE.ID + '.roundCycling-Label',
+			hint: MODULE.ID + '.roundCycling-Hint',
+			type: Boolean,
+			config: true,
+			scope: 'world',
+			default: true
+		});
 		// -- Round Sound --
 		game.settings.register(MODULE.ID, CRIER.roundSound, {
 			name: MODULE.ID + '.roundSound-Label',
@@ -252,16 +261,6 @@ export const registerSettings = async () => {
 		});
 		// ------------------------------------------------------------
 
-		// ===== TURN SETTINGS =====
-		// -- Display Turn Cards --
-		game.settings.register(MODULE.ID, CRIER.turnCycling, {
-			name: MODULE.ID + '.turnCycling-Label',
-			hint: MODULE.ID + '.turnCycling-Hint',
-			type: Boolean,
-			config: true,
-			scope: 'world',
-			default: true,
-		});
 		// -- Turn Card Layout --
 		game.settings.register(MODULE.ID, CRIER.turnLayout, {
 			name: MODULE.ID + '.turnLayout-Label',
@@ -311,6 +310,15 @@ export const registerSettings = async () => {
 		});
 		// ------------------------------------------------------------
 
+		// -- Announce Turns --
+		game.settings.register(MODULE.ID, CRIER.turnCycling, {
+			name: MODULE.ID + '.turnCycling-Label',
+			hint: MODULE.ID + '.turnCycling-Hint',
+			type: Boolean,
+			config: true,
+			scope: 'world',
+			default: true,
+		});
 		// -- Turn Sound --
 		game.settings.register(MODULE.ID, CRIER.turnSound, {
 			name: MODULE.ID + '.turnSound-Label',
@@ -336,6 +344,11 @@ export const registerSettings = async () => {
 
 
 		// ===== TURN CARD PERSONALIZATION =====
+		game.settings.register(MODULE.ID, CRIER.headingH3simpleTurnElements, {
+			name: MODULE.ID + '.headingH3simpleTurnElements-Label',
+			hint: MODULE.ID + '.headingH3simpleTurnElements-Hint',
+			scope: 'world', config: true, default: '', type: String
+		});
 		// -- Image Style --
 		game.settings.register(MODULE.ID, CRIER.portraitStyle, {
 			name: MODULE.ID + '.portraitStyle-Label',
@@ -393,29 +406,16 @@ export const registerSettings = async () => {
 			},
 			default: 'all',
 		});
-		// ===== MISC Settings =====
-		// -- Compact --
+		// Legacy no-op retained as hidden so existing world data remains valid.
 		game.settings.register(MODULE.ID, CRIER.compact, {
 			name: MODULE.ID + '.Compact-Label',
 			hint: MODULE.ID + '.Compact-Hint',
 			type: Boolean,
-			config: true,
+			config: false,
 			scope: 'world',
 			default: true,
 		});
 		
-		// -- TURN PERSOANLIZATION --
-		// ------------------------------------------------------------
-		game.settings.register(MODULE.ID, CRIER.headingH3simpleTurnElements, {
-			name: MODULE.ID + '.headingH3simpleTurnElements-Label',
-			hint: MODULE.ID + '.headingH3simpleTurnElements-Hint',
-			scope: "world",
-			config: true,
-			default: "",
-			type: String,
-		});
-		// ------------------------------------------------------------
-
 		// -- Bloody Portraits --
 		game.settings.register(MODULE.ID, CRIER.hideBloodyPortrait, {
 			name: MODULE.ID + '.hideBloodyPortrait-Label',
@@ -485,6 +485,11 @@ export const registerSettings = async () => {
 		});
 
 		// ===== MISSED TURNS =====
+		game.settings.register(MODULE.ID, CRIER.headingH3MissedTurns, {
+			name: MODULE.ID + '.headingH3MissedTurns-Label',
+			hint: MODULE.ID + '.headingH3MissedTurns-Hint',
+			scope: 'world', config: true, default: '', type: String
+		});
 		// -- Display Missed Turns --
 		game.settings.register(MODULE.ID, CRIER.missedKey, {
 			name: MODULE.ID + '.missedTurn-Label',
