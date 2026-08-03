@@ -50,18 +50,20 @@ if (pool.length < 2) {
     return;
 }
 
-// Turn and round cards must be switched on, or every scenario "passes"
+// All lifecycle cards must be switched on, or scenarios can pass by silence.
 // by posting nothing and the run means nothing.
 const turnCycling = game.settings.get(MODULE_ID, 'turnCycling');
 const roundCycling = game.settings.get(MODULE_ID, 'roundCycling');
-if (!turnCycling || !roundCycling) {
-    ui.notifications.error(`Crier timing test: enable both Show Combatant Cards (${turnCycling}) and Display 'New Round' Cards (${roundCycling}) first.`);
+const combatStartCycling = game.settings.get(MODULE_ID, 'combatStartCycling');
+const combatEndCycling = game.settings.get(MODULE_ID, 'combatEndCycling');
+if (!turnCycling || !roundCycling || !combatStartCycling || !combatEndCycling) {
+    ui.notifications.error('Crier timing test: enable combat start, round, turn, and combat end announcements first.');
     return;
 }
 
 const proceed = await foundry.applications.api.DialogV2.confirm({
     window: { title: 'Crier Turn-Card Timing Test' },
-    content: `<p>Creates a temporary combat with <strong>${pool.map((t) => t.name).join('</strong> and <strong>')}</strong>, runs 7 timing checks, then deletes the combat and the cards it posted.</p>
+    content: `<p>Creates a temporary combat with <strong>${pool.map((t) => t.name).join('</strong> and <strong>')}</strong>, runs 10 lifecycle/timing checks, then deletes the cards it posted.</p>
               <p>Takes about 30 seconds. Players will briefly see the test cards.</p>`,
     modal: true,
     rejectClose: false
@@ -78,7 +80,7 @@ const hookId = Hooks.on('createChatMessage', (msg) => {
     if (!flags) return;
     posted.push(msg.id);
     recorded.push({
-        kind: flags.roundCycling ? 'round' : flags.turnAnnounce ? 'turn' : 'other',
+        kind: flags.lifecycle ?? (flags.roundCycling ? 'round' : flags.turnAnnounce ? 'turn' : 'other'),
         round: flags.round,
         combatantId: flags.combatant ?? null
     });
@@ -88,7 +90,7 @@ const results = [];
 
 /**
  * Run one scenario: clear the tape, do the thing, wait for quiet, judge.
- * `want` is {round, turn} counts; `wantFirst` asserts the turn card names
+ * `want` is a partial set of {start, round, turn, end} counts.
  * whoever actually acts first, which is the pointer-correction bug.
  */
 async function check(label, action, want, { wantFirst = false } = {}) {
@@ -97,12 +99,14 @@ async function check(label, action, want, { wantFirst = false } = {}) {
     await wait(QUIET_MS);
 
     const got = {
+        start: recorded.filter((r) => r.kind === 'start').length,
         round: recorded.filter((r) => r.kind === 'round').length,
-        turn: recorded.filter((r) => r.kind === 'turn').length
+        turn: recorded.filter((r) => r.kind === 'turn').length,
+        end: recorded.filter((r) => r.kind === 'end').length
     };
     const notes = [];
-    let pass = got.round === want.round && got.turn === want.turn;
-    if (!pass) notes.push(`expected ${want.round} round / ${want.turn} turn, got ${got.round} / ${got.turn}`);
+    let pass = Object.entries(want).every(([kind, count]) => got[kind] === count);
+    if (!pass) notes.push(`expected ${JSON.stringify(want)}, got ${JSON.stringify(got)}`);
 
     if (pass && wantFirst && got.turn === 1) {
         const expected = combat.turns[0];
@@ -156,7 +160,7 @@ try {
     await wait(QUIET_MS);
 
     await check('1. Combat begins, nobody has rolled',
-        () => combat.startCombat(), { round: 0, turn: 0 });
+        () => combat.startCombat(), { start: 1, round: 0, turn: 0, end: 0 });
 
     await check('2. Initiatives come in — round 1 begins',
         rollEveryone, { round: 1, turn: 1 }, { wantFirst: true });
@@ -189,6 +193,13 @@ try {
     await check('8. …and rolls, releasing the held card',
         () => combat.setInitiative(combat.combatants.contents[0].id, 17),
         { round: 0, turn: 1 });
+
+    await check('9. Combat ends once',
+        () => combat.endCombat(), { start: 0, round: 0, turn: 0, end: 1 });
+
+    await check('10. Deleting an ended combat does not announce twice',
+        async () => { await combat.delete(); combat = null; },
+        { start: 0, round: 0, turn: 0, end: 0 });
 } finally {
     Hooks.off('createChatMessage', hookId);
     if (combat) await combat.delete();

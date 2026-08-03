@@ -2,7 +2,7 @@
 
 ## Overview
 
-Coffee Pub Crier is a FoundryVTT module that automatically posts turn and round cards to the chat when combat changes occur. It integrates with the Blacksmith API for enhanced functionality and follows FoundryVTT's combat lifecycle.
+Coffee Pub Crier owns configurable combat-start, round-start, turn-start, and combat-end chat announcements. It integrates with the Blacksmith API for presentation and utilities while keeping announcement lifecycle behavior in Crier.
 
 ## Core Components
 
@@ -27,7 +27,7 @@ The module uses the Blacksmith External API for:
 ### 1. Initialization
 ```javascript
 Hooks.once('init') → BlacksmithModuleManager.registerModule()
-Hooks.once('ready') → Register hooks, load templates, initialize lastCombatant
+Hooks.once('ready') → Register hooks, load templates, initialize per-combat state
 ```
 
 ### 2. Combat Change Detection
@@ -55,7 +55,7 @@ A combatant added mid-round has no initiative, so cards pause until it rolls. Th
 
 #### Holding and releasing
 
-Cards blocked by an unsettled order are **held, not dropped** — `heldAnnouncement` records which cards were due, on the one client that made the combat update, so a flush posts each exactly once.
+Cards blocked by an unsettled order are **held, not dropped**. Per-combat maps record due cards and settle timers, so activity in another combat cannot overwrite them. A per-combat promise queue serializes build/post work.
 
 The release is the part that is easy to get wrong. Rolling initiative writes to **Combatant** documents, so `updateCombat` never fires for it; Foundry's own follow-up `combat.update({turn})` inside `rollInitiative` diffs down to nothing whenever the current combatant keeps its slot, and fires no hook either. `flushHeldAnnouncement()` therefore hangs off the combatant hooks instead:
 
@@ -80,7 +80,7 @@ Judging at any point before the end of that cascade gets it wrong, so three rule
 
 1. **A round change is never judged on the spot.** It is held for `ORDER_SETTLE_DELAY_MS` (250 ms) and reconsidered when that expires.
 2. **A change arriving while a window is open joins it** rather than announcing on its own, and restarts the clock. The window closes when things have been quiet for 250 ms.
-3. **A card that cannot be delivered goes back on hold.** Building a card awaits settings, portraits, effects and `enrichHTML`, and the order can come apart during it. `announceCombatChange()` re-checks before each post and re-holds the remainder.
+3. **A card that cannot be delivered goes back on hold.** Building a card awaits settings, portraits, effects and `enrichHTML`, and the order can come apart during it. `announceCombatChange()` checks the expected round and active combatant immediately before each chat write and re-holds unposted work.
 
 None of this is a guess at the answer — `isOrderSettled()` still has to pass when the window closes, and the combatant hooks still cover anything slower than the delay. Turn advances outside a window announce immediately, with no delay.
 
@@ -92,8 +92,11 @@ A persisted record that the order settled during this round, kept in step on eve
 
 ### 4. State Management
 
-#### Global Variables:
-- `lastCombatant`: Tracks the last combatant to prevent duplicate messages
+#### Runtime state:
+- `lastCombatants`: Per-combat previous-combatant state used for duplicate and missed-turn detection
+- `heldAnnouncements` / `announceTimers`: Per-combat unsettled work
+- `deliveryQueues`: Per-combat serialization for hook and timer work
+- `deliveredLifecycleEvents`: Deduplication for overlapping end/delete hooks
 - `roundInitialized`: Boolean flag indicating if current round has all initiatives rolled (persistent setting)
 - `turnTemplate`, `roundTemplate`: Loaded Handlebars templates
 
@@ -108,6 +111,8 @@ Round Change      → roundInitialized = false
 Turn Change       → roundInitialized = allInitiativesRolled(combat)
 Any Turn Card     → posted only if combat.started && allInitiativesRolled(combat)
 ```
+
+Combat lifecycle cards use `combatStart` and both `endCombat`/`deleteCombat`. Only the highest-role active GM posts these table-wide events. Ending a combat clears held round/turn work; the end/delete pair is deduplicated. Sounds run only after the corresponding chat message is successfully created.
 
 ## Hook Registration
 
@@ -173,7 +178,7 @@ The block is display-only and applies nothing. Bibliosoph owns applying, ticking
 - Prevents multiple turn cards during initiative rolling phase
 
 ### 3. Combat State Changes
-- Tracks `lastCombatant` to prevent duplicate messages
+- Tracks previous-combatant state per combat to prevent duplicate messages
 - Resets tracking on round changes
 - Handles defeated combatants appropriately
 

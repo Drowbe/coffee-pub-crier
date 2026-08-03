@@ -5,6 +5,8 @@
 
 		"headingH1Crier-Label": "Introduction",
 		"headingH1Crier-Hint": "Description",
+		"headingH2Lifecycle-Label": "Combat Lifecycle",
+		"headingH2Lifecycle-Hint": "Configure announcements for combat beginning and ending. Round and turn announcements are configured below.",
 
 		"headingH2Rounds-Label": "Rounds",
 		"headingH2Rounds-Hint": "Description",
@@ -26,6 +28,19 @@
 
 		"headingH3simpleTurnElements-Label": "Personalization",
 		"headingH3simpleTurnElements-Hint": "Description",
+
+		"combatStartCycling-Label": "Announce Combat Start",
+		"combatStartCycling-Hint": "Post an announcement card when combat actually starts.",
+		"combatStartSound-Label": "Combat Start Sound",
+		"combatStartSound-Hint": "Sound played after the combat start card is successfully posted.",
+		"combatStartLabel-Label": "Combat Start Label",
+		"combatStartLabel-Hint": "Text displayed on the combat start announcement.",
+		"combatEndCycling-Label": "Announce Combat End",
+		"combatEndCycling-Hint": "Post an announcement card when combat ends.",
+		"combatEndSound-Label": "Combat End Sound",
+		"combatEndSound-Hint": "Sound played after the combat end card is successfully posted.",
+		"combatEndLabel-Label": "Combat End Label",
+		"combatEndLabel-Hint": "Text displayed on the combat end announcement.",
 
 
 

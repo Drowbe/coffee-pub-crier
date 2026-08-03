@@ -101,6 +101,38 @@ export const registerSettings = async () => {
 			default: "",
 			type: String,
 		});
+
+		// Combat lifecycle announcements use the round announcement theme/icon.
+		game.settings.register(MODULE.ID, CRIER.headingH2Lifecycle, {
+			name: MODULE.ID + '.headingH2Lifecycle-Label', hint: MODULE.ID + '.headingH2Lifecycle-Hint',
+			type: String, config: true, scope: 'world', default: ''
+		});
+		game.settings.register(MODULE.ID, CRIER.combatStartCycling, {
+			name: MODULE.ID + '.combatStartCycling-Label', hint: MODULE.ID + '.combatStartCycling-Hint',
+			type: Boolean, config: true, scope: 'world', default: true
+		});
+		game.settings.register(MODULE.ID, CRIER.combatStartSound, {
+			name: MODULE.ID + '.combatStartSound-Label', hint: MODULE.ID + '.combatStartSound-Hint',
+			type: String, config: true, scope: 'world', default: constants?.SOUNDGONG || 'gong',
+			choices: constants?.arrSoundChoices || { error: 'Failed to load sounds - check Blacksmith module' }
+		});
+		game.settings.register(MODULE.ID, CRIER.combatStartLabel, {
+			name: MODULE.ID + '.combatStartLabel-Label', hint: MODULE.ID + '.combatStartLabel-Hint',
+			type: String, config: true, scope: 'world', default: 'Combat Begins'
+		});
+		game.settings.register(MODULE.ID, CRIER.combatEndCycling, {
+			name: MODULE.ID + '.combatEndCycling-Label', hint: MODULE.ID + '.combatEndCycling-Hint',
+			type: Boolean, config: true, scope: 'world', default: true
+		});
+		game.settings.register(MODULE.ID, CRIER.combatEndSound, {
+			name: MODULE.ID + '.combatEndSound-Label', hint: MODULE.ID + '.combatEndSound-Hint',
+			type: String, config: true, scope: 'world', default: 'none',
+			choices: constants?.arrSoundChoices || { error: 'Failed to load sounds - check Blacksmith module' }
+		});
+		game.settings.register(MODULE.ID, CRIER.combatEndLabel, {
+			name: MODULE.ID + '.combatEndLabel-Label', hint: MODULE.ID + '.combatEndLabel-Hint',
+			type: String, config: true, scope: 'world', default: 'Combat Ends'
+		});
 		// ------------------------------------------------------------
 
 		// -- ROUNDS --

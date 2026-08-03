@@ -23,11 +23,19 @@ const turn_template_file = `modules/${MODULE.ID}/templates/turns.hbs`,
 
 let turnTemplate, roundTemplate;
 // Set the last combatant
-const lastCombatant = {
-	combatant: null,
-	get tokenId() { return this.combatant?.token?.id; },
-	spoke: false
-};
+const lastCombatants = new Map();
+function getLastCombatantState(combatOrId = game.combat) {
+    const id = typeof combatOrId === 'string' ? combatOrId : combatOrId?.id;
+    if (!id) return { combatant: null, tokenId: null, spoke: false };
+    if (!lastCombatants.has(id)) {
+        lastCombatants.set(id, {
+            combatant: null,
+            get tokenId() { return this.combatant?.token?.id; },
+            spoke: false
+        });
+    }
+    return lastCombatants.get(id);
+}
 
 // Track whether the current round has been properly initialized with all initiatives rolled
 // This is now stored as a persistent setting, but we keep a local cache for performance
@@ -40,8 +48,12 @@ let roundInitialized = false;
  * each the context of the change that called for that card, or null.
  * @type {{combatId: string, roundCard: object|null, turnCard: object|null}|null}
  */
-let heldAnnouncement = null;
-let announceTimer = null;
+const heldAnnouncements = new Map();
+const announceTimers = new Map();
+const deliveryQueues = new Map();
+const deliveredLifecycleEvents = new Set();
+const startedCombats = new Set();
+const lifecycleRetryCounts = new Map();
 
 /**
  * How long to let a round change settle before deciding anything.
@@ -54,6 +66,32 @@ let announceTimer = null;
  * combatant hooks still cover anything slower than this.
  */
 const ORDER_SETTLE_DELAY_MS = 250;
+
+function enqueueCombatWork(combatId, work) {
+    const previous = deliveryQueues.get(combatId) ?? Promise.resolve();
+    const next = previous.catch(() => undefined).then(work);
+    deliveryQueues.set(combatId, next);
+    const cleanup = () => {
+        if (deliveryQueues.get(combatId) === next) deliveryQueues.delete(combatId);
+    };
+    next.then(cleanup, cleanup);
+    return next;
+}
+
+function isAnnouncementAuthority() {
+    const gm = game.users?.filter(user => user.isGM && user.active)?.sort((a, b) => b.role - a.role || String(a.id).localeCompare(String(b.id)))?.[0];
+    return !!gm && gm.id === game.user.id;
+}
+
+function queueLifecycleAnnouncement(combat, kind) {
+    const key = `${combat.id}:${kind}`;
+    return enqueueCombatWork(combat.id, () => postLifecycleAnnouncement(combat, kind)).catch((error) => {
+        const attempts = (lifecycleRetryCounts.get(key) ?? 0) + 1;
+        lifecycleRetryCounts.set(key, attempts);
+        debugLog('LIFECYCLE ANNOUNCEMENT: Delivery failed', () => ({ kind, combat: combat.id, attempts, error: error?.message ?? error }));
+        if (attempts < 3) setTimeout(() => queueLifecycleAnnouncement(combat, kind), 1000);
+    });
+}
 
 // Helper functions to sync with persistent setting
 function getRoundInitialized() {
@@ -196,7 +234,8 @@ Hooks.once('ready', async () => {
         }
         
         // Initialize last combatant
-        lastCombatant.combatant = game.combat?.combatant ?? null;
+        getLastCombatantState().combatant = game.combat?.combatant ?? null;
+        if (game.combat?.started) startedCombats.add(game.combat.id);
         
         // Register settings now that Blacksmith is ready (await since it's async)
         await registerSettings();
@@ -261,13 +300,14 @@ Hooks.once('ready', async () => {
                     // Reset lastCombatant tracking if a new round starts
                     if (roundChanged) {
                         debugLog('HOOK: New round detected, resetting lastCombatant and roundInitialized');
+                        const lastCombatant = getLastCombatantState(combat);
                         lastCombatant.combatant = null;
                         lastCombatant.spoke = false;
                         setRoundInitialized(false);
                     }
                     
                     // Process round changes (round cards) and turn changes (turn cards) separately
-                    return processCombatChange(combat, update, context, userId, turnChanged, roundChanged);
+                    return enqueueCombatWork(combat.id, () => processCombatChange(combat, update, context, userId, turnChanged, roundChanged));
                 }
             }
         });
@@ -285,7 +325,8 @@ Hooks.once('ready', async () => {
             priority: 2,
             callback: (combatant, changed) => {
                 if (!('initiative' in (changed ?? {}))) return;
-                return flushHeldAnnouncement(combatant?.parent);
+                const combat = combatant?.parent;
+                if (combat) return enqueueCombatWork(combat.id, () => flushHeldAnnouncement(combat));
             }
         });
 
@@ -294,8 +335,29 @@ Hooks.once('ready', async () => {
             description: 'Coffee Pub Crier: Post held cards when the combatant being waited on leaves',
             context: MODULE.ID,
             priority: 2,
-            callback: (combatant) => flushHeldAnnouncement(combatant?.parent)
+            callback: (combatant) => {
+                const combat = combatant?.parent;
+                if (combat) return enqueueCombatWork(combat.id, () => flushHeldAnnouncement(combat));
+            }
         });
+
+        BlacksmithHookManager.registerHook({
+            name: 'combatStart',
+            description: 'Coffee Pub Crier: Announce combat start',
+            context: MODULE.ID,
+            priority: 2,
+            callback: (combat) => {
+                if (!isAnnouncementAuthority()) return;
+                return queueLifecycleAnnouncement(combat, 'start');
+            }
+        });
+
+        const endCombat = (combat) => {
+            if (!isAnnouncementAuthority()) return;
+            return queueLifecycleAnnouncement(combat, 'end');
+        };
+        BlacksmithHookManager.registerHook({ name: 'endCombat', description: 'Coffee Pub Crier: Announce combat end', context: MODULE.ID, priority: 2, callback: endCombat });
+        BlacksmithHookManager.registerHook({ name: 'deleteCombat', description: 'Coffee Pub Crier: Announce deleted combat end', context: MODULE.ID, priority: 2, callback: endCombat });
 
         const renderChatMessageHookId = BlacksmithHookManager.registerHook({
             name: 'renderChatMessage',
@@ -748,8 +810,9 @@ function interceptMissedTurnMessage(cm, html, main) {
 // ************************************
 
 function updateLastCombatantFromMsg(cm, flags) {
+	const lastCombatant = getLastCombatantState(flags.combat);
 	lastCombatant.spoke = false;
-	lastCombatant.combatant = game.combat?.getCombatantByToken(flags.token) ?? null;
+	lastCombatant.combatant = game.combats.get(flags.combat)?.getCombatantByToken(flags.token) ?? null;
 }
 
 
@@ -778,6 +841,7 @@ function chatMessageEvent(cm, html, _options) {
 	const flags = cmd.flags?.[MODULE.ID];
 
 	if (!flags) {
+		const lastCombatant = getLastCombatantState();
 		if (isGM && cmd.speaker?.token === lastCombatant.tokenId)
 			lastCombatant.spoke = true;
 		return;
@@ -1009,6 +1073,8 @@ async function createNewRoundCard(combat) {
         message: override ? override.replace('{round}', combat.round) : game.i18n.format('coffee-pub-crier.RoundCycling', { round: combat.round }),
         roundCardStyle,
         roundIconStyle,
+        iconStyle: roundIconStyle,
+        kind: 'round',
         theme
     };
     
@@ -1025,11 +1091,6 @@ async function createNewRoundCard(combat) {
             [MODULE.ID]: { roundCycling: true, round: combat.round, combat: combat.id, roundCardStyle, roundIconStyle }
         },
     };
-        // Play Round sound
-    const strSound = await getSettingSafely(MODULE.ID, CRIER.roundSound);
-    if (strSound && strSound !== 'none') {
-        BlacksmithUtils.playSound(strSound, BlacksmithAPIConstants?.SOUNDVOLUMENORMAL || BlacksmithConstants?.SOUNDVOLUMENORMAL || BlacksmithAPIConstants?.SOUNDVOLUMESOFT || BlacksmithConstants?.SOUNDVOLUMESOFT || 0.5);
-    }
     // Return the message
 
     return msgData;
@@ -1050,8 +1111,68 @@ async function postNewRound(combat, context) {
     // Skip in case turns were rolled back.
     if (combat.crierLastRoundNumber >= combat.round) return;
     if (context.crier.roundShift <= 0) return;
-    combat.crierLastRoundNumber = combat.round;
     return createNewRoundCard(combat);
+}
+
+async function playConfiguredSound(settingKey) {
+    try {
+        const sound = await getSettingSafely(MODULE.ID, settingKey);
+        if (!sound || sound === 'none') return;
+        await BlacksmithUtils.playSound(sound, BlacksmithAPIConstants?.SOUNDVOLUMENORMAL || BlacksmithConstants?.SOUNDVOLUMENORMAL || BlacksmithAPIConstants?.SOUNDVOLUMESOFT || BlacksmithConstants?.SOUNDVOLUMESOFT || 0.5);
+    } catch (error) {
+        debugLog('ANNOUNCEMENT SOUND: Playback failed', () => ({ settingKey, error: error?.message ?? error }));
+    }
+}
+
+async function postLifecycleAnnouncement(combat, kind) {
+    const isStart = kind === 'start';
+    if (isStart && deliveredLifecycleEvents.has(`${combat.id}:end`)) {
+        deliveredLifecycleEvents.delete(`${combat.id}:start`);
+        deliveredLifecycleEvents.delete(`${combat.id}:end`);
+    }
+    const eventKey = `${combat.id}:${kind}`;
+    if (deliveredLifecycleEvents.has(eventKey)) return;
+    if (isStart && !combat.started) return;
+    if (isStart) startedCombats.add(combat.id);
+    if (!isStart && !startedCombats.has(combat.id) && !(Number(combat.round) > 0)) return;
+
+    // Ending invalidates anything which was waiting to describe a round/turn.
+    if (!isStart) clearHeldAnnouncement(combat.id);
+
+    const enabledKey = isStart ? CRIER.combatStartCycling : CRIER.combatEndCycling;
+    if (!await getSettingSafely(MODULE.ID, enabledKey, true)) {
+        deliveredLifecycleEvents.add(eventKey);
+        lifecycleRetryCounts.delete(eventKey);
+        if (!isStart) startedCombats.delete(combat.id);
+        return;
+    }
+    const labelKey = isStart ? CRIER.combatStartLabel : CRIER.combatEndLabel;
+    const soundKey = isStart ? CRIER.combatStartSound : CRIER.combatEndSound;
+    const [message, roundCardStyle, roundIconStyle] = await Promise.all([
+        getSettingSafely(MODULE.ID, labelKey, isStart ? 'Combat Begins' : 'Combat Ends'),
+        getSettingSafely(MODULE.ID, CRIER.roundCardStyle, 'theme-announcement-green'),
+        getSettingSafely(MODULE.ID, CRIER.roundIconStyle, 'fa-chess-queen')
+    ]);
+    const theme = await mapRoundCardStyleToTheme(roundCardStyle);
+    if (!roundTemplate) throw new Error('Coffee Pub Crier: round announcement template is not loaded');
+    const content = roundTemplate({ combat, message, theme, iconStyle: roundIconStyle, kind }, { allowProtoMethodsByDefault: true, allowProtoPropertiesByDefault: true });
+    await ChatMessage.create({
+        content,
+        speaker: ChatMessage.getSpeaker('GM'),
+        rollMode: 'publicroll',
+        flags: { [MODULE.ID]: { lifecycle: kind, combat: combat.id } }
+    });
+    deliveredLifecycleEvents.add(eventKey);
+    lifecycleRetryCounts.delete(eventKey);
+    if (!isStart) {
+        startedCombats.delete(combat.id);
+        lastCombatants.delete(combat.id);
+    }
+    try {
+        await playConfiguredSound(soundKey);
+    } catch (error) {
+        debugLog('LIFECYCLE ANNOUNCEMENT: Sound failed after delivery', () => ({ kind, error: error?.message ?? error }));
+    }
 }
 
 // ************************************
@@ -1147,6 +1268,7 @@ async function postNewTurnCard(combat, context) {
     // Initiative check is now handled in processCombatChange function
     // This function assumes the round is properly initialized
 
+    const lastCombatant = getLastCombatantState(combat);
     const previous = {
         combatant: lastCombatant.combatant, // cache
         get defeated() { return getDocData(this.combatant)?.defeated; },
@@ -1154,16 +1276,13 @@ async function postNewTurnCard(combat, context) {
         spoke: getDocData(lastCombatant.combatant)?.defeated ? false : lastCombatant.spoke, // dead don't speak
     };
 
-    // Update for next cycle
-    debugLog('POST NEW TURN CARD: Updating lastCombatant', () => ({
+    // The state is committed only after every generated message posts.
+    debugLog('POST NEW TURN CARD: Pending lastCombatant update', () => ({
         oldCombatantId: lastCombatant.combatant?.id,
         newCombatantId: combatant?.id,
         oldCombatantName: lastCombatant.combatant?.name,
         newCombatantName: combatant?.name
     }));
-    lastCombatant.combatant = combatant;
-    lastCombatant.spoke = false;
-
     const info = {
         actor: combatant.actor,
         combatant: combatant,
@@ -1507,7 +1626,7 @@ async function processCombatChange(combat, _update, context, userId, turnChanged
     // update, so a held round card must not inherit a later turn's context —
     // it would test as "no round change" and vanish, leaving the turn card to
     // announce a round nobody was told about.
-    const held = heldAnnouncement?.combatId === combat.id ? heldAnnouncement : null;
+    const held = heldAnnouncements.get(combat.id) ?? null;
     const due = {
         combatId: combat.id,
         roundCard: roundChanged ? context : (held?.roundCard ?? null),
@@ -1524,10 +1643,10 @@ async function processCombatChange(combat, _update, context, userId, turnChanged
     // top of the freshly sorted order, because Foundry keeps whoever was
     // current before the rolls. Announcing both that and what we were already
     // holding is how two turn cards land back to back.
-    if (roundChanged || announceTimer) {
+    if (roundChanged || announceTimers.has(combat.id)) {
         debugLog('PROCESS COMBAT CHANGE: Holding until the order settles', () => ({
             roundChanged,
-            alreadyWaiting: !!announceTimer
+            alreadyWaiting: announceTimers.has(combat.id)
         }));
         holdAnnouncement(combat, due, ORDER_SETTLE_DELAY_MS);
         return;
@@ -1551,8 +1670,14 @@ async function processCombatChange(combat, _update, context, userId, turnChanged
         return;
     }
 
-    heldAnnouncement = null;
-    await announceCombatChange(combat, due);
+    heldAnnouncements.delete(combat.id);
+    try {
+        await announceCombatChange(combat, due);
+    } catch (error) {
+        holdAnnouncement(combat, due, null);
+        debugLog('PROCESS COMBAT CHANGE: Delivery failed, work retained', () => ({ error: error?.message ?? error }));
+        throw error;
+    }
 }
 
 /**
@@ -1563,14 +1688,23 @@ async function processCombatChange(combat, _update, context, userId, turnChanged
  * @param {number|null} delayMs
  */
 function holdAnnouncement(combat, due, delayMs) {
-    heldAnnouncement = due;
-    if (announceTimer) clearTimeout(announceTimer);
-    announceTimer = null;
+    heldAnnouncements.set(combat.id, due);
+    const existingTimer = announceTimers.get(combat.id);
+    if (existingTimer) clearTimeout(existingTimer);
+    announceTimers.delete(combat.id);
     if (delayMs === null) return;
-    announceTimer = setTimeout(() => {
-        announceTimer = null;
-        flushHeldAnnouncement(combat, { windowElapsed: true });
+    const timer = setTimeout(() => {
+        announceTimers.delete(combat.id);
+        enqueueCombatWork(combat.id, () => flushHeldAnnouncement(combat, { windowElapsed: true }));
     }, delayMs);
+    announceTimers.set(combat.id, timer);
+}
+
+function clearHeldAnnouncement(combatId) {
+    heldAnnouncements.delete(combatId);
+    const timer = announceTimers.get(combatId);
+    if (timer) clearTimeout(timer);
+    announceTimers.delete(combatId);
 }
 
 /**
@@ -1598,11 +1732,17 @@ async function announceCombatChange(combat, { roundCard, turnCard }) {
     // arrives before the round it belongs to reads backwards.
     if (roundCard) {
         if (!isOrderSettled(combat)) return rearm({ roundCard, turnCard });
+        const expectedRound = combat.round;
         debugLog('ANNOUNCE: Processing round change');
         if (await getSettingSafely(MODULE.ID, CRIER.roundCycling)) {
             const roundMsg = await postNewRound(combat, roundCard);
             if (roundMsg) {
+                if (!isOrderSettled(combat) || combat.round !== expectedRound || Number(roundMsg.flags?.[MODULE.ID]?.round) !== expectedRound) {
+                    return rearm({ roundCard, turnCard });
+                }
                 await ChatMessage.create(roundMsg);
+                combat.crierLastRoundNumber = combat.round;
+                await playConfiguredSound(CRIER.roundSound);
                 debugLog('ANNOUNCE: Round message posted', () => ({ round: combat.round }));
             }
         } else {
@@ -1612,12 +1752,20 @@ async function announceCombatChange(combat, { roundCard, turnCard }) {
 
     if (turnCard) {
         if (!isOrderSettled(combat)) return rearm({ roundCard: null, turnCard });
+        const expectedCombatantId = combat.combatant?.id;
         const turnMsgs = await postNewTurnCard(combat, turnCard);
         if (turnMsgs?.length) {
             debugLog('ANNOUNCE: Posting turn messages', () => ({ count: turnMsgs.length }));
             for (const msg of turnMsgs) {
+                if (!isOrderSettled(combat) || combat.combatant?.id !== expectedCombatantId) {
+                    return rearm({ roundCard: null, turnCard });
+                }
                 await ChatMessage.create(msg);
             }
+            const lastCombatant = getLastCombatantState(combat);
+            lastCombatant.combatant = combat.combatant;
+            lastCombatant.spoke = false;
+            await playConfiguredSound(CRIER.turnSound);
         } else {
             debugLog('ANNOUNCE: No turn message to post');
         }
@@ -1631,8 +1779,8 @@ async function announceCombatChange(combat, { roundCard, turnCard }) {
  * @param {Combat|null|undefined} combat
  */
 async function flushHeldAnnouncement(combat, { windowElapsed = false } = {}) {
-    const held = heldAnnouncement;
-    if (!held || !combat || held.combatId !== combat.id) return;
+    const held = combat ? heldAnnouncements.get(combat.id) : null;
+    if (!held || !combat) return;
     // Still not settled: keep holding. Whoever has yet to roll will bring us
     // back here through the combatant hooks.
     if (!isOrderSettled(combat)) {
@@ -1655,16 +1803,20 @@ async function flushHeldAnnouncement(combat, { windowElapsed = false } = {}) {
         return;
     }
 
-    heldAnnouncement = null;
-    if (announceTimer) clearTimeout(announceTimer);
-    announceTimer = null;
+    clearHeldAnnouncement(combat.id);
     setRoundInitialized(true);
     debugLog('FLUSH HELD ANNOUNCEMENT: Order settled, posting held cards', () => ({
         roundCard: !!held.roundCard,
         turnCard: !!held.turnCard,
         round: combat.round
     }));
-    await announceCombatChange(combat, held);
+    try {
+        await announceCombatChange(combat, held);
+    } catch (error) {
+        holdAnnouncement(combat, held, null);
+        debugLog('FLUSH HELD ANNOUNCEMENT: Delivery failed, work retained', () => ({ error: error?.message ?? error }));
+        throw error;
+    }
 }
 
 async function processTurn(combat, _update, context, userId) {
