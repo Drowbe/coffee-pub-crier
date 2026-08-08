@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.1.1]
 
+### Changed
 
+- **Status rows now come from Blacksmith**: The effect list is built from `blacksmith.api.effects.getDisplayEffects()` rather than from Crier's own copy of Bibliosoph's logic. Crier had been classifying `outcomeBurst` flags, indexing condition names, formatting durations and re-deriving the "via …" back-link itself — roughly 230 lines reimplementing decisions that belong to the modules that own them. One call replaces all of it, and rows gain severity and a live bleed (`Injury · Moderate · Blinded · 2 HP/turn · 29 minutes`) that Crier never had to learn how to compute.
+- **One row per penalty**: Roll penalties are still summed per stat, but two different stats no longer share a line. Joining them with a middot borrowed the separator the effect rows use for facets of a single thing, so `−3 to ability checks · −1 to saving throws` read as one statement rather than two independent penalties.
+- **Block heading**: **Lingering Injuries and Conditions** is now **Penalties and Duration**, which describes what is actually under it. The old heading promised a second list of conditions directly beneath the first one and delivered arithmetic — and because the two blocks toggle independently, it had to make sense with no effect list above it.
+- **Hover target**: The tooltip moved from the effect icon to the whole row. Names and details ellipsize in a narrow chat sidebar, and the tooltip is how a clipped row gets read, so the text being cut off is a likelier target than the icon beside it.
+
+### Fixed
+
+- **GM-authored effect text leaked to the table**: Turn cards enriched every effect description into their hover tooltips with no permission check. A turn card is composed once by the announcing GM and stored as ChatMessage content, then delivered verbatim to everyone — so a permission-aware check would have run as the GM and passed anyway. Descriptions are now explicitly disabled for this surface; the visible detail line carries type, severity, condition, bleed and duration, none of which is GM-only.
+- **Relief countdown ordered by the wrong unit**: Remaining time was sorted on a raw number that means rounds for combat-based effects and seconds for everything else, so a 20-round effect could sort ahead of something that lifts sooner. Ordering now converts through the unit the API reports alongside the value.
+- **Durations on lingering wounds**: Crier's own duration formatter read Foundry's duration field as an effect's lifetime. Bibliosoph has since re-modelled lingering injuries so that field governs only the bleed phase, leaving the wound itself permanent until treated. Blacksmith's formatter is now the single source, so a wound that is still bleeding correctly shows no countdown instead of an invented one.
+
+### Removed
+
+- **Bleed preview row**: The summed *Bleeding — N HP* line is gone from the penalty block. It reimplemented Bibliosoph's damage floor locally and accumulated across effects against falling HP where Bibliosoph computes each against current HP, so the total could disagree with the effects it summarized. The number now appears per effect as `2 HP/turn`, phrased by the module that owns the arithmetic.
 
 ## [13.1.0]
 
