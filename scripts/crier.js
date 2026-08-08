@@ -434,164 +434,64 @@ function applyCrierTokenBackgroundFrames(scope, imageUrl) {
 	});
 }
 
-const BIBLIOSOPH_ID = 'coffee-pub-bibliosoph';
+// ************************************
+// ** ACTIVE EFFECTS
+// ************************************
+// What is riding on this combatant right now, display-only. Every question
+// worth asking about an effect — is it worth showing, what kind is it, what
+// is it conveying, how long is left — is Blacksmith's to answer, and this
+// module asks rather than works it out. Crier used to classify Bibliosoph's
+// flags, format its own durations and re-derive the "via" back-link itself;
+// all three drifted the moment their owners changed, and none of them were
+// ever Crier's to know.
 
-/**
- * Effects worth surfacing on a turn card: Bibliosoph afflictions, anything
- * with a duration, anything carrying a status id, and hand-authored effects
- * named after a registered condition. Disabled and suppressed effects never
- * qualify — they are not riding on the combatant right now.
- * @param {Actor|null|undefined} actor
- * @returns {Array<ActiveEffect>}
- */
-function collectDisplayEffects(actor) {
-	if (!actor) return [];
-
-	const conditionNames = new Set([
-		...(CONFIG.statusEffects ?? []).map((status) => game.i18n.localize(status.name ?? '').toLowerCase()),
-		...Object.values(CONFIG.DND5E?.conditionTypes ?? {}).map((condition) =>
-			game.i18n.localize(condition.name ?? '').toLowerCase()
-		)
-	].filter(Boolean));
-
-	return Array.from(actor.effects ?? []).filter((effect) => {
-		try {
-			return !effect.disabled && !effect.isSuppressed && (
-				!!effect.getFlag(BIBLIOSOPH_ID, 'outcomeBurst')
-				|| effect.isTemporary
-				|| effect.statuses?.size > 0
-				|| conditionNames.has(String(effect.name ?? '').toLowerCase())
-			);
-		} catch (_) {
-			return false;
-		}
-	});
-}
-
-const ROUND_SECONDS = 6;
-
-/**
- * The effect's name as the table says it. Bibliosoph prefixes its criticals
- * and fumbles for sorting; the zone heading already says which it is.
- * @param {ActiveEffect} effect
- * @returns {string}
- */
-function displayEffectName(effect) {
-	const kind = effect?.getFlag(BIBLIOSOPH_ID, 'outcomeBurst')?.kind;
-	const name = String(effect?.name ?? '');
-	if (kind === 'crit') return name.replace(/^Critical:\s*/i, '');
-	if (kind === 'fumble') return name.replace(/^Fumble:\s*/i, '');
-	return name;
+/** Blacksmith's effects API, or null on a build that predates it. */
+function getEffectsAPI() {
+	return game.modules.get('coffee-pub-blacksmith')?.api?.effects ?? null;
 }
 
 /**
- * How long an effect has left, in the unit that means something to the table.
- * Empty when it is permanent.
+ * Blacksmith's display records for this actor: `img`, `name` and a
+ * pre-composed `detail` reading "Type · Context · Remaining".
  *
- * Foundry tracks combat durations in rounds and everything else in seconds,
- * and Bibliosoph authors its afflictions in seconds — so the flat "seconds
- * divided by six" conversion turns a ten-minute wound into "97 rounds
- * remain", which is true and unusable. Short remainders are worth counting in
- * rounds because they will lift during the fight; longer ones are a time.
- * @param {ActiveEffect} effect
- * @returns {string}
+ * DESCRIPTIONS ARE DELIBERATELY OFF.
+ *
+ * The API's default is permission-aware — GMs and actor owners get the
+ * enriched description, nobody else does — and that is the right default for
+ * anything rendered on the viewer's own client. A turn card is not that. It
+ * is composed once by the announcing GM (see `isAnnouncementAuthority`) and
+ * the resulting HTML is stored on the ChatMessage and delivered verbatim to
+ * the table, so the permission check would run as the GM and bake GM-authored
+ * text into a public card for everyone. 'never' is what "public card" means
+ * here; 'auto' would leak exactly as surely as 'always'.
+ * @param {Actor|null|undefined} actor
+ * @returns {Promise<Array<object>>}
  */
-function remainingTimeLabel(effect) {
-	const duration = effect?.duration;
-	const type = duration?.type;
-	if (!type || type === 'none') return '';
-
-	// Combat-based durations: Foundry already phrases these ("3 Rounds"), and
-	// how it encodes `remaining` for them is its business rather than ours.
-	if (type !== 'seconds') return String(duration.label ?? '').trim();
-
-	const seconds = Math.round(Number(duration.remaining ?? duration.seconds));
-	if (!Number.isFinite(seconds) || seconds <= 0) return '';
-	const say = (unit, value) => game.i18n.format(
-		`${MODULE.ID}.Duration.${unit}${value === 1 ? 'Singular' : 'Plural'}`,
-		{ value }
-	);
-	if (seconds <= 60) return say('Round', Math.ceil(seconds / ROUND_SECONDS));
-	if (seconds < 3600) return say('Minute', Math.round(seconds / 60));
-	if (seconds < 86400) return say('Hour', Math.round(seconds / 3600));
-	return say('Day', Math.round(seconds / 86400));
+async function collectEffectRecords(actor) {
+	if (!actor) return [];
+	try {
+		return await getEffectsAPI()?.getDisplayEffects(actor, { includeDescriptions: 'never' }) ?? [];
+	} catch (error) {
+		debugLog('ACTIVE EFFECTS: Could not build display records', () => ({ error: error?.message ?? error }));
+		return [];
+	}
 }
 
 /**
  * Build display-only active-effect rows for a turn card.
- * Mirrors Bibliosoph's Check-Up filtering and grouping without treatment actions.
  * @param {Actor|null|undefined} actor
- * @param {Array<ActiveEffect>} [collected] Pre-collected effects, to avoid filtering twice.
+ * @param {Array<object>} [records] Pre-fetched display records, to avoid asking twice.
  * @returns {Promise<Array<{label: string, rows: Array<object>}>>}
  */
-async function buildActiveEffectGroups(actor, collected) {
-	if (!actor) return [];
-
-	const effects = collected ?? collectDisplayEffects(actor);
-
-	const conditionLabel = (id) => {
-		const status = CONFIG.statusEffects?.find((entry) => entry.id === id);
-		if (status?.name) return game.i18n.localize(status.name);
-		const condition = CONFIG.DND5E?.conditionTypes?.[id];
-		if (condition?.name) return game.i18n.localize(condition.name);
-		const text = String(id ?? '');
-		return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
-	};
-	const conveyedBy = (effect) => {
-		if (!effect.statuses?.size) return null;
-		for (const other of effects) {
-			if (other === effect) continue;
-			const flag = other.getFlag(BIBLIOSOPH_ID, 'outcomeBurst');
-			if (!['injury', 'crit', 'fumble'].includes(flag?.kind)) continue;
-			const conveyed = new Set(other.statuses ?? []);
-			if (flag.condition) conveyed.add(flag.condition);
-			for (const statusId of effect.statuses) {
-				if (conveyed.has(statusId)) return other.name;
-			}
-		}
-		return null;
-	};
-	const TextEditorImpl = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
-	const rows = await Promise.all(effects.map(async (effect) => {
-		const flag = effect.getFlag(BIBLIOSOPH_ID, 'outcomeBurst');
-		const kind = ['injury', 'crit', 'fumble'].includes(flag?.kind) ? flag.kind : 'other';
-		const name = displayEffectName(effect);
-		const statusIds = new Set(effect.statuses ?? []);
-		if (flag?.condition) statusIds.add(flag.condition);
-		const conditions = [...statusIds].map(conditionLabel).filter(Boolean).join(', ');
-		const durationLabel = remainingTimeLabel(effect);
-		let context = conditions;
-		if (kind === 'other') {
-			const source = conveyedBy(effect);
-			context = source ? `via ${source}` : '';
-		}
-		const typeKey = kind === 'injury' ? 'Injury'
-			: kind === 'crit' ? 'Critical'
-			: kind === 'fumble' ? 'Fumble'
-			: 'Effect';
-		const typeLabel = game.i18n.localize(`${MODULE.ID}.ActiveEffectType.${typeKey}`);
-		const detail = [typeLabel, context, durationLabel].filter(Boolean).join(' · ');
-
-		let description = String(effect.description ?? '').trim();
-		if (description) {
-			try {
-				description = String(await TextEditorImpl.enrichHTML(description, {
-					relativeTo: effect,
-					rollData: actor.getRollData?.() ?? {}
-				})).trim();
-			} catch (_) { /* A malformed embed should not prevent the turn card. */ }
-		}
-		const tooltip = `<section class="crier-effect-tooltip"><strong>${effect.name}</strong>`
-			+ (detail ? `<br><em>${detail}</em>` : '')
-			+ (description ? `<hr>${description}` : '')
-			+ `</section>`;
-		return {
-			kind,
-			name,
-			img: effect.img || 'icons/svg/aura.svg',
-			detail,
-			tooltip
-		};
+async function buildActiveEffectGroups(actor, records) {
+	const rows = (records ?? await collectEffectRecords(actor)).map((record) => ({
+		name: record.name,
+		img: record.img,
+		// Already reads "Injury · Moderate · Blinded · 2 HP/turn · 29 minutes".
+		// Some rows carry no duration on purpose — a lingering wound is
+		// permanent until treated — so an empty tail is not a missing value.
+		detail: record.detail,
+		tooltip: record.tooltipHtml
 	}));
 
 	return rows.length ? [{
@@ -636,62 +536,63 @@ function signedTotal(total) {
 }
 
 /**
- * HP this combatant loses to bleed at the start of this turn. Ticks are a
- * percentage of max HP so the same wound reads the same at level 1 and 15.
- * The arithmetic mirrors Bibliosoph's damageFor — at least a point, never
- * the last one — and walks the effects in order because Bibliosoph applies
- * them one after another against falling health.
- * @param {Actor} actor
- * @param {Array<ActiveEffect>} effects
+ * Seconds a remainder is worth, for ordering only.
+ *
+ * `remaining` is `{value, unit}` because a combat-based effect counts in
+ * rounds and everything else counts in seconds. Sorting the raw numbers
+ * together ranks "20 rounds" ahead of "100 seconds" — the mistake the API
+ * added the unit to stop. Ordering is all this is for; the string to show is
+ * always `durationLabel`, never anything derived here.
+ * @param {{value: number, unit: string}|null|undefined} remaining
  * @returns {number}
  */
-function bleedThisTurn(actor, effects) {
-	const hp = actor?.system?.attributes?.hp;
-	const max = Number(hp?.max) || 0;
-	let current = Number(hp?.value) || 0;
-	if (max <= 0) return 0;
-
-	let total = 0;
-	for (const effect of effects) {
-		if (current <= 0) break;
-		const percent = Number(effect.getFlag(BIBLIOSOPH_ID, 'outcomeBurst')?.tick) || 0;
-		if (percent <= 0) continue;
-		const raw = Math.round(max * (percent / 100));
-		const loss = Math.max(0, Math.min(Math.max(1, raw), current - 1));
-		if (loss <= 0) continue;
-		total += loss;
-		current -= loss;
-	}
-	return total;
+function remainingSeconds(remaining) {
+	const value = Number(remaining?.value);
+	if (!Number.isFinite(value)) return Infinity;
+	return remaining.unit === 'rounds' ? value * (CONFIG.time?.roundTime || 6) : value;
 }
 
 /**
- * Build the "while this lasts" block: summed roll penalties, bleed, and how
- * long the things causing them have left.
+ * Build the "while this lasts" block: summed roll penalties, and how long the
+ * things causing them have left.
+ *
+ * Bleed used to get its own summed line here, worked out from Bibliosoph's
+ * tick flag with a local copy of its damage floor. That number now arrives
+ * already costed on each effect row ("2 HP/turn"), phrased by the module that
+ * owns the arithmetic, so the copy is gone rather than kept in step by hand.
+ *
+ * Works from the same records the rows above render, pairing each with the
+ * document behind it for the `changes` only a document carries. Re-running
+ * the API's filter to get those documents would be a second chance to
+ * disagree with the list the table is looking at.
  * @param {Actor|null|undefined} actor
- * @param {Array<ActiveEffect>} [collected]
+ * @param {Array<object>} records Blacksmith display records.
  * @returns {{label: string, rows: Array<{icon: string, text: string}>}|null}
  */
-function buildTurnPenaltyReport(actor, collected) {
-	if (!actor) return null;
-	const effects = collected ?? collectDisplayEffects(actor);
-	if (!effects.length) return null;
+function buildTurnPenaltyReport(actor, records = []) {
+	if (!actor || !records.length) return null;
+	const paired = records
+		.map((record) => ({ record, effect: actor.effects?.get?.(record.id) }))
+		.filter((entry) => entry.effect);
+	if (!paired.length) return null;
 
 	const rows = [];
 
 	// 1. ROLL PENALTIES. One summed line beats five effect rows, because the
-	// total is the number they are about to roll with.
+	// total is the number they are about to roll with. These are plain dnd5e
+	// change keys — anything on the actor bites the same way, whoever put it
+	// there — so reading them is not knowledge of any other module.
 	const contributors = new Set();
 	const totals = [];
 	for (const { path, label } of TURN_PENALTY_STATS) {
 		let total = 0;
-		for (const effect of effects) {
+		for (const { record, effect } of paired) {
 			for (const change of effect.changes ?? []) {
 				if (change?.key !== path) continue;
 				const value = numericChangeValue(change.value);
 				if (!value) continue;
 				total += value;
-				contributors.add(effect);
+				contributors.add(record);
 			}
 		}
 		if (total) totals.push(`${signedTotal(total)} to ${label}`);
@@ -700,31 +601,23 @@ function buildTurnPenaltyReport(actor, collected) {
 		rows.push({ icon: 'fa-solid fa-dice-d20', text: totals.join(' · ') });
 	}
 
-	// 2. BLEED. Reported, never applied — Bibliosoph does that on updateCombat.
-	const bleed = bleedThisTurn(actor, effects);
-	if (bleed > 0) {
-		for (const effect of effects) {
-			if (Number(effect.getFlag(BIBLIOSOPH_ID, 'outcomeBurst')?.tick) > 0) contributors.add(effect);
-		}
-		rows.push({
-			icon: 'fa-solid fa-droplet',
-			text: game.i18n.format(`${MODULE.ID}.TurnPenalties.Bleeding`, { hp: bleed })
-		});
-	}
-
-	// 3. TIME REMAINING, only for what is actually costing them something
+	// 2. TIME REMAINING, only for what is actually costing them something
 	// above — the countdown is a promise about when the numbers lift, and
-	// every other duration is already on the effect rows. Soonest relief first.
-	// Nothing above means nothing to count down to: penalties that cancel out
-	// would otherwise leave a bare timer explaining a line that is not there.
+	// every other duration is already on the effect rows. Soonest relief
+	// first. Nothing above means nothing to count down to: penalties that
+	// cancel out would otherwise leave a bare timer explaining a line that is
+	// not there.
 	if (!rows.length) return null;
-	const timers = effects
-		.filter((effect) => contributors.has(effect))
-		.map((effect) => ({
-			name: displayEffectName(effect),
-			time: remainingTimeLabel(effect),
-			seconds: Number(effect.duration?.remaining ?? effect.duration?.seconds) || Infinity
+	const timers = paired
+		.map(({ record }) => record)
+		.filter((record) => contributors.has(record))
+		.map((record) => ({
+			name: record.name,
+			time: record.durationLabel,
+			seconds: remainingSeconds(record.remaining)
 		}))
+		// A permanent effect, and a lingering wound that has stopped counting
+		// down, have nothing to promise here.
 		.filter((entry) => entry.time)
 		.sort((a, b) => a.seconds - b.seconds);
 	for (const { name, time } of timers) {
@@ -1379,10 +1272,12 @@ async function postNewTurnCard(combat, context) {
 		const showEffects = cardSettings.showActiveEffects !== false;
 		const showPenalties = cardSettings.showTurnPenalties !== false;
 		if (showEffects || showPenalties) {
-			// Both blocks read the same set, so filter the actor's effects once.
-			const displayEffects = collectDisplayEffects(info.actor);
-			if (showEffects) info.activeEffectGroups = await buildActiveEffectGroups(info.actor, displayEffects);
-			if (showPenalties) info.turnPenaltyReport = buildTurnPenaltyReport(info.actor, displayEffects);
+			// Both blocks describe the same set, so ask Blacksmith once: the
+			// display records for the rows, and the documents behind them for
+			// the `changes` the penalty report adds up.
+			const records = await collectEffectRecords(info.actor);
+			if (showEffects) info.activeEffectGroups = await buildActiveEffectGroups(info.actor, records);
+			if (showPenalties) info.turnPenaltyReport = buildTurnPenaltyReport(info.actor, records);
 		}
 	}
     // Set the kind of image to set in the turn card

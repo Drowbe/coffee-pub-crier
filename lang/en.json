@@ -119,23 +119,12 @@
 		"hideAbilities-Hint": "Do not display str, dex, con, int, wis, and cha in the turn card.",
 
 		"showActiveEffects-Label": "Show Status & Conditions",
-		"showActiveEffects-Hint": "Remind the table what's riding on this combatant — conditions, injuries, buffs, and other temporary effects — with rules text on hover.",
+		"showActiveEffects-Hint": "Remind the table what's riding on this combatant — conditions, injuries, buffs, and other temporary effects, with severity and time remaining.",
 		"showTurnPenalties-Label": "Show Turn Penalties",
-		"showTurnPenalties-Hint": "Under the effects, total up what they cost this combatant right now — roll penalties, bleed damage, and how long until it lifts.",
+		"showTurnPenalties-Hint": "Under the effects, total up what they cost this combatant right now — roll penalties, and how long until they lift.",
 		"TurnPenalties": {
 			"Title": "Lingering Injuries and Conditions",
-			"Bleeding": "Bleeding — {hp} HP at the start of this turn",
 			"TimeRemaining": "{name}: {time} left"
-		},
-		"Duration": {
-			"RoundSingular": "1 round",
-			"RoundPlural": "{value} rounds",
-			"MinuteSingular": "1 minute",
-			"MinutePlural": "{value} minutes",
-			"HourSingular": "1 hour",
-			"HourPlural": "{value} hours",
-			"DaySingular": "1 day",
-			"DayPlural": "{value} days"
 		},
 		"activeEffectsAudience-Label": "Show Status & Conditions For",
 		"activeEffectsAudience-Hint": "Choose which combatants include active effects, conditions, and turn penalties on their turn cards.",
@@ -146,12 +135,6 @@
 		},
 		"ActiveEffectsGroup": {
 			"StatusAndConditions": "Status and Conditions"
-		},
-		"ActiveEffectType": {
-			"Injury": "Injury",
-			"Critical": "Critical",
-			"Fumble": "Fumble",
-			"Effect": "Effect"
 		},
 
 		"hideHealth-Label": "Hide Health",

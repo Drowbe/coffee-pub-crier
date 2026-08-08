@@ -306,9 +306,3 @@
 	line-height: 1.25;
 	overflow-wrap: anywhere;
 }
-.crier-effect-tooltip {
-	max-width: 320px;
-	max-height: 420px;
-	overflow: auto;
-	text-align: left;
-}
