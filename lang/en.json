@@ -123,7 +123,7 @@
 		"showTurnPenalties-Label": "Show Turn Penalties",
 		"showTurnPenalties-Hint": "Under the effects, total up what they cost this combatant right now — roll penalties, and how long until they lift.",
 		"TurnPenalties": {
-			"Title": "Lingering Injuries and Conditions",
+			"Title": "Penalties and Duration",
 			"TimeRemaining": "{name}: {time} left"
 		},
 		"activeEffectsAudience-Label": "Show Status & Conditions For",
