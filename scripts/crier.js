@@ -578,12 +578,19 @@ function buildTurnPenaltyReport(actor, records = []) {
 
 	const rows = [];
 
-	// 1. ROLL PENALTIES. One summed line beats five effect rows, because the
-	// total is the number they are about to roll with. These are plain dnd5e
-	// change keys — anything on the actor bites the same way, whoever put it
-	// there — so reading them is not knowledge of any other module.
+	// 1. ROLL PENALTIES, summed per stat and then one row each.
+	//
+	// A stat gets one line however many effects bit it, because the total is
+	// the number they are about to roll with. Two DIFFERENT stats do not
+	// share a line: joining them with a middot borrows the separator the
+	// effect rows use for facets of a single thing ("Effect · via Chromatic
+	// Conundrum"), so "−3 to ability checks · −1 to saving throws" reads as
+	// one statement about one thing rather than two independent penalties.
+	//
+	// These are plain dnd5e change keys — anything on the actor bites the
+	// same way, whoever put it there — so reading them is not knowledge of
+	// any other module.
 	const contributors = new Set();
-	const totals = [];
 	for (const { path, label } of TURN_PENALTY_STATS) {
 		let total = 0;
 		for (const { record, effect } of paired) {
@@ -595,10 +602,7 @@ function buildTurnPenaltyReport(actor, records = []) {
 				contributors.add(record);
 			}
 		}
-		if (total) totals.push(`${signedTotal(total)} to ${label}`);
-	}
-	if (totals.length) {
-		rows.push({ icon: 'fa-solid fa-dice-d20', text: totals.join(' · ') });
+		if (total) rows.push({ icon: 'fa-solid fa-dice-d20', text: `${signedTotal(total)} to ${label}` });
 	}
 
 	// 2. TIME REMAINING, only for what is actually costing them something

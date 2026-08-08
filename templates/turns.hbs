@@ -161,8 +161,8 @@
 				<div class="crier-effect-group">
 					<p class="crier-effect-group-title">{{this.label}}</p>
 					{{#each this.rows}}
-						<div class="crier-effect-row">
-							<img class="crier-effect-icon" src="{{this.img}}" alt="" data-tooltip="{{this.tooltip}}" data-tooltip-direction="LEFT" />
+						<div class="crier-effect-row" data-tooltip="{{this.tooltip}}" data-tooltip-direction="LEFT">
+							<img class="crier-effect-icon" src="{{this.img}}" alt="" />
 							<div class="crier-effect-text">
 								<div class="crier-effect-name"><strong>{{this.name}}</strong></div>
 								{{#if this.detail}}<div class="crier-effect-detail">{{this.detail}}</div>{{/if}}
