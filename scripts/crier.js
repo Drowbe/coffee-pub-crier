@@ -111,18 +111,17 @@ function setRoundInitialized(value) {
 
 const TURN_SETTINGS_CACHE_TTL = 5000;
 const TURN_SETTING_KEYS = {
-    turnLayout: CRIER.turnLayout,
+    turnCards: CRIER.turnCards,
     turnIconStyle: CRIER.turnIconStyle,
     turnCardStyle: CRIER.turnCardStyle,
     roundIconStyle: CRIER.roundIconStyle,
     roundCardStyle: CRIER.roundCardStyle,
     portraitStyle: CRIER.portraitStyle,
-    hideAbilities: CRIER.hideAbilities,
-    showActiveEffects: CRIER.showActiveEffects,
-    showTurnPenalties: CRIER.showTurnPenalties,
-    activeEffectsAudience: CRIER.activeEffectsAudience,
-    hideHealth: CRIER.hideHealth,
-    hideBloodyPortrait: CRIER.hideBloodyPortrait,
+    abilities: CRIER.abilities,
+    activeEffects: CRIER.activeEffects,
+    penalties: CRIER.penalties,
+    health: CRIER.health,
+    showBloodyPortrait: CRIER.showBloodyPortrait,
     turnLabel: CRIER.turnLabel,
     obfuscateNPCs: CRIER.obfuscateNPCs
 };
@@ -630,7 +629,7 @@ async function createMissedTurnCard(data, context) {
         alias = last.name;
     // Notify of MISSED TURN if the setting is enabled.
     const strMissedTurnPlayer = data.last.combatant.name;
-	if (await getSettingSafely(MODULE.ID, CRIER.missedTurnNotification, false)) {
+	if (await getSettingSafely(MODULE.ID, CRIER.missedTurns, 'notify') === 'notify') {
         ui.notifications.info("Did " + strMissedTurnPlayer + " miss their turn?", {permanent: false, console: false});
     }
     // A descriptor rather than a posted card: the turn delivery loop re-checks
@@ -874,8 +873,11 @@ function turnCardHealthContext(message, actor, parts) {
             ? game.i18n.localize('coffee-pub-crier.UnidentifiedTurn')
             : (combatant?.token?.name ?? actor.name),
         actor,
-        isNPC: false,
-        hideHealth: !showsHealth,
+        showHealth: showsHealth,
+        // The blood is whatever the card already carries: an enabled overlay is
+        // always present, at blood-0 for an untouched portrait, so its absence
+        // means the GM had it switched off when this card was posted.
+        showBlood: Boolean(parts.find((part) => part.part === 'image')?.overlays?.length),
         hidePortrait: !portrait,
         portrait,
         tokenDoc: combatant?.token,
@@ -942,6 +944,24 @@ function describeHealth(actor) {
 // ************************************
 
 /**
+ * Does an audience setting cover this combatant?
+ *
+ * Health, abilities, effects and penalties each answer "show this, and for
+ * whom" with one value, so they each ask this. `none` is simply the audience
+ * nobody is in, and anything unrecognised fails closed.
+ *
+ * @param {string} audience `none`, `players`, `npcs` or `both`
+ * @param {boolean} isPlayerActor
+ * @returns {boolean}
+ */
+function audienceIncludes(audience, isPlayerActor) {
+	if (audience === 'both') return true;
+	if (audience === 'players') return isPlayerActor;
+	if (audience === 'npcs') return !isPlayerActor;
+	return false;
+}
+
+/**
  * What to call this combatant's kind: their classes and levels, or for anything
  * without a class, its creature type.
  *
@@ -1006,7 +1026,7 @@ const DEATH_SAVE_ACTION = 'roll-death-save';
  */
 function turnPortraitPart(info) {
 	if (info.hidePortrait) return null;
-	const overlays = (!info.hideBloodyPortrait && !info.isNPC && info.bloodyPortraitNumber !== undefined)
+	const overlays = (info.showBlood && info.bloodyPortraitNumber !== undefined)
 		? [BLOOD_OVERLAY(info.bloodyPortraitNumber)]
 		: [];
 	return { part: 'image', src: info.portrait, alt: info.name, overlays };
@@ -1023,7 +1043,7 @@ function turnPortraitPart(info) {
  * @returns {Array<object>} nothing, or the one part that applies
  */
 function turnHealthParts(info) {
-	if (info.hideHealth || info.isNPC) return [];
+	if (!info.showHealth) return [];
 
 	if (info.isDead) {
 		return [{
@@ -1066,7 +1086,7 @@ function turnHealthParts(info) {
 
 /** The six ability scores as a row of caption-over-value boxes. */
 function turnAbilityPart(info) {
-	if (info.hideAbilities || info.isNPC || info.abilitySTR === undefined) return null;
+	if (!info.showAbilities || info.abilitySTR === undefined) return null;
 	return {
 		part: 'tiles',
 		columns: 6,
@@ -1186,7 +1206,7 @@ async function generateCards(info, context) {
 	
 	// Noitify of MISSED TURN if the setting is enabled.
 	const msgs = [];
-	if (await getSettingSafely(MODULE.ID, CRIER.missedKey, true)) {
+	if (await getSettingSafely(MODULE.ID, CRIER.missedTurns, 'notify') !== 'none') {
 		const msg = await createMissedTurnCard(info, context);
 		if (msg) msgs.push(msg);
 	}
@@ -1199,7 +1219,7 @@ async function generateCards(info, context) {
 		debugLog('GENERATE CARDS: Skipping - combatant hidden');
 		return msgs; // don't show card for hidden monsters
 	}
-	if (info.isNPC && info.tokenDoc?.hidden) {
+	if (!info.isPlayerActor && info.tokenDoc?.hidden) {
 		debugLog('GENERATE CARDS: Skipping - NPC token hidden on canvas');
 		return msgs; // don't show card for NPCs hidden on canvas
 	}
@@ -1330,7 +1350,7 @@ async function createNewRoundCard(combat) {
     const roundIconStyle = await getSettingSafely(MODULE.ID, CRIER.roundIconStyle, 'fa-chess-queen');
     const message = override
         ? override.replace('{round}', combat.round)
-        : game.i18n.format('coffee-pub-crier.RoundCycling', { round: combat.round });
+        : game.i18n.format('coffee-pub-crier.roundCycling', { round: combat.round });
 
     // A descriptor rather than a posted card: the caller re-checks combat state
     // at the post boundary and may decide to hold this back instead.
@@ -1390,8 +1410,8 @@ async function postLifecycleAnnouncement(combat, kind) {
     // Ending invalidates anything which was waiting to describe a round/turn.
     if (!isStart) clearHeldAnnouncement(combat.id);
 
-    const enabledKey = isStart ? CRIER.combatStartCycling : CRIER.combatEndCycling;
-    if (!await getSettingSafely(MODULE.ID, enabledKey, true)) {
+    const announce = await getSettingSafely(MODULE.ID, CRIER.combatCards, 'both');
+    if (announce !== 'both' && announce !== (isStart ? 'start' : 'end')) {
         deliveredLifecycleEvents.add(eventKey);
         lifecycleRetryCounts.delete(eventKey);
         if (!isStart) startedCombats.delete(combat.id);
@@ -1474,7 +1494,7 @@ async function postNewTurnCard(combat, context) {
     // Only continue with first GM in the list
     // if (!game.user.isGM || game.users.filter(o => o.isGM && o.active).sort((a, b) => b.role - a.role)[0].id !== game.user.id) return;
     // Exit the function if they have enabled skipping turn cards
-    	const blnShowTurnCards = await getSettingSafely(MODULE.ID, CRIER.turnCycling, true);
+    	const blnShowTurnCards = await getSettingSafely(MODULE.ID, CRIER.turnCards, 'full') !== 'none';
     debugLog('POST NEW TURN CARD: Turn cycling setting', () => ({ blnShowTurnCards }));
     if (blnShowTurnCards !== true) {
         debugLog('POST NEW TURN CARD: Skipping - turn cycling disabled');
@@ -1554,24 +1574,28 @@ async function postNewTurnCard(combat, context) {
     // Pull style settings from settings and set stuff
 	info.name = info.token?.name ?? combatant.name;
 	const cardSettings = await getTurnCardSettings();
-	info.turnLayout = cardSettings.turnLayout ?? 'full';
+	info.turnLayout = cardSettings.turnCards ?? 'full';
 	info.turnIconStyle = cardSettings.turnIconStyle ?? 'fa-shield';
 	info.turnCardStyle = cardSettings.turnCardStyle ?? 'default';
 	info.theme = await resolveThemeClass(info.turnCardStyle);
 	info.roundIconStyle = cardSettings.roundIconStyle ?? 'fa-chess-queen';
 	info.roundCardStyle = cardSettings.roundCardStyle ?? 'green-dark';
 	info.portraitStyle = cardSettings.portraitStyle ?? 'portrait';
-    // Hide abilities if needed
-    if (cardSettings.hideAbilities)
-        info.hideAbilities = true;	
-    // Hide Health if needed
-    if (cardSettings.hideHealth)
-        info.hideHealth = true;	
-    // Hide Bloody Portrait if needed
-    if (cardSettings.hideBloodyPortrait)
-        info.hideBloodyPortrait = true;	
+    // Whether this combatant is one of the people the GM meant. Resolved once,
+    // here, so the composition asks a plain boolean and never re-derives an
+    // audience.
+    //
+    // A PLAYER CHARACTER IS `actor.type === 'character'`. This used to ask
+    // whether a world actor existed with the token's name, which called an NPC
+    // a player whenever someone had a "Goblin" actor in the sidebar.
+    info.isPlayerActor = info.actor?.type === 'character';
+    info.showHealth = audienceIncludes(cardSettings.health ?? 'players', info.isPlayerActor);
+    info.showAbilities = audienceIncludes(cardSettings.abilities ?? 'players', info.isPlayerActor);
+    // Blood is a health readout, so it follows health's audience rather than
+    // carrying an audience of its own -- a splattered portrait beside no bar
+    // would be telling half the story.
+    info.showBlood = info.showHealth && cardSettings.showBloodyPortrait !== false;
     // GET THE IDs
-    const strActorId = await getActorId(info.name);
     // Set the view of the turn icon
     info.blnHideTurnIcon = false;
     if (info.turnIconStyle == "none") {
@@ -1582,29 +1606,15 @@ async function postNewTurnCard(combat, context) {
     // Set the LAYOUT. Two of them: the setting offers Detailed and Minimal, and
     // a third branch sat here for years that nothing could ever select.
     info.blnLayoutSmall = info.turnLayout === 'small';
-    // Set the plaer or NPC flag
-    if (strActorId.length == 0) {
-        // string is empty, so is not an actor
-        info.isNPC = true;
-     } else {
-        info.isNPC = false;
-     }
-	const effectsAudience = cardSettings.activeEffectsAudience ?? 'both';
-	const isPlayerActor = info.actor?.type === 'character';
-	const audienceMatches = effectsAudience === 'both'
-		|| (effectsAudience === 'players' && isPlayerActor)
-		|| (effectsAudience === 'npcs' && !isPlayerActor);
-	if (audienceMatches) {
-		const showEffects = cardSettings.showActiveEffects !== false;
-		const showPenalties = cardSettings.showTurnPenalties !== false;
-		if (showEffects || showPenalties) {
-			// Both blocks describe the same set, so ask Blacksmith once: the
-			// display records for the rows, and the documents behind them for
-			// the `changes` the penalty report adds up.
-			const records = await collectEffectRecords(info.actor);
-			if (showEffects) info.activeEffectGroups = await buildActiveEffectGroups(info.actor, records);
-			if (showPenalties) info.turnPenaltyReport = buildTurnPenaltyReport(info.actor, records);
-		}
+	const showEffects = audienceIncludes(cardSettings.activeEffects ?? 'both', info.isPlayerActor);
+	const showPenalties = audienceIncludes(cardSettings.penalties ?? 'players', info.isPlayerActor);
+	if (showEffects || showPenalties) {
+		// Both blocks describe the same set, so ask Blacksmith once: the
+		// display records for the rows, and the documents behind them for
+		// the `changes` the penalty report adds up.
+		const records = await collectEffectRecords(info.actor);
+		if (showEffects) info.activeEffectGroups = await buildActiveEffectGroups(info.actor, records);
+		if (showPenalties) info.turnPenaltyReport = buildTurnPenaltyReport(info.actor, records);
 	}
     // Set the kind of image to set in the turn card
     if (info.portraitStyle == "portrait") {
@@ -1659,7 +1669,7 @@ async function postNewTurnCard(combat, context) {
         info.hidePortrait = true;
     }
     // ---- Get Player Stats ---
-    if (!info.isNPC && info.actor) {
+    if (info.actor) {
         const abilities = info.actor.system?.abilities ?? {};
         info.abilitySTR = abilities.str?.value;
         info.abilityDEX = abilities.dex?.value;
@@ -1853,7 +1863,7 @@ async function announceCombatChange(combat, { roundCard, turnCard }) {
         if (!isOrderSettled(combat)) return rearm({ roundCard, turnCard });
         const expectedRound = combat.round;
         debugLog('ANNOUNCE: Processing round change');
-        if (await getSettingSafely(MODULE.ID, CRIER.roundCycling)) {
+        if (await getSettingSafely(MODULE.ID, CRIER.roundCards, 'announce') !== 'none') {
             const roundMsg = await postNewRound(combat, roundCard);
             if (roundMsg) {
                 if (!isOrderSettled(combat) || combat.round !== expectedRound || Number(roundMsg.flags?.round) !== expectedRound) {
@@ -1950,7 +1960,7 @@ async function processTurn(combat, _update, context, userId) {
 
     const msgs = [];
     // Round cycling message
-    	if (await getSettingSafely(MODULE.ID, CRIER.roundCycling, true)) {
+    	if (await getSettingSafely(MODULE.ID, CRIER.roundCards, 'announce') !== 'none') {
         debugLog('PROCESS TURN: Round cycling enabled');
         const roundMsg = await postNewRound(combat, context);
         if (roundMsg) {
@@ -2006,10 +2016,6 @@ async function processTurn(combat, _update, context, userId) {
 // Note: ready hook is now handled in the Blacksmith integration section above
 
 // Helper functions for token/actor operations
-async function getActorId(name) {
-    return BlacksmithUtils.getActorId(name);
-}
-
 async function getTokenImage(tokenDoc) {
     return BlacksmithUtils.getTokenImage(tokenDoc);
 }

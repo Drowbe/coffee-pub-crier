@@ -5,62 +5,66 @@
 
 		"headingH1Crier-Label": "Introduction",
 		"headingH1Crier-Hint": "Configure the chat cards and sounds Crier uses to guide the table through combat.",
-		"headingH2Lifecycle-Label": "Combat Lifecycle",
-		"headingH2Lifecycle-Hint": "Configure announcements for combat beginning and ending. Round and turn announcements are configured below.",
+		"headingH2Lifecycle-Label": "Combat Configuration",
+		"headingH2Lifecycle-Hint": "Whether combat beginning and ending are announced, and how those cards read. Rounds and turns are configured below.",
 
 		"headingH2Rounds-Label": "Rounds",
 		"headingH2Rounds-Hint": "Control announcements posted when a new combat round begins.",
 
-		"headingH3simpleRoundStyle-Label": "Round Card Appearance",
-		"headingH3simpleRoundStyle-Hint": "Choose the theme and icon used by round announcement cards.",
+		"headingH3simpleRoundStyle-Label": "Round Configuration",
+		"headingH3simpleRoundStyle-Hint": "Whether new rounds are announced, and the label, icon, theme and sound of the card when they are.",
 
-		"headingH3simpleRoundSettings-Label": "Round Announcement",
-		"headingH3simpleRoundSettings-Hint": "Choose the round announcement sound and customize its displayed label.",
 
 		"headingH2turns-Label": "Turns",
 		"headingH2turns-Hint": "Control the cards posted when each combatant's turn begins.",
 
-		"headingH3simpleTurnStyle-Label": "Turn Card Appearance",
-		"headingH3simpleTurnStyle-Hint": "Choose the layout, theme, and icon used for turn cards.",
+		"headingH3simpleTurnStyle-Label": "Turn Configuration",
+		"headingH3simpleTurnStyle-Hint": "Whether turns are announced, and the label, icon, theme and sound of the card when they are.",
 
-		"headingH3simpleTurnSettings-Label": "Turn Announcement",
-		"headingH3simpleTurnSettings-Hint": "Choose the turn sound and customize the combatant label shown on each card.",
 
 		"headingH3simpleTurnElements-Label": "Turn Card Content",
 		"headingH3simpleTurnElements-Hint": "Choose which portraits, names, health details, effects, penalties, and other combatant information appear on turn cards.",
 		"headingH3MissedTurns-Label": "Missed Turns",
 		"headingH3MissedTurns-Hint": "Configure GM-only reminders when a combatant appears to finish a turn without speaking in chat.",
-		"combatCardStyle-Label": "Combat Announcement Theme",
+		"combatCardStyle-Label": "Card Theme",
 		"combatCardStyle-Hint": "Theme used by combat start and combat end announcement cards.",
-		"combatIconStyle-Label": "Combat Announcement Icon",
+		"combatIconStyle-Label": "Card Icon",
 		"combatIconStyle-Hint": "Icon used by combat start and combat end announcement cards.",
 
-		"combatStartCycling-Label": "Announce Combat Start",
-		"combatStartCycling-Hint": "Post an announcement card when combat actually starts.",
+		"combatCards-Label": "Combat Cards",
+		"combatCards-Hint": "Which ends of a fight get an announcement card.",
+		"CombatCards": {
+			"None": "Do Not Announce Combat",
+			"Start": "Announce Start Only",
+			"End": "Announce End Only",
+			"Both": "Announce Start and End"
+		},
 		"combatStartSound-Label": "Combat Start Sound",
 		"combatStartSound-Hint": "Sound played after the combat start card is successfully posted.",
-		"combatStartLabel-Label": "Combat Start Label",
+		"combatStartLabel-Label": "Start Label",
 		"combatStartLabel-Hint": "Text displayed on the combat start announcement.",
-		"combatEndCycling-Label": "Announce Combat End",
-		"combatEndCycling-Hint": "Post an announcement card when combat ends.",
 		"combatEndSound-Label": "Combat End Sound",
 		"combatEndSound-Hint": "Sound played after the combat end card is successfully posted.",
-		"combatEndLabel-Label": "Combat End Label",
+		"combatEndLabel-Label": "End Label",
 		"combatEndLabel-Hint": "Text displayed on the combat end announcement.",
 
 
 
 
-		"roundCycling-Label": "Announce New Rounds",
-		"roundCycling-Hint": "Post an announcement card when a new round begins.",
+		"roundCards-Label": "Round Cards",
+		"roundCards-Hint": "Whether to post a card when a new round begins.",
+		"RoundCards": {
+			"None": "Do Not Announce Rounds",
+			"Announce": "Announce Rounds"
+		},
 
-		"roundCardStyle-Label": "Announcement Theme",
+		"roundCardStyle-Label": "Card Theme",
 		"roundCardStyle-Hint": "Theme used by round announcement cards.",
 
-		"roundIconStyle-Label": "Announcement Icon",
+		"roundIconStyle-Label": "Card Icon",
 		"roundIconStyle-Hint": "Icon used by round announcement cards.",
 
-		"roundSound-Label": "Round Sound",
+		"roundSound-Label": "Round Start Sound",
 		"roundSound-Hint": "The sound to play at the beginning of each round. Note: if other modules play a sound at the beginning of the round, all sounds will play.",
 
 		"round-Label": "Round Label",
@@ -69,22 +73,25 @@
 
 
 
-		"turnCycling-Label": "Announce Turns",
-		"turnCycling-Hint": "Post a card when each combatant's turn begins.",
 
-		"turnLayout-Label": "Turn Card Layout",
-		"turnLayout-Hint": "Choose a detailed or minimal turn-card layout.",
+		"turnCards-Label": "Turn Cards",
+		"turnCards-Hint": "Whether to post a card when each combatant's turn begins, and how much it shows.",
+		"TurnCards": {
+			"None": "Do Not Announce Turns",
+			"Full": "Large Turn Cards",
+			"Small": "Small Turn Cards"
+		},
 
-		"turnCardStyle-Label": "Turn Card Theme",
+		"turnCardStyle-Label": "Card Theme",
 		"turnCardStyle-Hint": "Theme used by turn cards.",
 
-		"turnIconStyle-Label": "Turn Card Icon",
+		"turnIconStyle-Label": "Card Icon",
 		"turnIconStyle-Hint": "Icon used by turn cards.",
 
-		"turnSound-Label": "Turn Sound",
+		"turnSound-Label": "Turn Start Sound",
 		"turnSound-Hint": "The sound to play at the beginning of each turn. Note: if other modules play a sound at the beginning of the turn, all sounds will play.",
 
-		"turnCard-Label": "Turn Label",
+		"turnCard-Label": "Card Label",
 		"turnCard-Hint": "Text shown on turn cards. Use {name} where the combatant's name should appear.",
 		"Turn": "{name}'s turn",
 
@@ -95,8 +102,8 @@
 
 
 
-		"hideBloodyPortrait-Label": "Hide Portrait Blood",
-		"hideBloodyPortrait-Hint": "Do not display a blood splatter overlay on the portrait as the player takes damage. The blood splatter get progressively worse as the combatant takes damage.",
+		"showBloodyPortrait-Label": "Show Portrait Blood",
+		"showBloodyPortrait-Hint": "Lay a blood splatter over the portrait as the combatant takes damage. It gets progressively worse the more they have taken, and appears for whoever Show Health does.",
 		
 
 		"obfuscateNPCs-Label": "NPC Name Visibility",
@@ -109,35 +116,48 @@
 			"Any": "Player owned or token name visible" 
 		},
 
-		"hideAbilities-Label": "Hide Ability Scores",
-		"hideAbilities-Hint": "Do not display str, dex, con, int, wis, and cha in the turn card.",
+		"abilities-Label": "Show Ability Scores",
+		"abilities-Hint": "Show str, dex, con, int, wis and cha on the turn card.",
+		"Abilities": {
+			"None": "Do Not Show Ability Scores"
+		},
 
-		"showActiveEffects-Label": "Show Status & Conditions",
-		"showActiveEffects-Hint": "Remind the table what's riding on this combatant — conditions, injuries, buffs, and other temporary effects, with severity and time remaining.",
-		"showTurnPenalties-Label": "Show Turn Penalties",
-		"showTurnPenalties-Hint": "Under the effects, total up what they cost this combatant right now — roll penalties, and how long until they lift.",
+		"activeEffects-Label": "Show Status & Conditions",
+		"activeEffects-Hint": "Remind the table what's riding on this combatant — conditions, injuries, buffs, and other temporary effects, with severity and time remaining — and choose whose cards say so.",
+		"ActiveEffects": {
+			"None": "Do Not Show Status & Conditions"
+		},
+		"Audience": {
+			"Players": "Players",
+			"NPCs": "NPCs and Monsters",
+			"Both": "Players, NPCs, and Monsters"
+		},
+		"penalties-Label": "Show Turn Penalties",
+		"penalties-Hint": "Under the effects, total up what they cost this combatant right now — roll penalties, and how long until they lift.",
+		"Penalties": {
+			"None": "Do Not Show Penalties"
+		},
 		"TurnPenalties": {
 			"TimeRemaining": "{name}: {time} left"
-		},
-		"activeEffectsAudience-Label": "Show Status & Conditions For",
-		"activeEffectsAudience-Hint": "Choose which combatants include active effects, conditions, and turn penalties on their turn cards.",
-		"ActiveEffectsAudience": {
-			"Players": "Players",
-			"NPCs": "NPCs & Monsters",
-			"Both": "Both"
 		},
 		"ActiveEffectsGroup": {
 			"StatusAndConditions": "Status and Conditions"
 		},
 
-		"hideHealth-Label": "Hide Health",
-		"hideHealth-Hint": "Do not show the health bar in the turn card.",
+		"health-Label": "Show Health",
+		"health-Hint": "Show the health bar on the turn card, and the death saving throws once a character is down. Portrait blood follows this too.",
+		"Health": {
+			"None": "Do Not Show Health"
+		},
 
-		"missedTurn-Label": "Enable Missed Turn Reminders",
-		"missedTurn-Hint": "Post a private GM chat card when a combatant may have missed a turn.",
+		"missedTurns-Label": "Missed Turn Reminders",
+		"missedTurns-Hint": "Whether to tell the GM privately when a combatant appears to have finished a turn without acting, and how loudly.",
+		"MissedTurns": {
+			"None": "Do Not Remind",
+			"Card": "Chat Card Only",
+			"Notify": "Chat Card and Notification"
+		},
 
-		"missedTurnNotification-Label": "Show Missed Turn Notification",
-		"missedTurnNotification-Hint": "Also show a temporary Foundry notification to the GM.",
 
 		"MissedTurn": "missed a turn?",
 		"IsDead": "{name} is dead",

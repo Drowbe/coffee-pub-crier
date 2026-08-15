@@ -211,6 +211,18 @@ number: a `meter` while standing, `pips` while rolling death saves, a `band`
 once dead. `describeHealth()` decides which, and is the only place the
 thresholds live.
 
+### Who sees what
+
+Four content settings share one shape — `health`, `abilities`, `activeEffects`
+and `penalties` each name a thing and hold an audience: `none`, `players`,
+`npcs` or `both`. `audienceIncludes()` is the only place that is interpreted,
+and `none` is simply the audience nobody is in. Portrait blood has no audience
+of its own; it follows health's.
+
+This is a world setting about which COMBATANTS get a given block, and is not to
+be confused with per-reader visibility below, which is about which VIEWERS see
+what is already on the card.
+
 ### Per-reader behaviour
 
 A composition is written once by the announcing GM and read by everybody, so

@@ -87,6 +87,91 @@ export function normalizeThemeId(value) {
 }
 
 /**
+ * Carry a world's choices over to the settings that replaced them.
+ *
+ * Two pairs collapsed into one choice each, because in both cases the second
+ * setting only meant anything when the first was on: "Announce Turns" plus a
+ * layout became a layout with "do not announce" as one of its options, and
+ * "Show Status & Conditions" plus an audience became an audience with "do not
+ * show" as one of its options.
+ *
+ * The three `hide...` toggles became `show...`, so their stored values invert.
+ *
+ * Runs once: each target is written only while it still holds its default, so
+ * a GM who has since chosen something else does not get overwritten on the next
+ * load. World settings, so only a GM writes them.
+ */
+async function migrateTurnSettings() {
+	if (!game.user?.isGM) return;
+
+	const get = (key, fallback) => {
+		try { return game.settings.get(MODULE.ID, key); } catch { return fallback; }
+	};
+	const setIfUntouched = async (key, value, currentDefault) => {
+		try {
+			if (game.settings.get(MODULE.ID, key) !== currentDefault) return;
+			if (value === currentDefault) return;
+			await game.settings.set(MODULE.ID, key, value);
+			console.log(`Coffee Pub Crier: Migrated ${key} to "${value}"`);
+		} catch (error) {
+			console.error(`Coffee Pub Crier: Could not migrate ${key}:`, error);
+		}
+	};
+
+	await setIfUntouched(CRIER.turnCards,
+		get(CRIER.legacyTurnCycling, true) === false ? 'none' : get(CRIER.legacyTurnLayout, 'full'),
+		'full');
+
+	await setIfUntouched(CRIER.activeEffects,
+		get(CRIER.legacyShowActiveEffects, true) === false ? 'none' : get(CRIER.legacyActiveEffectsAudience, 'both'),
+		'both');
+
+	await setIfUntouched(CRIER.roundCards,
+		get(CRIER.legacyRoundCycling, true) === false ? 'none' : 'announce',
+		'announce');
+
+	const start = get(CRIER.legacyCombatStartCycling, true) !== false;
+	const end = get(CRIER.legacyCombatEndCycling, true) !== false;
+	await setIfUntouched(CRIER.combatCards,
+		start && end ? 'both' : start ? 'start' : end ? 'end' : 'none',
+		'both');
+
+	await setIfUntouched(CRIER.missedTurns,
+		get(CRIER.legacyMissedTurn, true) === false
+			? 'none'
+			: (get(CRIER.legacyMissedTurnNotification, true) === false ? 'card' : 'notify'),
+		'notify');
+
+	await setIfUntouched(CRIER.showBloodyPortrait, !get(CRIER.legacyHideBloodyPortrait, false), true);
+
+	// Health and abilities came the long way round: `hideX` first became
+	// `showX`, and `showX` then became an audience. A world that skipped the
+	// middle step is covered because the boolean's own default is the answer
+	// the first step would have written -- both readings agree on "shown".
+	//
+	// Only ever "players": those two were hard-coded to player characters, so
+	// carrying them to `both` would put hit points on every monster card at a
+	// table that had never asked for it.
+	for (const [target, legacyHide, legacyShow] of [
+		[CRIER.health, CRIER.legacyHideHealth, CRIER.legacyShowHealth],
+		[CRIER.abilities, CRIER.legacyHideAbilities, CRIER.legacyShowAbilities]
+	]) {
+		const shown = get(legacyHide, false) === false && get(legacyShow, true) !== false;
+		await setIfUntouched(target, shown ? 'players' : 'none', 'players');
+	}
+
+	// Penalties DID have an audience already -- the one they shared with the
+	// effects list -- so that is what they keep. Their new default is narrower,
+	// and a world that had them on for everybody should not quietly lose them
+	// on half its cards.
+	await setIfUntouched(CRIER.penalties,
+		get(CRIER.legacyShowTurnPenalties, true) === false
+			? 'none'
+			: get(CRIER.legacyActiveEffectsAudience, 'both'),
+		'players');
+}
+
+/**
  * Rewrite theme settings still holding a CSS class name.
  *
  * World settings, so only a GM writes them; every other client relies on
@@ -129,51 +214,58 @@ export const registerSettings = async () => {
 			type: String,
 		});
 
-		// Combat lifecycle announcements use the round announcement theme/icon.
+		// -- COMBAT CONFIGURATION --
+		// ------------------------------------------------------------
 		game.settings.register(MODULE.ID, CRIER.headingH2Lifecycle, {
 			name: MODULE.ID + '.headingH2Lifecycle-Label', hint: MODULE.ID + '.headingH2Lifecycle-Hint',
 			type: String, config: true, scope: 'world', default: ''
 		});
-		game.settings.register(MODULE.ID, CRIER.combatCardStyle, {
-			name: MODULE.ID + '.combatCardStyle-Label', hint: MODULE.ID + '.combatCardStyle-Hint',
-			type: String, config: true, scope: 'world', default: 'green-dark',
-			choices: cardThemeChoices
+		// ------------------------------------------------------------
+
+		// -- Combat Cards --
+		// Two checkboxes became one choice. They were never independent in
+		// practice -- a table either narrates the shape of a fight or it does
+		// not -- and the pair made "neither" look like a state you had to
+		// assemble.
+		game.settings.register(MODULE.ID, CRIER.combatCards, {
+			name: MODULE.ID + '.combatCards-Label', hint: MODULE.ID + '.combatCards-Hint',
+			type: String, config: true, scope: 'world', default: 'both',
+			choices: {
+				none: MODULE.ID + '.CombatCards.None',
+				start: MODULE.ID + '.CombatCards.Start',
+				end: MODULE.ID + '.CombatCards.End',
+				both: MODULE.ID + '.CombatCards.Both'
+			}
+		});
+		game.settings.register(MODULE.ID, CRIER.combatStartLabel, {
+			name: MODULE.ID + '.combatStartLabel-Label', hint: MODULE.ID + '.combatStartLabel-Hint',
+			type: String, config: true, scope: 'world', default: 'Combat Begins'
+		});
+		game.settings.register(MODULE.ID, CRIER.combatEndLabel, {
+			name: MODULE.ID + '.combatEndLabel-Label', hint: MODULE.ID + '.combatEndLabel-Hint',
+			type: String, config: true, scope: 'world', default: 'Combat Ends'
 		});
 		game.settings.register(MODULE.ID, CRIER.combatIconStyle, {
 			name: MODULE.ID + '.combatIconStyle-Label', hint: MODULE.ID + '.combatIconStyle-Hint',
 			type: String, config: true, scope: 'world', default: constants?.ICONSHIELD || 'fa-shield',
 			choices: constants?.arrIconChoices || { error: 'Failed to load icons - check Blacksmith module' }
 		});
-		game.settings.register(MODULE.ID, CRIER.combatStartCycling, {
-			name: MODULE.ID + '.combatStartCycling-Label', hint: MODULE.ID + '.combatStartCycling-Hint',
-			type: Boolean, config: true, scope: 'world', default: true
+		game.settings.register(MODULE.ID, CRIER.combatCardStyle, {
+			name: MODULE.ID + '.combatCardStyle-Label', hint: MODULE.ID + '.combatCardStyle-Hint',
+			type: String, config: true, scope: 'world', default: 'green-dark',
+			choices: cardThemeChoices
 		});
 		game.settings.register(MODULE.ID, CRIER.combatStartSound, {
 			name: MODULE.ID + '.combatStartSound-Label', hint: MODULE.ID + '.combatStartSound-Hint',
 			type: String, config: true, scope: 'world', default: constants?.SOUNDGONG || 'gong',
 			choices: constants?.arrSoundChoices || { error: 'Failed to load sounds - check Blacksmith module' }
 		});
-		game.settings.register(MODULE.ID, CRIER.combatStartLabel, {
-			name: MODULE.ID + '.combatStartLabel-Label', hint: MODULE.ID + '.combatStartLabel-Hint',
-			type: String, config: true, scope: 'world', default: 'Combat Begins'
-		});
-		game.settings.register(MODULE.ID, CRIER.combatEndCycling, {
-			name: MODULE.ID + '.combatEndCycling-Label', hint: MODULE.ID + '.combatEndCycling-Hint',
-			type: Boolean, config: true, scope: 'world', default: true
-		});
 		game.settings.register(MODULE.ID, CRIER.combatEndSound, {
 			name: MODULE.ID + '.combatEndSound-Label', hint: MODULE.ID + '.combatEndSound-Hint',
 			type: String, config: true, scope: 'world', default: 'none',
 			choices: constants?.arrSoundChoices || { error: 'Failed to load sounds - check Blacksmith module' }
 		});
-		game.settings.register(MODULE.ID, CRIER.combatEndLabel, {
-			name: MODULE.ID + '.combatEndLabel-Label', hint: MODULE.ID + '.combatEndLabel-Hint',
-			type: String, config: true, scope: 'world', default: 'Combat Ends'
-		});
-		// ------------------------------------------------------------
 
-		// -- ROUNDS --
-		// ------------------------------------------------------------
 		game.settings.register(MODULE.ID, CRIER.headingH2Rounds, {
 			name: MODULE.ID + '.headingH2Rounds-Label',
 			hint: MODULE.ID + '.headingH2Rounds-Hint',
@@ -186,6 +278,8 @@ export const registerSettings = async () => {
 
 		// -- ROUND STYLES --
 		// ------------------------------------------------------------
+		// -- ROUND CONFIGURATION --
+		// ------------------------------------------------------------
 		game.settings.register(MODULE.ID, CRIER.headingH3simpleRoundStyle, {
 			name: MODULE.ID + '.headingH3simpleRoundStyle-Label',
 			hint: MODULE.ID + '.headingH3simpleRoundStyle-Hint',
@@ -196,18 +290,32 @@ export const registerSettings = async () => {
 		});
 		// ------------------------------------------------------------
 
-		// -- Round Card Style --
-		// Updated to use Blacksmith Chat Cards API for round cards
-		game.settings.register(MODULE.ID, CRIER.roundCardStyle, {
-			name: MODULE.ID + '.roundCardStyle-Label',
-			hint: MODULE.ID + '.roundCardStyle-Hint',
-			scope: 'world',
-			config: true,
+		// -- Round Cards --
+		// Two options where a checkbox would do, so that every section of this
+		// panel opens the same way: whether the card is posted at all, then how
+		// it reads.
+		game.settings.register(MODULE.ID, CRIER.roundCards, {
+			name: MODULE.ID + '.roundCards-Label',
+			hint: MODULE.ID + '.roundCards-Hint',
 			type: String,
-			default: 'green-dark', // Blacksmith theme id
-			choices: cardThemeChoices
+			config: true,
+			scope: 'world',
+			choices: {
+				none: MODULE.ID + '.RoundCards.None',
+				announce: MODULE.ID + '.RoundCards.Announce'
+			},
+			default: 'announce',
 		});
-		// -- Round Icon --
+		// -- Card Label --
+		game.settings.register(MODULE.ID, CRIER.roundLabel, {
+			name: MODULE.ID + '.round-Label',
+			hint: MODULE.ID + '.round-Hint',
+			type: String,
+			config: true,
+			scope: 'world',
+			default: 'Round {round}',
+		});
+		// -- Card Icon --
 		game.settings.register(MODULE.ID, CRIER.roundIconStyle, {
 			name: MODULE.ID + '.roundIconStyle-Label',
 			hint: MODULE.ID + '.roundIconStyle-Hint',
@@ -219,29 +327,17 @@ export const registerSettings = async () => {
 				'error': 'Failed to load icons - check Blacksmith module'
 			},
 		});
-
-		// -- ROUND SETTINGS --
-		// ------------------------------------------------------------
-		game.settings.register(MODULE.ID, CRIER.headingH3simpleRoundSettings, {
-			name: MODULE.ID + '.headingH3simpleRoundSettings-Label',
-			hint: MODULE.ID + '.headingH3simpleRoundSettings-Hint',
-			scope: "world",
-			config: true,
-			default: "",
-			type: String,
-		});
-		// ------------------------------------------------------------
-
-		// -- Announce New Rounds --
-		game.settings.register(MODULE.ID, CRIER.roundCycling, {
-			name: MODULE.ID + '.roundCycling-Label',
-			hint: MODULE.ID + '.roundCycling-Hint',
-			type: Boolean,
-			config: true,
+		// -- Card Theme --
+		game.settings.register(MODULE.ID, CRIER.roundCardStyle, {
+			name: MODULE.ID + '.roundCardStyle-Label',
+			hint: MODULE.ID + '.roundCardStyle-Hint',
 			scope: 'world',
-			default: true
+			config: true,
+			type: String,
+			default: 'green-dark', // Blacksmith theme id
+			choices: cardThemeChoices
 		});
-		// -- Round Sound --
+		// -- Round Start Sound --
 		game.settings.register(MODULE.ID, CRIER.roundSound, {
 			name: MODULE.ID + '.roundSound-Label',
 			hint: MODULE.ID + '.roundSound-Hint',
@@ -253,19 +349,7 @@ export const registerSettings = async () => {
 				'error': 'Failed to load sounds - check Blacksmith module'
 			},
 		});
-		// -- Round Label --
-		game.settings.register(MODULE.ID, CRIER.roundLabel, {
-			name: MODULE.ID + '.round-Label',
-			hint: MODULE.ID + '.round-Hint',
-			type: String,
-			config: true,
-			scope: 'world',
-			default: 'Round {round}'
-		});
 
-
-		// -- TURNS --
-		// ------------------------------------------------------------
 		game.settings.register(MODULE.ID, CRIER.headingH2turns, {
 			name: MODULE.ID + '.headingH2turns-Label',
 			hint: MODULE.ID + '.headingH2turns-Hint',
@@ -276,7 +360,7 @@ export const registerSettings = async () => {
 		});
 		// ------------------------------------------------------------
 
-		// -- TURN STYLE --
+		// -- TURN CONFIGURATION --
 		// ------------------------------------------------------------
 		game.settings.register(MODULE.ID, CRIER.headingH3simpleTurnStyle, {
 			name: MODULE.ID + '.headingH3simpleTurnStyle-Label',
@@ -288,31 +372,34 @@ export const registerSettings = async () => {
 		});
 		// ------------------------------------------------------------
 
-		// -- Turn Card Layout --
-		game.settings.register(MODULE.ID, CRIER.turnLayout, {
-			name: MODULE.ID + '.turnLayout-Label',
-			hint: MODULE.ID + '.turnLayout-Hint',
+		// -- Turn Cards --
+		// Whether to announce a turn and how much the card shows, in one
+		// choice. They were two settings, and "Announce Turns" off with a
+		// layout still selected below it invited the reader to wonder which
+		// won.
+		game.settings.register(MODULE.ID, CRIER.turnCards, {
+			name: MODULE.ID + '.turnCards-Label',
+			hint: MODULE.ID + '.turnCards-Hint',
 			type: String,
 			config: true,
 			scope: 'world',
 			choices: {
-				full: 'Detailed Cards',
-				small: 'Minimal Cards'
+				none: MODULE.ID + '.TurnCards.None',
+				full: MODULE.ID + '.TurnCards.Full',
+				small: MODULE.ID + '.TurnCards.Small'
 			},
 			default: 'full',
 		});
-		// -- Turn Card Color --
-		// Updated to use Blacksmith Chat Cards API for turn cards
-		game.settings.register(MODULE.ID, CRIER.turnCardStyle, {
-			name: MODULE.ID + '.turnCardStyle-Label',
-			hint: MODULE.ID + '.turnCardStyle-Hint',
-			scope: 'world',
-			config: true,
+		// -- Card Label --
+		game.settings.register(MODULE.ID, CRIER.turnLabel, {
+			name: MODULE.ID + '.turnCard-Label',
+			hint: MODULE.ID + '.turnCard-Hint',
 			type: String,
-			default: 'default', // Blacksmith theme id
-			choices: cardThemeChoices,
+			config: true,
+			scope: 'world',
+			default: '{name}',
 		});
-		// -- Turn Card Color --
+		// -- Card Icon --
 		game.settings.register(MODULE.ID, CRIER.turnIconStyle, {
 			name: MODULE.ID + '.turnIconStyle-Label',
 			hint: MODULE.ID + '.turnIconStyle-Hint',
@@ -324,29 +411,17 @@ export const registerSettings = async () => {
 				'error': 'Failed to load icons - check Blacksmith module'
 			},
 		});
-
-		// -- TURN STYLE --
-		// ------------------------------------------------------------
-		game.settings.register(MODULE.ID, CRIER.headingH3simpleTurnSettings, {
-			name: MODULE.ID + '.headingH3simpleTurnSettings-Label',
-			hint: MODULE.ID + '.headingH3simpleTurnSettings-Hint',
-			scope: "world",
-			config: true,
-			default: "",
-			type: String,
-		});
-		// ------------------------------------------------------------
-
-		// -- Announce Turns --
-		game.settings.register(MODULE.ID, CRIER.turnCycling, {
-			name: MODULE.ID + '.turnCycling-Label',
-			hint: MODULE.ID + '.turnCycling-Hint',
-			type: Boolean,
-			config: true,
+		// -- Card Theme --
+		game.settings.register(MODULE.ID, CRIER.turnCardStyle, {
+			name: MODULE.ID + '.turnCardStyle-Label',
+			hint: MODULE.ID + '.turnCardStyle-Hint',
 			scope: 'world',
-			default: true,
+			config: true,
+			type: String,
+			default: 'default', // Blacksmith theme id
+			choices: cardThemeChoices,
 		});
-		// -- Turn Sound --
+		// -- Turn Start Sound --
 		game.settings.register(MODULE.ID, CRIER.turnSound, {
 			name: MODULE.ID + '.turnSound-Label',
 			hint: MODULE.ID + '.turnSound-Hint',
@@ -358,17 +433,6 @@ export const registerSettings = async () => {
 				'error': 'Failed to load sounds - check Blacksmith module'
 			},
 		});
-		// -- Turn Card Label --
-		game.settings.register(MODULE.ID, CRIER.turnLabel, {
-			name: MODULE.ID + '.turnCard-Label',
-			hint: MODULE.ID + '.turnCard-Hint',
-			type: String,
-			config: true,
-			scope: 'world',
-			default: '{name}',
-		});
-
-
 
 		// ===== TURN CARD PERSONALIZATION =====
 		game.settings.register(MODULE.ID, CRIER.headingH3simpleTurnElements, {
@@ -416,64 +480,107 @@ export const registerSettings = async () => {
 			default: true,
 		});
 		
-		// -- Bloody Portraits --
-		game.settings.register(MODULE.ID, CRIER.hideBloodyPortrait, {
-			name: MODULE.ID + '.hideBloodyPortrait-Label',
-			hint: MODULE.ID + '.hideBloodyPortrait-Hint',
-			type: Boolean,
-			config: true,
-			scope: 'world',
-			default: false,
-		});
-		// -- Player Names --
-		// -- Abilities --
-		game.settings.register(MODULE.ID, CRIER.hideAbilities, {
-			name: MODULE.ID + '.hideAbilities-Label',
-			hint: MODULE.ID + '.hideAbilities-Hint',
-			type: Boolean,
-			config: true,
-			scope: 'world',
-			default: false,
-		});
-		// -- Active Effects & Conditions --
-		game.settings.register(MODULE.ID, CRIER.showActiveEffects, {
-			name: MODULE.ID + '.showActiveEffects-Label',
-			hint: MODULE.ID + '.showActiveEffects-Hint',
+		// -- Portrait Blood --
+		// No audience of its own: blood is a health readout, so it appears for
+		// whoever health does. A splattered portrait beside no bar would be
+		// telling half the story.
+		game.settings.register(MODULE.ID, CRIER.showBloodyPortrait, {
+			name: MODULE.ID + '.showBloodyPortrait-Label',
+			hint: MODULE.ID + '.showBloodyPortrait-Hint',
 			type: Boolean,
 			config: true,
 			scope: 'world',
 			default: true,
 		});
-		game.settings.register(MODULE.ID, CRIER.showTurnPenalties, {
-			name: MODULE.ID + '.showTurnPenalties-Label',
-			hint: MODULE.ID + '.showTurnPenalties-Hint',
-			type: Boolean,
-			config: true,
-			scope: 'world',
-			default: true,
-		});
-		game.settings.register(MODULE.ID, CRIER.activeEffectsAudience, {
-			name: MODULE.ID + '.activeEffectsAudience-Label',
-			hint: MODULE.ID + '.activeEffectsAudience-Hint',
+		// -- Health --
+		// Four content settings, one shape: show this, and say who for. `none`
+		// is the audience nobody is in, which is why an "off" checkbox beside an
+		// audience dropdown was never two questions.
+		game.settings.register(MODULE.ID, CRIER.health, {
+			name: MODULE.ID + '.health-Label',
+			hint: MODULE.ID + '.health-Hint',
 			type: String,
 			config: true,
 			scope: 'world',
 			choices: {
-				players: MODULE.ID + '.ActiveEffectsAudience.Players',
-				npcs: MODULE.ID + '.ActiveEffectsAudience.NPCs',
-				both: MODULE.ID + '.ActiveEffectsAudience.Both',
+				none: MODULE.ID + '.Health.None',
+				players: MODULE.ID + '.Audience.Players',
+				npcs: MODULE.ID + '.Audience.NPCs',
+				both: MODULE.ID + '.Audience.Both'
+			},
+			default: 'players',
+		});
+		// -- Abilities --
+		game.settings.register(MODULE.ID, CRIER.abilities, {
+			name: MODULE.ID + '.abilities-Label',
+			hint: MODULE.ID + '.abilities-Hint',
+			type: String,
+			config: true,
+			scope: 'world',
+			choices: {
+				none: MODULE.ID + '.Abilities.None',
+				players: MODULE.ID + '.Audience.Players',
+				npcs: MODULE.ID + '.Audience.NPCs',
+				both: MODULE.ID + '.Audience.Both'
+			},
+			default: 'players',
+		});
+		// -- Active Effects & Conditions --
+		game.settings.register(MODULE.ID, CRIER.activeEffects, {
+			name: MODULE.ID + '.activeEffects-Label',
+			hint: MODULE.ID + '.activeEffects-Hint',
+			type: String,
+			config: true,
+			scope: 'world',
+			choices: {
+				none: MODULE.ID + '.ActiveEffects.None',
+				players: MODULE.ID + '.Audience.Players',
+				npcs: MODULE.ID + '.Audience.NPCs',
+				both: MODULE.ID + '.Audience.Both'
 			},
 			default: 'both',
 		});
-		// -- Health --
-		game.settings.register(MODULE.ID, CRIER.hideHealth, {
-			name: MODULE.ID + '.hideHealth-Label',
-			hint: MODULE.ID + '.hideHealth-Hint',
-			type: Boolean,
+		// -- Turn Penalties --
+		game.settings.register(MODULE.ID, CRIER.penalties, {
+			name: MODULE.ID + '.penalties-Label',
+			hint: MODULE.ID + '.penalties-Hint',
+			type: String,
 			config: true,
 			scope: 'world',
-			default: false,
+			choices: {
+				none: MODULE.ID + '.Penalties.None',
+				players: MODULE.ID + '.Audience.Players',
+				npcs: MODULE.ID + '.Audience.NPCs',
+				both: MODULE.ID + '.Audience.Both'
+			},
+			default: 'players',
 		});
+
+		// ===== SUPERSEDED SETTINGS =====
+		// Registered but hidden. A world's stored values stay valid, and
+		// `migrateTurnSettings` reads them once to carry a table's choices over
+		// to the settings that replaced them.
+		for (const [key, type, fallback] of [
+			[CRIER.legacyTurnLayout, String, 'full'],
+			[CRIER.legacyTurnCycling, Boolean, true],
+			[CRIER.legacyHideBloodyPortrait, Boolean, false],
+			[CRIER.legacyHideHealth, Boolean, false],
+			[CRIER.legacyHideAbilities, Boolean, false],
+			[CRIER.legacyShowActiveEffects, Boolean, true],
+			[CRIER.legacyActiveEffectsAudience, String, 'both'],
+			[CRIER.legacyRoundCycling, Boolean, true],
+			[CRIER.legacyCombatStartCycling, Boolean, true],
+			[CRIER.legacyCombatEndCycling, Boolean, true],
+			[CRIER.legacyMissedTurn, Boolean, true],
+			[CRIER.legacyMissedTurnNotification, Boolean, true],
+			[CRIER.legacyShowHealth, Boolean, true],
+			[CRIER.legacyShowAbilities, Boolean, true],
+			[CRIER.legacyShowTurnPenalties, Boolean, true]
+		]) {
+			game.settings.register(MODULE.ID, key, {
+				name: key, scope: 'world', config: false, type, default: fallback
+			});
+		}
 
 		// ===== MISSED TURNS =====
 		game.settings.register(MODULE.ID, CRIER.headingH3MissedTurns, {
@@ -481,23 +588,21 @@ export const registerSettings = async () => {
 			hint: MODULE.ID + '.headingH3MissedTurns-Hint',
 			scope: 'world', config: true, default: '', type: String
 		});
-		// -- Display Missed Turns --
-		game.settings.register(MODULE.ID, CRIER.missedKey, {
-			name: MODULE.ID + '.missedTurn-Label',
-			hint: MODULE.ID + '.missedTurn-Hint',
-			type: Boolean,
+		// -- Missed Turn Reminders --
+		// The notification only ever meant anything with the reminder on, so
+		// the two are one choice: whether to remind, and how loudly.
+		game.settings.register(MODULE.ID, CRIER.missedTurns, {
+			name: MODULE.ID + '.missedTurns-Label',
+			hint: MODULE.ID + '.missedTurns-Hint',
+			type: String,
 			config: true,
 			scope: 'world',
-			default: true
-		});
-		// -- Missed Turn in Chat --
-		game.settings.register(MODULE.ID, CRIER.missedTurnNotification, {
-			name: MODULE.ID + '.missedTurnNotification-Label',
-			hint: MODULE.ID + '.missedTurnNotification-Hint',
-			type: Boolean,
-			config: true,
-			scope: 'world',
-			default: true,
+			choices: {
+				none: MODULE.ID + '.MissedTurns.None',
+				card: MODULE.ID + '.MissedTurns.Card',
+				notify: MODULE.ID + '.MissedTurns.Notify'
+			},
+			default: 'notify',
 		});
 
 		// ===== INTERNAL STATE TRACKING =====
@@ -516,6 +621,7 @@ export const registerSettings = async () => {
         // After registration, never before: a setting cannot be read until it
         // exists.
         await migrateCardThemeSettings();
+        await migrateTurnSettings();
 
     } catch (error) {
         console.error('❌ Coffee Pub Crier: Failed to register settings with new Blacksmith API:', error);

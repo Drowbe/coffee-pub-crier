@@ -101,6 +101,54 @@ Blacksmith.
 - [x] `interceptNewTurnMessage`, `interceptNewRoundMessage`, `interceptMissedTurnMessage` — all three are already no-ops
 - [x] The unreachable `blnLayoutNone` branch; the layout setting only offers `full` and `small`
 
+### Step 7 — Settings simplification
+
+Every section now opens the same way: one dropdown saying whether the card is
+posted at all, then how it reads. An enable checkbox paired with a second
+setting that only mattered when it was ticked became one choice in each case,
+because the pair made "off" look like a state you had to assemble.
+
+
+- [x] "Turn Card Appearance" and "Turn Announcement" merged into **Turn Configuration**
+- [x] "Announce Turns" and "Turn Card Layout" merged into **Turn Cards**: Do Not
+      Announce Turns / Large Turn Cards (default) / Small Turn Cards. The second
+      setting only meant anything when the first was on, and a layout sitting
+      under an unticked "Announce Turns" invited the reader to wonder which won
+- [x] Reordered: Turn Cards, Card Label, Card Icon, Card Theme, Turn Start Sound
+- [x] The three `hide...` toggles became `show...`, all defaulting to on
+- [x] "Show Status & Conditions" and "Show Status & Conditions For" merged into
+      **Show Status & Conditions**: Do Not Show / Players / NPCs and Monsters /
+      Players, NPCs, and Monsters — "off" is just the audience nobody is in
+- [x] `migrateTurnSettings()` carries a world's existing choices across, writing
+      each target only while it still holds its default
+- [x] Superseded keys stay registered but hidden, so stored values remain valid
+      and the migration can read them
+- [x] Fixed a pre-existing i18n bug: the round card asked for `RoundCycling`
+      while the string is `roundCycling`, so an unlabelled round card rendered
+      the literal key
+- [x] "Combat Lifecycle" → **Combat Configuration**, and the two announce
+      checkboxes became **Combat Cards**: Do Not Announce Combat / Announce
+      Start Only / Announce End Only / Announce Start and End
+- [x] "Round Card Appearance" and "Round Announcement" merged into **Round
+      Configuration**, and "Announce New Rounds" became **Round Cards**: Do Not
+      Announce Rounds / Announce Rounds. Two options where a checkbox would do,
+      chosen for the shape rather than the content — every section then opens
+      the same way
+- [x] Missed turns: "Enable Missed Turn Reminders" and "Show Missed Turn
+      Notification" became **Missed Turn Reminders**: Do Not Remind / Chat Card
+      Only / Chat Card and Notification
+- [x] Round and combat sections reordered to match Turns: cards, label(s), icon,
+      theme, sound(s)
+- [x] Health, Ability Scores and Turn Penalties became audience dropdowns too,
+      each defaulting to Players. Four content settings now share one shape:
+      show this, and say who for
+- [x] Portrait blood follows the health audience rather than carrying one of its
+      own — a splattered portrait beside no bar tells half the story
+- [x] `isNPC` retired. It asked whether a world actor existed with the token's
+      name, which called an NPC a player whenever someone had a "Goblin" in the
+      sidebar. A player character is now `actor.type === 'character'`, one
+      notion instead of two, and the name lookup and its helper are gone
+
 ## Decisions
 
 - **Portrait background tile is removed.** It existed because transparent token
@@ -111,6 +159,15 @@ Blacksmith.
 - **Death saves become clickable.** The card is a snapshot, so a button that
   visibly does nothing to the card it sits on is worse than no button; the live
   update is part of the same step rather than a follow-up.
+- **No blood overlay on a Minimal card.** `subject` takes no `overlays`, and a
+  splatter over a thumbnail that size would not read anyway. Not worth a request.
+- **No section heading over the penalties.** `notes` draws its own top rule, so
+  a `section` above it drew the line twice.
+- **The player's name is off the card.** Who is running the character is not
+  what a turn card is for.
+- **A refresh honours the card, not the settings.** Which parts a posted card is
+  allowed to have is read back off the card itself, so turning a setting on
+  mid-combat does not make something appear on a card that never had it.
 
 ## Out of scope
 
