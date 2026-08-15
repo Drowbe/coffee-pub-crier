@@ -93,11 +93,7 @@
 		"portraitStyle-Label": "Portrait Image",
 		"portraitStyle-Hint": "The image to show on the turn card. Choose from the token image, the token portrait, or none.",
 
-		"tokenBackground-Label": "Portrait Background",
-		"tokenBackground-Hint": "Style of background you want behind the token image.",
 
-		"tokenScale-Label": "Portrait Scale",
-		"tokenScale-Hint": "The size of token or portrait. Scale ranges from 25% to 100%. Default: 100%.",
 
 		"hideBloodyPortrait-Label": "Hide Portrait Blood",
 		"hideBloodyPortrait-Hint": "Do not display a blood splatter overlay on the portrait as the player takes damage. The blood splatter get progressively worse as the combatant takes damage.",
@@ -147,6 +143,11 @@
 		"missedTurnNotification-Hint": "Also show a temporary Foundry notification to the GM.",
 
 		"MissedTurn": "missed a turn?",
+		"IsDead": "{name} is dead",
+		"RollDeathSave": "Roll a death saving throw",
+		"DeathSaveNotYours": "You do not own this character",
+		"MissedTurnTitle": "Missed Turn",
+		"MissedTurnBody": "**{name}** may have missed a turn.",
 		"UnidentifiedTurn": "???",
 
 		"Compact-Label": "Compact Chat Messages",

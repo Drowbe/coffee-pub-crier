@@ -14,15 +14,9 @@ import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api
 // -- Import special page variables --
 
 // Register settings so they can be loaded below.
-import { registerSettings } from './settings.js';
+import { registerSettings, normalizeThemeId } from './settings.js';
 
 // -- Set Page variables --
-// Grab the Templates
-const turn_template_file = `modules/${MODULE.ID}/templates/turns.hbs`,
-	round_template_file = `modules/${MODULE.ID}/templates/rounds.hbs`,
-	combat_template_file = `modules/${MODULE.ID}/templates/combat.hbs`;
-
-let turnTemplate, roundTemplate, combatTemplate;
 // Set the last combatant
 const lastCombatants = new Map();
 function getLastCombatantState(combatOrId = game.combat) {
@@ -123,8 +117,6 @@ const TURN_SETTING_KEYS = {
     roundIconStyle: CRIER.roundIconStyle,
     roundCardStyle: CRIER.roundCardStyle,
     portraitStyle: CRIER.portraitStyle,
-    tokenBackground: CRIER.tokenBackground,
-    tokenScale: CRIER.tokenScale,
     hidePlayer: CRIER.hidePlayer,
     hideAbilities: CRIER.hideAbilities,
     showActiveEffects: CRIER.showActiveEffects,
@@ -207,42 +199,6 @@ Hooks.once('ready', async () => {
             }
         }
 
-        // Initialize templates
-        debugLog('READY: Loading templates', () => ({ turn: turn_template_file, round: round_template_file, combat: combat_template_file }));
-        
-        const getTemplateAsync = foundry.applications?.handlebars?.getTemplate;
-        debugLog('READY: Checking foundry.applications.handlebars.getTemplate', () => ({
-            hasFoundry: !!foundry,
-            hasGetTemplate: typeof getTemplateAsync === 'function'
-        }));
-
-        try {
-            if (typeof getTemplateAsync === 'function') {
-                turnTemplate = await getTemplateAsync(turn_template_file);
-                debugLog('READY: Turn template loaded', () => ({ success: !!turnTemplate, type: typeof turnTemplate }));
-            }
-        } catch (err) {
-            debugLog('READY: Turn template failed', () => ({ error: err.message }));
-        }
-
-        try {
-            if (typeof getTemplateAsync === 'function') {
-                roundTemplate = await getTemplateAsync(round_template_file);
-                debugLog('READY: Round template loaded', () => ({ success: !!roundTemplate, type: typeof roundTemplate }));
-            }
-        } catch (err) {
-            debugLog('READY: Round template failed', () => ({ error: err.message }));
-        }
-
-        try {
-            if (typeof getTemplateAsync === 'function') {
-                combatTemplate = await getTemplateAsync(combat_template_file);
-                debugLog('READY: Combat template loaded', () => ({ success: !!combatTemplate, type: typeof combatTemplate }));
-            }
-        } catch (err) {
-            debugLog('READY: Combat template failed', () => ({ error: err.message }));
-        }
-        
         // Initialize last combatant
         getLastCombatantState().combatant = game.combat?.combatant ?? null;
         if (game.combat?.started) startedCombats.add(game.combat.id);
@@ -372,9 +328,12 @@ Hooks.once('ready', async () => {
         };
         BlacksmithHookManager.registerHook({ name: 'deleteCombat', description: 'Coffee Pub Crier: Announce combat end on deletion', context: MODULE.ID, priority: 2, callback: announceDeletedCombat });
 
+        // Data, not decoration: this reads the flags off a Crier card to keep
+        // track of who spoke last. The card's own appearance is Blacksmith's
+        // from here, and anything per-reader is a render pass.
         const renderChatMessageHookId = BlacksmithHookManager.registerHook({
             name: 'renderChatMessageHTML',
-            description: 'Coffee Pub Crier: Intercept and modify chat messages',
+            description: 'Coffee Pub Crier: Track the last combatant from posted cards',
             context: MODULE.ID,
             priority: 2,
             callback: (cm, html, options) => {
@@ -382,6 +341,20 @@ Hooks.once('ready', async () => {
                 return chatMessageEvent(cm, html, options);
             }
         });
+
+        // A posted card is a snapshot, and a clickable death save makes a stale
+        // one obvious. Only the announcing GM writes; everyone else re-renders
+        // off the change.
+        BlacksmithHookManager.registerHook({
+            name: 'updateActor',
+            description: 'Coffee Pub Crier: Refresh a turn card when health or death saves change',
+            context: MODULE.ID,
+            priority: 3,
+            callback: (actor, changed) => refreshTurnCardHealth(actor, changed)
+        });
+
+        // On every client, GM and player alike.
+        registerCardBehaviour();
         
     } catch (error) {
         console.error('❌ Coffee Pub Crier: Failed to initialize:', error);
@@ -397,42 +370,6 @@ Hooks.once('ready', async () => {
 // ================================================================== 
 // ===== FUNCTIONS ==================================================
 // ================================================================== 
-
-/**
- * Setting stores Blacksmith asset `value`. Resolve `path` from api.assetLookup.
- * Chat HTML is sanitized — inline `style` is stripped — so we store `imageUrl` on message flags and apply in `renderChatMessageHTML`.
- * No path (themecolor) → CSS class .crier-token-background-themecolor only.
- * @param {string} value
- * @returns {{ imageUrl: string|null, useClass: boolean }}
- */
-function getTokenBackgroundPresentation(value) {
-	const lookup = game.modules.get('coffee-pub-blacksmith')?.api?.assetLookup;
-	const images = lookup?.dataCollections?.backgroundImages;
-	if (Array.isArray(images)) {
-		const entry = images.find((img) => String(img.value) === String(value));
-		if (entry?.path) {
-			return {
-				imageUrl: foundry.utils.getRoute(entry.path),
-				useClass: false
-			};
-		}
-	}
-	return { imageUrl: null, useClass: true };
-}
-
-/**
- * @param {ParentNode|null|undefined} scope
- * @param {string} imageUrl
- */
-function applyCrierTokenBackgroundFrames(scope, imageUrl) {
-	if (!scope || !imageUrl) return;
-	const safe = String(imageUrl).replace(/\\/g, '/').replace(/"/g, '\\"');
-	scope.querySelectorAll?.('.crier-token-frame')?.forEach((el) => {
-		el.style.setProperty('background-image', `url("${safe}")`);
-		el.style.setProperty('background-repeat', 'repeat');
-		el.style.setProperty('background-size', 'cover');
-	});
-}
 
 // ************************************
 // ** ACTIVE EFFECTS
@@ -635,87 +572,6 @@ function buildTurnPenaltyReport(actor, records = []) {
 }
 
 // ************************************
-// ** HIDE CONTENT
-// ************************************
-
-/**
- * @param {Element} content
- */
-function hideContent(content) {
-	if (content) {
-		content.replaceChildren();
-		content.style.display = 'none';
-	}
-}
-
-// ************************************
-// ** INTERCEPT NEW TURN MESSAGE
-// ************************************
-
-/**
- * @param {ChatMessage} cm
- * @param {Element} html
- * @param {Element} main
- */
-
-// DEBUG: I TURNED THIS OFF DUE TO A BUG BEFORE A GAME!!!!!
-function interceptNewTurnMessage(cm, html, main) {
-	// const compact = game.settings.get(MODULE.ID, CRIER.compact);
-	// //const compact = true;
-	// if (compact) main.classList.add('compact');
-}
-
-
-// ************************************
-// ** INTERCEPT NEW ROUND MESSAGE
-// ************************************
-/**
- * @param {ChatMessage} cm
- * @param {Element} html
- * @param {Element} main
- */
-function interceptNewRoundMessage(cm, html, main) {
-    // Round cards now use Blacksmith framework - template handles structure
-    // This function is kept for compatibility but no longer manipulates DOM
-    // The template (rounds.hbs) now includes:
-    // - hide-header span
-    // - .blacksmith-card with theme
-    // - .card-header with icon and message
-    // - data attributes for combat/round
-    
-    // Data attributes are already in the template, so no migration needed
-    // Blacksmith framework handles styling
-    if (!main) return;
-    // Ensure crier class is present (already added in chatMessageEvent, but keep for safety)
-    main.classList.add('coffee-pub');
-}
-
-// ************************************
-// ** Intercept MISSED TURNS
-// ************************************
-
-/**
- * @param {ChatMessage} cm
- * @param {Element} html
- * @param {Element} main
- */
-function interceptMissedTurnMessage(cm, html, main) {
-	// Missed turn cards now use Blacksmith framework - template handles structure
-	// This function is kept for compatibility but no longer manipulates DOM
-	// The template (created in createMissedTurnCard) now includes:
-	// - hide-header span
-	// - .blacksmith-card with theme-orange
-	// - .card-header with icon and message
-	// - Blacksmith framework handles styling
-	
-	// Data attributes are already in the template, so no migration needed
-	// Blacksmith framework handles styling
-	if (!main) return;
-	// Ensure crier class is present (already added in chatMessageEvent, but keep for safety)
-	main.classList.add('coffee-pub');
-}
-
-// ************************************
 // ** LAST COMBAT FROM
 // ************************************
 
@@ -734,66 +590,19 @@ function updateLastCombatantFromMsg(cm, flags) {
  * @param {HTMLElement|JQuery|Array} html
  * @param {Object} _options
  */
-function chatMessageEvent(cm, html, _options) {
-	// v13: Detect and convert jQuery to native DOM if needed
-	let nativeHtml = html;
-	if (html && (html.jquery || typeof html.find === 'function')) {
-		nativeHtml = html[0] || html.get?.(0) || html;
-	}
-	
-	// If html was an array, extract first element
-	if (Array.isArray(nativeHtml)) {
-		nativeHtml = nativeHtml[0] || nativeHtml;
-	}
-	
-	const isGM = game.user.isGM;
+function chatMessageEvent(cm, _html, _options) {
 	const cmd = getDocData(cm);
 	const flags = cmd.flags?.[MODULE.ID];
 
 	if (!flags) {
 		const lastCombatant = getLastCombatantState();
-		if (isGM && cmd.speaker?.token === lastCombatant.tokenId)
+		if (game.user.isGM && cmd.speaker?.token === lastCombatant.tokenId)
 			lastCombatant.spoke = true;
 		return;
 	}
 
-	const main = nativeHtml.closest('[data-message-id]');
-	nativeHtml?.classList.add('crier', 'coffee-pub');
-
-	if (flags.missedTurn){
-	// They want to notify on missed turn and it has been missed
-	// check compress and see chose the option to remove speaker and timestamp
-		interceptMissedTurnMessage(cm, nativeHtml, main);
-	} else if (flags.turnAnnounce || flags.token) {
+	if (!flags.missedTurn && (flags.turnAnnounce || flags.token))
 		updateLastCombatantFromMsg(cm, flags);
-		// check compress and see chose the option to remove speaker and timestamp
-		//interceptNewTurnMessage(cm, nativeHtml, main);
-	}
-	else if (flags.roundCycling) {
-		// check compress and see chose the option to remove speaker and timestamp
-		interceptNewRoundMessage(cm, nativeHtml, main);
-	}
-
-	main?.querySelector('.whisper-to')?.remove();
-	// De-obfuscate name for GM
-	if (isGM && cm.getFlag(MODULE.ID, 'obfuscated')) {
-		const combatId = cm.getFlag(MODULE.ID, 'combat'),
-			combatantId = cm.getFlag(MODULE.ID, 'combatant'),
-			combat = game.combats.get(combatId),
-			combatant = combat?.combatants.get(combatantId);
-		if (combatant?.token) {
-			const name = nativeHtml.querySelector('.actor .name-box .name');
-			if (name) name.textContent = combatant.token.name;
-			nativeHtml.classList.add('obfuscated');
-		}
-	}
-
-	// Sanitized chat HTML strips inline styles; apply tile URL from flags after DOM exists.
-	const bgUrl = flags.tokenBackgroundImageUrl ?? cm.getFlag(MODULE.ID, 'tokenBackgroundImageUrl');
-	if (bgUrl) {
-		const scope = main ?? nativeHtml?.closest?.('.message') ?? nativeHtml;
-		applyCrierTokenBackgroundFrames(scope, bgUrl);
-	}
 }
 
 // ************************************
@@ -825,27 +634,452 @@ async function createMissedTurnCard(data, context) {
 	if (await getSettingSafely(MODULE.ID, CRIER.missedTurnNotification, false)) {
         ui.notifications.info("Did " + strMissedTurnPlayer + " miss their turn?", {permanent: false, console: false});
     }
-    // Use Blacksmith framework for missed turn cards
-    const content = `<span style="visibility: hidden">coffeepub-hide-header</span>
-<div class="blacksmith-card theme-orange">
-	<div class="card-header">
-		<i class="fa-solid fa-fire"></i> Missed Turn
-	</div>
-	<div class="section-content">
-		<span class="missed-combatant">${data.last.combatant.name}</span> <span class="missed-turn-text">may have missed a turn.</span>
-	</div>
-</div>`;
-    const msgData = {
-        content: content,
+    // A descriptor rather than a posted card: the turn delivery loop re-checks
+    // combat state before posting anything, this card included.
+    return {
+        moduleId: MODULE.ID,
+        type: 'missed-turn',
+        theme: 'orange',
         rollMode: 'selfroll',
-        whisper: [...game.users.filter(u => u.isGM)],
+        whisper: game.users.filter(u => u.isGM).map(u => u.id),
         speaker: { scene, actor, token, alias },
-        flags: {
-            [MODULE.ID]: { missedTurn: true, token, actor, combatant: last.combatant.id }
-        },
-        user: game.user.id,
+        parts: [
+            { part: 'header', icon: 'fa-solid fa-fire', title: game.i18n.localize('coffee-pub-crier.MissedTurnTitle') },
+            { part: 'prose', blocks: [{
+                type: 'paragraph',
+                text: game.i18n.format('coffee-pub-crier.MissedTurnBody', { name: strMissedTurnPlayer })
+            }] }
+        ],
+        flags: { missedTurn: true, token, actor, combatant: last.combatant.id }
     };
-    return msgData;
+}
+
+// ==================================================================
+// ===== PER-READER CARD BEHAVIOUR ==================================
+// ==================================================================
+//
+// A composition is written once, by the announcing GM, and read by the whole
+// table. Anything that depends on WHO IS LOOKING has to be decided in the
+// reader's own browser, and that means a registered render pass rather than a
+// renderChatMessageHTML hook: a parts card re-renders from its stored
+// composition a tick after Foundry paints it, and the swap throws away whatever
+// a hook decorated.
+
+/**
+ * Wire up everything a client needs to interact with a Crier card.
+ *
+ * Called on EVERY client at startup, GM and player alike. A chat message is
+ * data on every client, so nothing can travel with the card — each client
+ * resolves the handler and the passes from its own registry when the card
+ * renders, which is also why buttons still work after a browser reload.
+ */
+function registerCardBehaviour() {
+    const chatCards = getChatCardsAPI();
+    if (!chatCards) {
+        debugLog('CARD BEHAVIOUR: Chat cards API unavailable, skipping registration');
+        return;
+    }
+
+    // ---- The death-save button -------------------------------------
+    //
+    // The permission check lives HERE, not in the composition. Hiding or
+    // disabling a control is presentation; any client can fire an action
+    // whatever its copy of the card looks like.
+    chatCards.registerAction(MODULE.ID, DEATH_SAVE_ACTION, async ({ value }) => {
+        const actor = fromUuidSync(value)?.actor;
+        if (!actor) return;
+        if (!actor.isOwner) {
+            ui.notifications.warn(game.i18n.localize('coffee-pub-crier.DeathSaveNotYours'));
+            return;
+        }
+        await actor.rollDeathSave();
+    });
+
+    // ---- Who may roll it -------------------------------------------
+    //
+    // The pulse marks the button as live, so removing it is the whole signal:
+    // the reader who can roll sees a beating skull, everyone else a still one.
+    // Deliberately no dimming, because that would mean Crier shipping card CSS
+    // again — the thing this migration exists to stop.
+    chatCards.registerRenderPass(MODULE.ID, 'death-save-affordance', ({ root }) => {
+        const selector = 'button[data-blacksmith-action="' + DEATH_SAVE_ACTION + '"]';
+        for (const button of root.querySelectorAll(selector)) {
+            const mayRoll = Boolean(fromUuidSync(button.dataset.blacksmithValue)?.actor?.isOwner);
+            button.disabled = !mayRoll;
+            button.querySelector('i')?.classList.toggle('blacksmith-anim-pulse', mayRoll);
+            button.dataset.tooltip = game.i18n.localize(mayRoll
+                ? 'coffee-pub-crier.RollDeathSave'
+                : 'coffee-pub-crier.DeathSaveNotYours');
+        }
+    });
+
+    // ---- The GM sees who it really is ------------------------------
+    //
+    // An obfuscated card names the combatant "???" for everybody, because that
+    // placeholder is what the stored composition has to say. The GM's copy gets
+    // the real name put back here, in their own browser.
+    chatCards.registerRenderPass(MODULE.ID, 'deobfuscate-name', ({ message, root }) => {
+        if (!game.user.isGM) return;
+        if (!message.getFlag(MODULE.ID, 'obfuscated')) return;
+
+        const combat = game.combats.get(message.getFlag(MODULE.ID, 'combat'));
+        const combatant = combat?.combatants.get(message.getFlag(MODULE.ID, 'combatant'));
+        const realName = combatant?.token?.name;
+        if (!realName) return;
+
+        // Match the placeholder rather than the first bold run: a GM whose turn
+        // label has its own emphasis in it should keep that emphasis intact.
+        // Comparing against the placeholder is also what makes this idempotent,
+        // since a pass may run more than once on the same card.
+        const placeholder = game.i18n.localize('coffee-pub-crier.UnidentifiedTurn');
+        for (const el of root.querySelectorAll('.card-header strong')) {
+            if (el.textContent === placeholder) el.textContent = realName;
+        }
+    });
+}
+
+/**
+ * Keep a posted turn card honest about health.
+ *
+ * A card is a stored snapshot, so the hit point bar, the death-save pips and
+ * the blood over the portrait all describe the moment the card was posted. That
+ * was tolerable while nothing on the card could be clicked; a death-save button
+ * whose own pips never move is not.
+ *
+ * Rewriting the stored composition makes every client re-render, so one write
+ * updates the card on every screen. Only the announcing GM writes it — the
+ * player who owns the actor is not the message's author and could not update it
+ * anyway.
+ *
+ * @param {Actor} actor
+ * @param {object} changed The update delta, used only to decide whether to look.
+ */
+async function refreshTurnCardHealth(actor, changed) {
+    if (!isAnnouncementAuthority()) return;
+    const touched = changed?.system?.attributes;
+    if (!touched?.hp && !touched?.death) return;
+
+    const message = findLatestTurnCard(actor);
+    if (!message) return;
+
+    const card = foundry.utils.deepClone(message.flags?.['coffee-pub-blacksmith']?.card);
+    const parts = card?.parts;
+    if (!Array.isArray(parts)) return;
+
+    const info = turnCardHealthContext(message, actor);
+    if (!info) return;
+
+    let changedCard = false;
+
+    // Compared as JSON rather than with `foundry.utils.objectsEqual`, which
+    // falls back to identity for an array — so a part holding `groups` or
+    // `overlays` always looked changed and every hit point tick wrote to the
+    // message. Both sides are built by the same code, so key order matches; the
+    // worst a mismatch costs is one redundant update.
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+    // The health part is replaced rather than edited, because the three
+    // readings are three different parts: a bar becomes pips when a character
+    // goes down, and pips become a band when they die.
+    const healthAt = parts.findIndex((part) => ['meter', 'pips', 'band'].includes(part.part));
+    const [health] = turnHealthParts(info);
+    if (healthAt !== -1 && health && !same(parts[healthAt], health)) {
+        parts[healthAt] = health;
+        changedCard = true;
+    }
+
+    const imageAt = parts.findIndex((part) => part.part === 'image');
+    const portrait = turnPortraitPart(info);
+    if (imageAt !== -1 && portrait && !same(parts[imageAt].overlays ?? [], portrait.overlays)) {
+        parts[imageAt].overlays = portrait.overlays;
+        changedCard = true;
+    }
+
+    if (!changedCard) return;
+
+    try {
+        await message.update({ 'flags.coffee-pub-blacksmith.card': card });
+        debugLog('REFRESH TURN CARD: Updated', () => ({ message: message.id, actor: actor.id }));
+    } catch (error) {
+        debugLog('REFRESH TURN CARD: Update failed', () => ({ error: error?.message ?? error }));
+    }
+}
+
+/**
+ * The most recent turn card for this actor, or null.
+ *
+ * Newest first and stopping at the first turn card found: if that one names a
+ * different combatant then this actor's card is older than the current turn,
+ * and quietly rewriting the log behind the table is worse than a stale number.
+ * @param {Actor} actor
+ * @returns {ChatMessage|null}
+ */
+function findLatestTurnCard(actor) {
+    const messages = game.messages?.contents ?? [];
+    for (let i = messages.length - 1; i >= 0; i--) {
+        const message = messages[i];
+        const flags = message.flags?.[MODULE.ID];
+        if (!flags?.turnAnnounce) continue;
+        const combatant = game.combats.get(flags.combat)?.combatants.get(flags.combatant);
+        return combatant?.actor?.id === actor.id ? message : null;
+    }
+    return null;
+}
+
+/**
+ * Enough of a turn context to rebuild the health parts, recovered from a posted
+ * card's flags and the live actor.
+ *
+ * Only the fields `turnHealthParts` and `turnPortraitPart` actually read. The
+ * rest of a turn context describes settings and layout, and neither of those
+ * changes because somebody took damage.
+ * @param {ChatMessage} message
+ * @param {Actor} actor
+ * @returns {object|null}
+ */
+function turnCardHealthContext(message, actor) {
+    const health = describeHealth(actor);
+    if (!health) return null;
+    const flags = message.flags?.[MODULE.ID] ?? {};
+    const combatant = game.combats.get(flags.combat)?.combatants.get(flags.combatant);
+    return {
+        name: message.getFlag(MODULE.ID, 'obfuscated')
+            ? game.i18n.localize('coffee-pub-crier.UnidentifiedTurn')
+            : (combatant?.token?.name ?? actor.name),
+        isNPC: false,
+        tokenDoc: combatant?.token,
+        attributeHP: health.value,
+        attributeHPMAX: health.max,
+        attributeDEATHSUCCESS: health.successes,
+        attributeDEATHFAILURE: health.failures,
+        isDead: health.isDead,
+        isDeathSaving: health.isDeathSaving,
+        bloodyPortraitNumber: health.bloody
+    };
+}
+
+// ************************************
+// ** HEALTH
+// ************************************
+
+/**
+ * How a combatant stands: the numbers, whether they are down, and which blood
+ * layer belongs over their portrait.
+ *
+ * One function because two callers must agree — the card is composed from this
+ * once, and refreshed from it again every time the actor's health or death
+ * saves change. A second copy of the thresholds is a second chance to disagree
+ * with what the table is looking at.
+ *
+ * Reads the COMBATANT'S OWN actor. This used to look a world actor up by the
+ * token's name, which found the wrong document for any unlinked token — and the
+ * death-save button rolls against the combatant's actor, so a card built the old
+ * way could show one creature's saves and roll another's.
+ *
+ * @param {Actor|null|undefined} actor
+ * @returns {{value: number, max: number, percent: number, successes: number,
+ *            failures: number, isDead: boolean, isDeathSaving: boolean,
+ *            bloody: number}|null} null when the actor tracks no hit points
+ */
+function describeHealth(actor) {
+	const hp = actor?.system?.attributes?.hp;
+	const max = Number(hp?.max);
+	if (!Number.isFinite(max) || max <= 0) return null;
+
+	const value = Number(hp.value) || 0;
+	const percent = Math.round((100 * value) / max);
+	const death = actor.system.attributes.death ?? {};
+	const successes = Number(death.success) || 0;
+	const failures = Number(death.failure) || 0;
+
+	const down = percent <= 0;
+	const isDead = down && failures >= 3;
+	const isDeathSaving = down && !isDead;
+
+	// The blood art comes in 5% steps, so the damage taken rounds up to one.
+	// 1-4% keeps the heaviest LIVING splatter rather than rounding to a clean
+	// portrait, and the dead get their own layer past the end of the scale.
+	let bloody = Math.min(100, Math.max(0, Math.ceil((100 - percent) / 5) * 5));
+	if (percent >= 1 && percent <= 4) bloody = 95;
+	if (isDead) bloody = 101;
+
+	return { value, max, percent, successes, failures, isDead, isDeathSaving, bloody };
+}
+
+// ************************************
+// ** TURN CARD COMPOSITION
+// ************************************
+// The turn card described as data. Nothing here emits markup: Blacksmith owns
+// how a meter, a tile or a row looks, and improving one of those parts improves
+// every card already sitting in the log.
+//
+// Read the layouts as two answers to the same question rather than a big card
+// and a cut-down one. Detailed spends the space: a full portrait, the numbers
+// beside it, what is riding on the combatant. Minimal is a `subject` -- a small
+// picture beside a name -- which is the whole card.
+
+/** Where the blood overlays live, keyed by the rounded damage percentage. */
+const BLOOD_OVERLAY = (n) => `modules/${MODULE.ID}/images/blood-${n}.webp`;
+
+/**
+ * The action id for the death-save control, and the name of its render pass.
+ * Named once because three places have to agree: the composition, the handler
+ * registered at startup, and the pass that dims it for readers who cannot roll.
+ */
+const DEATH_SAVE_ACTION = 'roll-death-save';
+
+/**
+ * The portrait, with a blood layer over it when the combatant is hurt.
+ *
+ * The overlay is an ordinary image drawn on top -- the same mechanism the
+ * `image` part offers anyone. NPCs never bleed on the card, which is a
+ * deliberate long-standing choice rather than an oversight: their hit points
+ * are not the table's business.
+ */
+function turnPortraitPart(info) {
+	if (info.hidePortrait) return null;
+	const overlays = (!info.hideBloodyPortrait && !info.isNPC && info.bloodyPortraitNumber !== undefined)
+		? [BLOOD_OVERLAY(info.bloodyPortraitNumber)]
+		: [];
+	return { part: 'image', src: info.portrait, alt: info.name, overlays };
+}
+
+/**
+ * How the combatant is standing: dead, rolling death saves, or a hit point bar.
+ *
+ * Exactly one of the three, because they are three readings of one number.
+ * Blacksmith derives the meter's tone from the percentage at the same 25/50/75
+ * steps this module used for its four hand-coloured bars, so the tone is no
+ * longer passed -- one fewer thing to keep in step.
+ *
+ * @returns {Array<object>} nothing, or the one part that applies
+ */
+function turnHealthParts(info) {
+	if (info.hideHealth || info.isNPC) return [];
+
+	if (info.isDead) {
+		return [{
+			part: 'band',
+			text: game.i18n.format('coffee-pub-crier.IsDead', { name: info.name }),
+			icon: 'fa-solid fa-skull',
+			tone: 'negative'
+		}];
+	}
+
+	if (info.isDeathSaving) {
+		return [{
+			part: 'pips',
+			// The centre is the click target. Whether this reader may use it is
+			// settled in their own browser -- by the handler, which checks
+			// ownership, and by a render pass, which dims it if they cannot.
+			// Composing that decision here would bake one reader's answer into
+			// every copy of the card.
+			center: {
+				icon: 'fa-solid fa-skull',
+				animation: 'pulse',
+				moduleId: MODULE.ID,
+				action: DEATH_SAVE_ACTION,
+				value: info.tokenDoc?.uuid,
+				tooltip: game.i18n.localize('coffee-pub-crier.RollDeathSave')
+			},
+			groups: [
+				{ total: 3, filled: info.attributeDEATHSUCCESS ?? 0, tone: 'positive' },
+				{ total: 3, filled: info.attributeDEATHFAILURE ?? 0, tone: 'negative' }
+			]
+		}];
+	}
+
+	if (info.attributeHPMAX > 0) {
+		return [{ part: 'meter', value: info.attributeHP, max: info.attributeHPMAX }];
+	}
+
+	return [];
+}
+
+/** The six ability scores as a row of caption-over-value boxes. */
+function turnAbilityPart(info) {
+	if (info.hideAbilities || info.isNPC || info.abilitySTR === undefined) return null;
+	return {
+		part: 'tiles',
+		columns: 6,
+		items: [
+			{ label: 'STR', value: info.abilitySTR },
+			{ label: 'DEX', value: info.abilityDEX },
+			{ label: 'CON', value: info.abilityCON },
+			{ label: 'INT', value: info.abilityINT },
+			{ label: 'WIS', value: info.abilityWIS },
+			{ label: 'CHA', value: info.abilityCHA }
+		]
+	};
+}
+
+/**
+ * What is riding on the combatant, and what it is costing them.
+ *
+ * Both blocks are a labelled divider over a list. Effects read better without
+ * the row boxes -- `plain` -- because a conditions list is icon and text rather
+ * than a stack of containers.
+ */
+function turnEffectParts(info) {
+	const parts = [];
+
+	for (const group of info.activeEffectGroups ?? []) {
+		if (!group.rows?.length) continue;
+		parts.push({ part: 'section', icon: 'fa-solid fa-hand-sparkles', label: group.label });
+		parts.push({
+			part: 'rows',
+			plain: true,
+			items: group.rows.map((row) => ({
+				img: row.img,
+				label: row.name,
+				sublabel: row.detail,
+				tooltip: row.tooltip
+			}))
+		});
+	}
+
+	const penalties = info.turnPenaltyReport;
+	if (penalties?.rows?.length) {
+		parts.push({ part: 'section', icon: 'fa-solid fa-dice-d20', label: penalties.label });
+		parts.push({ part: 'notes', items: penalties.rows.map((row) => ({ icon: row.icon, text: row.text })) });
+	}
+
+	return parts;
+}
+
+/**
+ * The whole turn card, in render order.
+ *
+ * NOTHING IN HERE MAY ASK WHO IS LOOKING. One composition is written by the
+ * announcing GM and read by the entire table, so a `game.user.isGM` in this
+ * function bakes that GM's answer into everybody's copy. Per-reader decisions
+ * belong in a render pass, which runs in each reader's own browser.
+ *
+ * @param {object} info The assembled turn context.
+ * @returns {Array<object>} the composition
+ */
+function buildTurnCardParts(info) {
+	const header = { part: 'header', title: info.label };
+	const icon = info.blnHideTurnIcon ? null : cardIcon(info.turnIconStyle);
+	if (icon) header.icon = icon;
+
+	if (info.blnLayoutSmall) {
+		// One part carries the whole minimal card: a small picture beside a
+		// name. `subject` collapses to exactly that shape when it has no bar.
+		const subject = { part: 'subject', title: info.hidePlayer || info.isNPC ? info.name : info.player };
+		const img = info.hidePortrait ? 'icons/svg/combat.svg' : info.portrait;
+		if (img) subject.img = img;
+		return [header, subject, ...turnEffectParts(info)];
+	}
+
+	return [
+		header,
+		turnPortraitPart(info),
+		...turnHealthParts(info),
+		(!info.hidePlayer && !info.isNPC) ? { part: 'identity', name: info.player } : null,
+		turnAbilityPart(info),
+		...turnEffectParts(info)
+	].filter(Boolean);
 }
 
 // ************************************
@@ -882,90 +1116,113 @@ async function generateCards(info, context) {
 	const minPerm = getPermissionLevels().OBSERVER;
 	const defaultVisible = info.hidden ? false : (getDefaultPermission(info.actor ?? info.tokenDoc ?? info.combatant) ?? 0) >= minPerm;
 
-	if (!turnTemplate) {
-		debugLog('GENERATE CARDS: ERROR - turnTemplate is not loaded');
-		return msgs;
-	}
-	
-	const renderedContent = turnTemplate(info, { allowProtoMethodsByDefault: true, allowProtoPropertiesByDefault: true });
-	
+	// Resolve the audience here rather than handing `rollMode` to Blacksmith.
+	// `applyRollMode` is what actually decides the whisper list -- it clears it
+	// for a public card and replaces it with the GMs for a private one -- and it
+	// has always had the last word over the observer list computed above. Running
+	// it against a scratch object keeps that exact behaviour while letting
+	// `post()` receive a settled recipient list.
+	const delivery = { whisper: defaultVisible ? [] : getUsers(info.actor, minPerm) };
+	ChatMessage.applyRollMode(delivery, info.hidden ? 'gmroll' : 'publicroll');
+
 	const cardData = {
-		content: renderedContent,
+		moduleId: MODULE.ID,
+		type: 'turn',
+		theme: normalizeThemeId(info.turnCardStyle),
 		speaker,
-		rollMode: defaultVisible ? 'publicroll' : 'gmroll',
-		whisper: defaultVisible ? [] : getUsers(info.actor, minPerm),
+		relativeTo: info.actor ?? undefined,
+		parts: buildTurnCardParts(info),
+		...(delivery.whisper ? { whisper: delivery.whisper } : {}),
 		flags: {
-			[MODULE.ID]: {
-				turnAnnounce: true,
-				token: info.token?.id,
-				round: info.round,
-				turn: info.turn,
-				combat: info.combat.id,
-				combatant: info.combatant.id,
-				obfuscated: info.obfuscated,
-				turnCardStyle: info.turnCardStyle,
-				turnIconStyle: info.turnIconStyle,
-				roundCardStyle: info.roundCardStyle,
-				roundIconStyle: info.roundIconStyle,
-				...(info.tokenBackgroundImageUrl
-					? { tokenBackgroundImageUrl: info.tokenBackgroundImageUrl }
-					: {})
-			}
+			turnAnnounce: true,
+			token: info.token?.id,
+			round: info.round,
+			turn: info.turn,
+			combat: info.combat.id,
+			combatant: info.combatant.id,
+			obfuscated: info.obfuscated,
+			turnCardStyle: info.turnCardStyle,
+			turnIconStyle: info.turnIconStyle,
+			roundCardStyle: info.roundCardStyle,
+			roundIconStyle: info.roundIconStyle
 		},
 	};
 
-	ChatMessage.applyRollMode(cardData, !info.hidden ? 'publicroll' : 'gmroll')
 	msgs.push(cardData);
 	debugLog('GENERATE CARDS: Created card', () => ({ count: msgs.length }));
 	return msgs;
 }
 
 // ************************************
-// ** MAP ROUND CARD STYLE TO BLACKSMITH THEME
+// ** POSTING CARDS
 // ************************************
-async function mapRoundCardStyleToTheme(roundCardStyle) {
-    // If already a CSS class name (starts with 'theme-'), return as-is
-    if (roundCardStyle?.startsWith('theme-')) {
-        return roundCardStyle;
-    }
-    
-    // If it's a theme ID (not a class name), convert it using API
-    try {
-        const blacksmith = await BlacksmithAPI.get();
-        const chatCardsAPI = blacksmith?.chatCards;
-        if (chatCardsAPI) {
-            return chatCardsAPI.getThemeClassName(roundCardStyle) || 'theme-default';
-        }
-    } catch (error) {
-        console.warn('Coffee Pub Crier: Error accessing Chat Cards API, using fallback:', error);
-    }
-    
-    // Fallback to default
-    return 'theme-default';
+
+/** Blacksmith's chat cards API. */
+function getChatCardsAPI() {
+    return game.modules.get('coffee-pub-blacksmith')?.api?.chatCards ?? null;
+}
+
+/**
+ * Post one card.
+ *
+ * Called from the delivery loops that re-check combat state immediately
+ * beforehand, so this stays a post and nothing more — no settling checks, no
+ * state commits.
+ *
+ * THROWS ON FAILURE, which `post()` does not: it logs and returns null. Every
+ * caller here commits something once delivery returns — a delivered marker, a
+ * round number, a sound — and the announcement contract is that none of that
+ * happens unless the card actually posted. A silent null would consume the
+ * event and lose the card with it.
+ *
+ * @param {object} card A `chatCards.post()` descriptor, or ChatMessage data.
+ * @returns {Promise<ChatMessage>}
+ */
+async function deliverCard(card) {
+    const chatCards = getChatCardsAPI();
+    if (!chatCards) throw new Error('Coffee Pub Crier: Blacksmith chat cards API is unavailable');
+    const message = await chatCards.post(card);
+    if (!message) throw new Error(`Coffee Pub Crier: Blacksmith could not post the ${card.type ?? 'card'} card`);
+    return message;
+}
+
+/**
+ * An icon setting as a Font Awesome class, or null when the GM chose to have
+ * none. The settings store the glyph alone ("fa-shield"); the style is Crier's
+ * to supply, and always has been.
+ * @param {string} icon
+ * @returns {string|null}
+ */
+function cardIcon(icon) {
+    const glyph = String(icon ?? '').trim();
+    if (!glyph || glyph === 'none') return null;
+    return `fa-solid ${glyph}`;
 }
 
 // ************************************
-// ** MAP TURN CARD STYLE TO BLACKSMITH THEME
+// ** RESOLVE A THEME TO ITS CSS CLASS
 // ************************************
-async function mapTurnCardStyleToTheme(turnCardStyle) {
-    // If already a CSS class name (starts with 'theme-'), return as-is
-    if (turnCardStyle?.startsWith('theme-')) {
-        return turnCardStyle;
-    }
-    
-    // If it's a theme ID (not a class name), convert it using API
+
+/**
+ * The CSS class for a stored theme setting.
+ *
+ * Settings hold Blacksmith theme IDs. This exists only for the templates that
+ * still build their own card markup and therefore still need a class name;
+ * `chatCards.post()` takes the id directly and every card that has moved to it
+ * calls `normalizeThemeId` alone. It goes when the turn template does.
+ *
+ * @param {string} themeSetting
+ * @returns {Promise<string>} a `theme-*` class name
+ */
+async function resolveThemeClass(themeSetting) {
+    const themeId = normalizeThemeId(themeSetting);
     try {
         const blacksmith = await BlacksmithAPI.get();
-        const chatCardsAPI = blacksmith?.chatCards;
-        if (chatCardsAPI) {
-            return chatCardsAPI.getThemeClassName(turnCardStyle) || 'theme-default';
-        }
+        return blacksmith?.chatCards?.getThemeClassName(themeId) || 'theme-default';
     } catch (error) {
         console.warn('Coffee Pub Crier: Error accessing Chat Cards API, using fallback:', error);
+        return 'theme-default';
     }
-    
-    // Fallback to default
-    return 'theme-default';
 }
 
 // ************************************
@@ -974,34 +1231,23 @@ async function mapTurnCardStyleToTheme(turnCardStyle) {
 async function createNewRoundCard(combat) {
     const speaker = ChatMessage.getSpeaker('GM');
     const override = await getSettingSafely(MODULE.ID, CRIER.roundLabel);
-    const roundCardStyle = await getSettingSafely(MODULE.ID, CRIER.roundCardStyle, 'theme-announcement-green');
+    const roundCardStyle = await getSettingSafely(MODULE.ID, CRIER.roundCardStyle, 'green-dark');
     const roundIconStyle = await getSettingSafely(MODULE.ID, CRIER.roundIconStyle, 'fa-chess-queen');
-    
-    const theme = await mapRoundCardStyleToTheme(roundCardStyle);
-    const data = { 
-        combat,
-        message: override ? override.replace('{round}', combat.round) : game.i18n.format('coffee-pub-crier.RoundCycling', { round: combat.round }),
-        roundCardStyle,
-        roundIconStyle,
-        theme
-    };
-    
-    if (!roundTemplate) {
-        debugLog('CREATE NEW ROUND CARD: ERROR - roundTemplate is not loaded');
-        return null;
-    }
-    
-    const msgData = {
-        content: roundTemplate(data, { allowProtoMethodsByDefault: true, allowProtoPropertiesByDefault: true }),
+    const message = override
+        ? override.replace('{round}', combat.round)
+        : game.i18n.format('coffee-pub-crier.RoundCycling', { round: combat.round });
+
+    // A descriptor rather than a posted card: the caller re-checks combat state
+    // at the post boundary and may decide to hold this back instead.
+    return {
+        moduleId: MODULE.ID,
+        type: 'round',
+        theme: normalizeThemeId(roundCardStyle),
         speaker,
         rollMode: 'publicroll',
-        flags: {
-            [MODULE.ID]: { roundCycling: true, round: combat.round, combat: combat.id, roundCardStyle, roundIconStyle }
-        },
+        parts: [{ part: 'header', icon: cardIcon(roundIconStyle), title: message }],
+        flags: { roundCycling: true, round: combat.round, combat: combat.id, roundCardStyle, roundIconStyle }
     };
-    // Return the message
-
-    return msgData;
 }
 
 // ************************************
@@ -1060,17 +1306,17 @@ async function postLifecycleAnnouncement(combat, kind) {
     const soundKey = isStart ? CRIER.combatStartSound : CRIER.combatEndSound;
     const [message, combatCardStyle, combatIconStyle] = await Promise.all([
         getSettingSafely(MODULE.ID, labelKey, isStart ? 'Combat Begins' : 'Combat Ends'),
-        getSettingSafely(MODULE.ID, CRIER.combatCardStyle, 'theme-announcement-green'),
+        getSettingSafely(MODULE.ID, CRIER.combatCardStyle, 'green-dark'),
         getSettingSafely(MODULE.ID, CRIER.combatIconStyle, 'fa-shield')
     ]);
-    const theme = await mapRoundCardStyleToTheme(combatCardStyle);
-    if (!combatTemplate) throw new Error('Coffee Pub Crier: combat announcement template is not loaded');
-    const content = combatTemplate({ combat, message, theme, iconStyle: combatIconStyle, kind }, { allowProtoMethodsByDefault: true, allowProtoPropertiesByDefault: true });
-    await ChatMessage.create({
-        content,
+    await deliverCard({
+        moduleId: MODULE.ID,
+        type: `combat-${kind}`,
+        theme: normalizeThemeId(combatCardStyle),
         speaker: ChatMessage.getSpeaker('GM'),
         rollMode: 'publicroll',
-        flags: { [MODULE.ID]: { lifecycle: kind, combat: combat.id } }
+        parts: [{ part: 'header', icon: cardIcon(combatIconStyle), title: message }],
+        flags: { lifecycle: kind, combat: combat.id }
     });
     deliveredLifecycleEvents.add(eventKey);
     lifecycleRetryCounts.delete(eventKey);
@@ -1217,16 +1463,11 @@ async function postNewTurnCard(combat, context) {
 	const cardSettings = await getTurnCardSettings();
 	info.turnLayout = cardSettings.turnLayout ?? 'full';
 	info.turnIconStyle = cardSettings.turnIconStyle ?? 'fa-shield';
-	info.turnCardStyle = cardSettings.turnCardStyle ?? 'theme-default';
-	info.theme = await mapTurnCardStyleToTheme(info.turnCardStyle);
+	info.turnCardStyle = cardSettings.turnCardStyle ?? 'default';
+	info.theme = await resolveThemeClass(info.turnCardStyle);
 	info.roundIconStyle = cardSettings.roundIconStyle ?? 'fa-chess-queen';
-	info.roundCardStyle = cardSettings.roundCardStyle ?? 'theme-announcement-green';
+	info.roundCardStyle = cardSettings.roundCardStyle ?? 'green-dark';
 	info.portraitStyle = cardSettings.portraitStyle ?? 'portrait';
-	info.tokenBackground = cardSettings.tokenBackground ?? 'dirt';
-	const tokenBgPres = getTokenBackgroundPresentation(info.tokenBackground);
-	info.tokenBackgroundImageUrl = tokenBgPres.imageUrl;
-	info.tokenBackgroundUseClass = tokenBgPres.useClass;
-	info.tokenScale = cardSettings.tokenScale ?? 100;
     //	Hide the player name if needed
     if (cardSettings.hidePlayer)
         info.hidePlayer = true;
@@ -1240,7 +1481,6 @@ async function postNewTurnCard(combat, context) {
     if (cardSettings.hideBloodyPortrait)
         info.hideBloodyPortrait = true;	
     // GET THE IDs
-    const strTokenId = await getTokenId(info.name);
     const strActorId = await getActorId(info.name);
     // Set the view of the turn icon
     info.blnHideTurnIcon = false;
@@ -1249,17 +1489,9 @@ async function postNewTurnCard(combat, context) {
     } else {
         info.blnHideTurnIcon = false;
     }
-    // Set the LAYOUT
-    info.blnLayoutFull = false;
-    info.blnLayoutSmall = false;
-    info.blnLayoutNone = false;
-    if (info.turnLayout == "full") {
-        info.blnLayoutFull = true;
-    } else if (info.turnLayout == "small") {
-        info.blnLayoutSmall = true;
-    } else {
-        info.blnLayoutNone = true;
-    }
+    // Set the LAYOUT. Two of them: the setting offers Detailed and Minimal, and
+    // a third branch sat here for years that nothing could ever select.
+    info.blnLayoutSmall = info.turnLayout === 'small';
     // Set the plaer or NPC flag
     if (strActorId.length == 0) {
         // string is empty, so is not an actor
@@ -1337,142 +1569,25 @@ async function postNewTurnCard(combat, context) {
         info.hidePortrait = true;
     }
     // ---- Get Player Stats ---
-    if (strActorId.length == 0) {
-        // It returned nothing
-        //ui.notifications.info("NO ACTOR ID", {permanent: false, console: false});
-    } else {
-        // Get the Player Stats
-        const character = game.actors.get(strActorId);
-        // Pull the abilities	
-        info.abilityCHA = character.system.abilities.cha.value;
-        info.abilityCON = character.system.abilities.con.value;
-        info.abilityDEX = character.system.abilities.dex.value;
-        info.abilityINT = character.system.abilities.int.value;
-        info.abilitySTR = character.system.abilities.str.value;
-        info.abilityWIS = character.system.abilities.wis.value;
-        // Pull some interesting info	
-        info.attributeAC = character.system.attributes.ac.value;
-        info.attributeMOVE = character.system.attributes.movement.walk;
-        info.attributeDEATHFAILURE = character.system.attributes.death.failure;
-        info.attributeDEATHSUCCESS = character.system.attributes.death.success;
-        // Set the death save defaults
-        info.attributeDEATHSUCCESSdot1 = "off";
-        info.attributeDEATHSUCCESSdot2 = "off";
-        info.attributeDEATHSUCCESSdot3 = "off";
-        info.attributeDEATHFAILUREdot1 = "off";
-        info.attributeDEATHFAILUREdot2 = "off";
-        info.attributeDEATHFAILUREdot3 = "off";
+    if (!info.isNPC && info.actor) {
+        const abilities = info.actor.system?.abilities ?? {};
+        info.abilitySTR = abilities.str?.value;
+        info.abilityDEX = abilities.dex?.value;
+        info.abilityCON = abilities.con?.value;
+        info.abilityINT = abilities.int?.value;
+        info.abilityWIS = abilities.wis?.value;
+        info.abilityCHA = abilities.cha?.value;
 
-        // Calc the HP
-        info.attributeHP = character.system.attributes.hp.value;
-        info.attributeHPMAX = character.system.attributes.hp.max;
-        // Set up death saving throws
-        if (info.attributeHP <= 0 ) {
-            // They are either compleltely dead or doing death saving throws
-            if (info.attributeDEATHSUCCESS <= 3 && info.attributeDEATHFAILURE <= 3 ) {
-                //They are still rolling death saves
-                // Set the Successes
-                if (info.attributeDEATHSUCCESS == 0 ) {
-                    info.attributeDEATHSUCCESSdot1 = "off";
-                    info.attributeDEATHSUCCESSdot2 = "off";
-                    info.attributeDEATHSUCCESSdot3 = "off";
-                } else if (info.attributeDEATHSUCCESS == 1 ) {
-                    info.attributeDEATHSUCCESSdot1 = "on";
-                    info.attributeDEATHSUCCESSdot2 = "off";
-                    info.attributeDEATHSUCCESSdot3 = "off";
-                } else if (info.attributeDEATHSUCCESS == 2 ) {
-                    info.attributeDEATHSUCCESSdot1 = "on";
-                    info.attributeDEATHSUCCESSdot2 = "on";
-                    info.attributeDEATHSUCCESSdot3 = "off";
-                } else if (info.attributeDEATHSUCCESS == 3 ) {
-                    info.attributeDEATHSUCCESSdot1 = "on";
-                    info.attributeDEATHSUCCESSdot2 = "on";
-                    info.attributeDEATHSUCCESSdot3 = "on";
-                }
-                // Set the Failures
-                if (info.attributeDEATHFAILURE == 0 ) {
-                    info.attributeDEATHFAILUREdot1 = "off";
-                    info.attributeDEATHFAILUREdot2 = "off";
-                    info.attributeDEATHFAILUREdot3 = "off";
-                } else if (info.attributeDEATHFAILURE == 1 ) {
-                    info.attributeDEATHFAILUREdot1 = "on";
-                    info.attributeDEATHFAILUREdot2 = "off";
-                    info.attributeDEATHFAILUREdot3 = "off";
-                } else if (info.attributeDEATHFAILURE == 2 ) {
-                    info.attributeDEATHFAILUREdot1 = "on";
-                    info.attributeDEATHFAILUREdot2 = "on";
-                    info.attributeDEATHFAILUREdot3 = "off";
-                } else if (info.attributeDEATHFAILURE == 3 ) {
-                    info.attributeDEATHFAILUREdot1 = "on";
-                    info.attributeDEATHFAILUREdot2 = "on";
-                    info.attributeDEATHFAILUREdot3 = "on";
-                }
-            } else {
-                // they are dead.
-            }
-        }
-        // Round up if under 5 unless it is a zero.
-        info.attributehpprogress = Math.round((100 * info.attributeHP) / info.attributeHPMAX);		
-        // Do the calcs for the bloody portrait
-        info.bloodyPortraitNumber = 100 - info.attributehpprogress;
-        info.bloodyPortraitNumber = Math.ceil(info.bloodyPortraitNumber / 5) * 5;
-        // Override as appropriate
-        if (info.bloodyPortraitNumber < 0 ) {
-            info.bloodyPortraitNumber = 0;
-        } else if (info.bloodyPortraitNumber > 100) {
-            info.bloodyPortraitNumber = 100;
-        } else if (info.attributehpprogress >= 1 && info.attributehpprogress <= 4) {
-            //use the "critical" portriat unless they are at 0hp, so round up to 95% bloody.
-            info.bloodyPortraitNumber = 95;
-        }
-        // See if dying
-        if (info.attributehpprogress <= 0 ) {
-            // Is Dead or saving
-            info.isHealthy = false;
-            info.isHurt = false;
-            info.isDying = false;
-            info.isCritical = false;
-            if (info.attributeDEATHFAILURE < 3){
-                info.isDeathSaving = true;
-                info.isDead = false;
-            } else {
-                info.isDeathSaving = false;
-                info.isDead = true;
-                info.bloodyPortraitNumber = 101; // DEAD
-            }
-        } else if (info.attributehpprogress > 0 && info.attributehpprogress <= 25) {
-            // Is Critical
-            info.isHealthy = false;
-            info.isHurt = false;
-            info.isDying = false;
-            info.isCritical = true;
-            info.isDeathSaving = false;
-            info.isDead = false;
-        } else if (info.attributehpprogress > 25 && info.attributehpprogress <= 50) {
-            // Is Dying
-            info.isHealthy = false;
-            info.isHurt = false;
-            info.isDying = true;
-            info.isCritical = false;
-            info.isDeathSaving = false;
-            info.isDead = false;
-        } else if (info.attributehpprogress > 50 && info.attributehpprogress <= 75) {
-            // Is Hurt
-            info.isHealthy = false;
-            info.isHurt = true;
-            info.isDying = false;
-            info.isCritical = false;
-            info.isDeathSaving = false;
-            info.isDead = false;
-        } else {
-            // Is Healthy
-            info.isHealthy = true;
-            info.isHurt = false;
-            info.isDying = false;
-            info.isCritical = false;
-            info.isDeathSaving = false;
-            info.isDead = false;
-        }
+        const health = describeHealth(info.actor);
+        if (health) Object.assign(info, {
+            attributeHP: health.value,
+            attributeHPMAX: health.max,
+            attributeDEATHSUCCESS: health.successes,
+            attributeDEATHFAILURE: health.failures,
+            isDead: health.isDead,
+            isDeathSaving: health.isDeathSaving,
+            bloodyPortraitNumber: health.bloody
+        });
     }
 
     	const obfuscateType = cardSettings.obfuscateNPCs;
@@ -1486,7 +1601,11 @@ async function postNewTurnCard(combat, context) {
     info.obfuscated = obfuscate[obfuscateType] ?? false;
     if (info.obfuscated) info.name = game.i18n.localize('coffee-pub-crier.UnidentifiedTurn');
 
-    const label = `<span class='name'>${info.name}</span>`;
+    // Text, not markup: Blacksmith escapes everything and converts the two
+    // inline marks, so the name is emphasised with ** rather than a span. The
+    // GM's own label override goes through the same pipeline, which means a
+    // world that had put HTML in it now sees the tags instead of obeying them.
+    const label = `**${info.name}**`;
     	const override = cardSettings.turnLabel;
     if (override) info.label = override.replace('{name}', label);
     else info.label = game.i18n.format('coffee-pub-crier.Turn', { name: label });
@@ -1500,9 +1619,7 @@ async function postNewTurnCard(combat, context) {
             turnIconStyle: info.turnIconStyle,
             roundCardStyle: info.roundCardStyle,
             roundIconStyle: info.roundIconStyle,
-            portraitStyle: info.portraitStyle,
-            tokenBackground: info.tokenBackground,
-            tokenScale: info.tokenScale
+            portraitStyle: info.portraitStyle
         }
     }));
     const msgs = await generateCards(info, context);
@@ -1649,10 +1766,10 @@ async function announceCombatChange(combat, { roundCard, turnCard }) {
         if (await getSettingSafely(MODULE.ID, CRIER.roundCycling)) {
             const roundMsg = await postNewRound(combat, roundCard);
             if (roundMsg) {
-                if (!isOrderSettled(combat) || combat.round !== expectedRound || Number(roundMsg.flags?.[MODULE.ID]?.round) !== expectedRound) {
+                if (!isOrderSettled(combat) || combat.round !== expectedRound || Number(roundMsg.flags?.round) !== expectedRound) {
                     return rearm({ roundCard, turnCard });
                 }
-                await ChatMessage.create(roundMsg);
+                await deliverCard(roundMsg);
                 combat.crierLastRoundNumber = combat.round;
                 await playConfiguredSound(CRIER.roundSound);
                 debugLog('ANNOUNCE: Round message posted', () => ({ round: combat.round }));
@@ -1672,7 +1789,7 @@ async function announceCombatChange(combat, { roundCard, turnCard }) {
                 if (!isOrderSettled(combat) || combat.combatant?.id !== expectedCombatantId) {
                     return rearm({ roundCard: null, turnCard });
                 }
-                await ChatMessage.create(msg);
+                await deliverCard(msg);
             }
             const lastCombatant = getLastCombatantState(combat);
             lastCombatant.combatant = combat.combatant;
@@ -1771,7 +1888,7 @@ async function processTurn(combat, _update, context, userId) {
     // Send the message
 	if (msgs.length) {
 		for (const msg of msgs) {
-			await ChatMessage.create(msg);
+			await deliverCard(msg);
 		}
 	} else {
 		debugLog('PROCESS TURN: No messages to create');
@@ -1801,10 +1918,6 @@ async function processTurn(combat, _update, context, userId) {
 // Helper functions for token/actor operations
 async function getActorId(name) {
     return BlacksmithUtils.getActorId(name);
-}
-
-async function getTokenId(name) {
-    return BlacksmithUtils.getTokenId(name);
 }
 
 async function getTokenImage(tokenDoc) {

@@ -15,71 +15,97 @@ import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api
 // ================================================================== 
 
 /**
- * Get Blacksmith theme choices for round cards using Chat Cards API
- * Returns only announcement themes (round cards are announcements)
+ * Blacksmith's card themes, as an id-to-name map for a settings dropdown.
+ *
+ * Themes are stored by ID, not by CSS class name. Storing class names meant
+ * every read had to translate one into the other, and it hid the fact that the
+ * three `theme-announcement-*` themes this module defaulted to had been retired
+ * — `getAnnouncementThemeChoicesWithClassNames()` no longer existed, so the
+ * dropdown silently fell back to three ids Blacksmith could not resolve and
+ * every round and combat card rendered as Tan.
  */
-async function getRoundCardThemeChoices() {
+async function getCardThemeChoices() {
 	try {
 		const blacksmith = await BlacksmithAPI.get();
-		const chatCardsAPI = blacksmith?.chatCards;
-		
-		if (!chatCardsAPI) {
-			console.warn('Coffee Pub Crier: Blacksmith Chat Cards API not available, using fallback');
-			return getRoundCardThemeChoicesFallback();
-		}
-		
-		// Get only announcement themes from API with CSS class names as keys (round cards are announcements)
-		return chatCardsAPI.getAnnouncementThemeChoicesWithClassNames();
+		const choices = blacksmith?.chatCards?.getThemeChoices?.('card');
+		if (choices && Object.keys(choices).length) return choices;
+		console.warn('Coffee Pub Crier: Blacksmith Chat Cards API not available, using fallback themes');
 	} catch (error) {
-		console.error('Coffee Pub Crier: Error getting round card themes from API:', error);
-		return getRoundCardThemeChoicesFallback();
+		console.error('Coffee Pub Crier: Error getting card themes from API:', error);
 	}
+	return getCardThemeChoicesFallback();
 }
 
-/**
- * Fallback theme choices if API is unavailable (only announcement themes)
- */
-function getRoundCardThemeChoicesFallback() {
+/** The theme list as it stood when this was written, for a Blacksmith too old to ask. */
+function getCardThemeChoicesFallback() {
 	return {
-		'theme-announcement-green': 'Announcement Green',
-		'theme-announcement-red': 'Announcement Red',
-		'theme-announcement-blue': 'Announcement Blue'
+		'default': 'Tan',
+		'amber': 'Amber',
+		'blue': 'Blue',
+		'green': 'Green',
+		'red': 'Red',
+		'orange': 'Orange',
+		'default-dark': 'Tan (dark header)',
+		'amber-dark': 'Amber (dark header)',
+		'blue-dark': 'Blue (dark header)',
+		'green-dark': 'Green (dark header)',
+		'red-dark': 'Red (dark header)',
+		'orange-dark': 'Orange (dark header)'
 	};
 }
 
 /**
- * Get Blacksmith theme choices for turn cards using Chat Cards API
- * Returns only themes from the API (card themes)
+ * The three retired announcement themes, and where each one lands.
+ *
+ * They darkened the whole card and were only ever used for cards that were
+ * nothing but a header. The `-dark` variants do that one thing honestly — a
+ * dark header band on an otherwise ordinary card — so they are the equivalent,
+ * not merely the nearest colour.
  */
-async function getTurnCardThemeChoices() {
-	try {
-		const blacksmith = await BlacksmithAPI.get();
-		const chatCardsAPI = blacksmith?.chatCards;
-		
-		if (!chatCardsAPI) {
-			console.warn('Coffee Pub Crier: Blacksmith Chat Cards API not available, using fallback');
-			return getTurnCardThemeChoicesFallback();
-		}
-		
-		// Get card themes from API with CSS class names as keys (turn cards are regular cards)
-		return chatCardsAPI.getCardThemeChoicesWithClassNames();
-	} catch (error) {
-		console.error('Coffee Pub Crier: Error getting turn card themes from API:', error);
-		return getTurnCardThemeChoicesFallback();
-	}
+const LEGACY_ANNOUNCEMENT_THEMES = {
+	'theme-announcement-green': 'green-dark',
+	'theme-announcement-red': 'red-dark',
+	'theme-announcement-blue': 'blue-dark'
+};
+
+/**
+ * A stored setting value as a theme id.
+ *
+ * Settings used to hold CSS class names. Migration rewrites them, but only a GM
+ * can write a world setting, so a player client can read a legacy value for a
+ * whole session before any GM logs in. Normalizing on read means that client
+ * still gets the right theme rather than Blacksmith's Tan fallback.
+ *
+ * @param {string} value
+ * @returns {string} a theme id, which Blacksmith validates in its own turn
+ */
+export function normalizeThemeId(value) {
+	const stored = String(value ?? '').trim();
+	if (!stored) return 'default';
+	if (LEGACY_ANNOUNCEMENT_THEMES[stored]) return LEGACY_ANNOUNCEMENT_THEMES[stored];
+	return stored.startsWith('theme-') ? stored.slice('theme-'.length) : stored;
 }
 
 /**
- * Fallback theme choices if API is unavailable (only API themes, no legacy)
+ * Rewrite theme settings still holding a CSS class name.
+ *
+ * World settings, so only a GM writes them; every other client relies on
+ * `normalizeThemeId` until one does. Runs after registration because a setting
+ * cannot be read before it exists.
  */
-function getTurnCardThemeChoicesFallback() {
-	return {
-		'theme-default': 'Default',
-		'theme-blue': 'Blue',
-		'theme-green': 'Green',
-		'theme-red': 'Red',
-		'theme-orange': 'Orange'
-	};
+async function migrateCardThemeSettings() {
+	if (!game.user?.isGM) return;
+	for (const key of [CRIER.roundCardStyle, CRIER.turnCardStyle, CRIER.combatCardStyle]) {
+		try {
+			const stored = game.settings.get(MODULE.ID, key);
+			const migrated = normalizeThemeId(stored);
+			if (migrated === stored) continue;
+			await game.settings.set(MODULE.ID, key, migrated);
+			console.log(`Coffee Pub Crier: Migrated ${key} theme "${stored}" to "${migrated}"`);
+		} catch (error) {
+			console.error(`Coffee Pub Crier: Could not migrate ${key} theme:`, error);
+		}
+	}
 }
 
 export const registerSettings = async () => {
@@ -87,9 +113,10 @@ export const registerSettings = async () => {
         // Get constants using the API function approach
         const constants = BlacksmithAPIConstants ? BlacksmithAPIConstants() : BlacksmithConstants;
         
-        // Get theme choices from Chat Cards API (await before using in settings)
-        const roundCardThemeChoices = await getRoundCardThemeChoices();
-        const turnCardThemeChoices = await getTurnCardThemeChoices();
+        // Get theme choices from Chat Cards API (await before using in settings).
+        // One list for all three cards: a theme is a colour, and there is no
+        // longer a separate family for announcements.
+        const cardThemeChoices = await getCardThemeChoices();
 
 		// -- TITLE --
 		// ------------------------------------------------------------
@@ -109,8 +136,8 @@ export const registerSettings = async () => {
 		});
 		game.settings.register(MODULE.ID, CRIER.combatCardStyle, {
 			name: MODULE.ID + '.combatCardStyle-Label', hint: MODULE.ID + '.combatCardStyle-Hint',
-			type: String, config: true, scope: 'world', default: 'theme-announcement-green',
-			choices: roundCardThemeChoices
+			type: String, config: true, scope: 'world', default: 'green-dark',
+			choices: cardThemeChoices
 		});
 		game.settings.register(MODULE.ID, CRIER.combatIconStyle, {
 			name: MODULE.ID + '.combatIconStyle-Label', hint: MODULE.ID + '.combatIconStyle-Hint',
@@ -177,8 +204,8 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			default: 'theme-announcement-green', // CSS class name from API
-			choices: roundCardThemeChoices
+			default: 'green-dark', // Blacksmith theme id
+			choices: cardThemeChoices
 		});
 		// -- Round Icon --
 		game.settings.register(MODULE.ID, CRIER.roundIconStyle, {
@@ -282,8 +309,8 @@ export const registerSettings = async () => {
 			scope: 'world',
 			config: true,
 			type: String,
-			default: 'theme-default', // CSS class name from API
-			choices: turnCardThemeChoices,
+			default: 'default', // Blacksmith theme id
+			choices: cardThemeChoices,
 		});
 		// -- Turn Card Color --
 		game.settings.register(MODULE.ID, CRIER.turnIconStyle, {
@@ -363,33 +390,6 @@ export const registerSettings = async () => {
 			},
 			default: 'portrait',
 		});
-		// -- Image Background (stored value = Blacksmith asset `value`; file comes from Blacksmith merged assets) --
-		game.settings.register(MODULE.ID, CRIER.tokenBackground, {
-			name: MODULE.ID + '.tokenBackground-Label',
-			hint: MODULE.ID + '.tokenBackground-Hint',
-			scope: 'world',
-			config: true,
-			type: String,
-			choices: constants?.arrBackgroundImageChoices || {
-				'error': 'Failed to load backgrounds - check Blacksmith module'
-			},
-			default: 'dirt',
-		});
-		// -- Image Scale --
-		game.settings.register(MODULE.ID, CRIER.tokenScale, {
-			name: MODULE.ID + '.tokenScale-Label',
-			hint: MODULE.ID + '.tokenScale-Hint',
-			scope: "world",
-			config: true,
-			type: Number,
-			range: {
-			  min: 25,
-			  max: 100,
-			  step: 5,
-			},
-			default: 100,
-		});
-
 		// -- NPC Names --
 		game.settings.register(MODULE.ID, CRIER.obfuscateNPCs, {
 			name: MODULE.ID + '.obfuscateNPCs-Label',
@@ -521,7 +521,11 @@ export const registerSettings = async () => {
 		});
 
         // -------------------------------------------------------------- 
-        
+
+        // After registration, never before: a setting cannot be read until it
+        // exists.
+        await migrateCardThemeSettings();
+
     } catch (error) {
         console.error('❌ Coffee Pub Crier: Failed to register settings with new Blacksmith API:', error);
     }

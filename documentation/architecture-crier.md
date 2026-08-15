@@ -10,8 +10,8 @@ Coffee Pub Crier owns configurable combat-start, round-start, turn-start, and co
 - **Main Script**: `scripts/crier.js` - Core functionality
 - **Settings**: `scripts/settings.js` - Module configuration
 - **Constants**: `scripts/const.js` - Module constants
-- **Templates**: `templates/combat.hbs`, `templates/rounds.hbs`, and `templates/turns.hbs` - Handlebars templates for lifecycle, round, and turn cards
-- **Styles**: `styles/default.css` with component imports such as `styles/turns.css` - Visual styling
+- **Templates**: none. Every card is composed as Blacksmith parts.
+- **Styles**: none. Blacksmith owns card presentation.
 
 ### 2. Blacksmith API Integration
 
@@ -98,7 +98,6 @@ A persisted record that the order settled during this round, kept in step on eve
 - `deliveryQueues`: Per-combat serialization for hook and timer work
 - `deliveredLifecycleEvents`: Deduplication for lifecycle deliveries and restarted encounters
 - `roundInitialized`: Boolean flag indicating if current round has all initiatives rolled (persistent setting)
-- `turnTemplate`, `roundTemplate`: Loaded Handlebars templates
 
 #### Persistent State:
 - `roundInitialized` is stored as a hidden FoundryVTT setting that persists across sessions
@@ -182,21 +181,55 @@ The block is display-only and applies nothing. Bibliosoph owns applying, ticking
 - Resets tracking on round changes
 - Handles defeated combatants appropriately
 
-## Template System
+## Cards
 
-### Turn Template (`templates/turns.hbs`)
-- Renders individual turn cards
-- Includes combatant name, portrait, token info
-- Uses Blacksmith styling constants
+Crier writes no card HTML and no card CSS. Every card is described as a
+composition of Blacksmith parts and posted through `chatCards.post()`; see
+`plans/plan-cards.md` for the migration and `api-chatcards.md` in Blacksmith for
+the part library. Theme settings hold Blacksmith theme ids.
 
-### Round Template (`templates/rounds.hbs`)
-- Renders round announcement cards
-- Shows current round number
+| Card | Composition |
+|---|---|
+| Round | `header` |
+| Combat start / end | `header` |
+| Missed turn | `header` + `prose`, whispered to the GMs |
+| Turn — Detailed | `header`, `image` (portrait, blood overlay), health, `identity`, `tiles`, effects |
+| Turn — Minimal | `header`, `subject` |
 
-### Combat Template (`templates/combat.hbs`)
-- Renders combat-start and combat-end announcement cards
-- Uses dedicated combat announcement theme/icon settings with lifecycle-specific labels and flags
-- Uses Blacksmith styling constants
+Health is exactly one of three parts, because they are three readings of one
+number: a `meter` while standing, `pips` while rolling death saves, a `band`
+once dead. `describeHealth()` decides which, and is the only place the
+thresholds live.
+
+### Per-reader behaviour
+
+A composition is written once by the announcing GM and read by everybody, so
+nothing that varies by reader may be decided while composing it. Three things
+are therefore resolved in each reader's own browser:
+
+- **The death-save button.** `registerAction` on every client at startup; the
+  handler checks `actor.isOwner` before rolling, because hiding a control is
+  presentation rather than authorization.
+- **Whether the reader may use it.** A render pass disables the button and drops
+  its pulse for anyone who does not own the actor.
+- **NPC obfuscation.** The stored card names the combatant `???`; a render pass
+  puts the real name back for a GM.
+
+These are render passes rather than `renderChatMessageHTML` hooks: a parts card
+re-renders from its stored composition a tick after Foundry paints it, and that
+swap discards anything a hook decorated.
+
+### Keeping a posted card honest
+
+A card is a snapshot. `refreshTurnCardHealth()` runs on `updateActor`, on the
+announcing GM alone, and rewrites the stored composition when hit points or
+death saves change — so the bar, the pips and the blood all move on every
+client. It replaces the health part rather than editing it, since a bar becomes
+pips when a character goes down and pips become a band when they die.
+
+`deliverCard()` is the single post boundary. It throws when a post fails, because
+every caller commits something once it returns — a delivered marker, a round
+number, a sound — and none of that may happen for a card that did not post.
 
 ## Settings Integration
 

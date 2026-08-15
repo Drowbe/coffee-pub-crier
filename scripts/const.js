@@ -46,8 +46,6 @@ export const CRIER = {
     missedKey: 'missedTurn',
     missedTurnNotification : 'missedTurnNotification',
     portraitStyle: 'portraitStyle',
-    tokenBackground: 'tokenBackground',
-    tokenScale: 'tokenScale',
     hideBloodyPortrait: 'hideBloodyPortrait',
     hidePlayer: 'hidePlayer',
     hideHealth: 'hideHealth',
