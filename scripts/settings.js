@@ -426,15 +426,6 @@ export const registerSettings = async () => {
 			default: false,
 		});
 		// -- Player Names --
-		game.settings.register(MODULE.ID, CRIER.hidePlayer, {
-			name: MODULE.ID + '.hidePlayer-Label',
-			hint: MODULE.ID + '.hidePlayer-Hint',
-			type: Boolean,
-			config: true,
-			scope: 'world',
-			default: false,
-		});
-		
 		// -- Abilities --
 		game.settings.register(MODULE.ID, CRIER.hideAbilities, {
 			name: MODULE.ID + '.hideAbilities-Label',

@@ -193,8 +193,18 @@ the part library. Theme settings hold Blacksmith theme ids.
 | Round | `header` |
 | Combat start / end | `header` |
 | Missed turn | `header` + `prose`, whispered to the GMs |
-| Turn — Detailed | `header`, `image` (portrait, blood overlay), health, `identity`, `tiles`, effects |
-| Turn — Minimal | `header`, `subject` |
+| Turn — Detailed | `header`, `image` (portrait, blood overlay), health, `tiles`, effects |
+| Turn — Minimal | `header`, `subject` (portrait, class, speed, health bar), `tiles`, effects |
+
+The two turn layouts differ in the shape of the identity block, not in what the
+card may say: every show/hide setting applies to both. Minimal folds portrait,
+class, walking speed and the hit point bar into one `subject`; a character
+rolling death saves keeps the subject compact and puts the pips beneath it,
+because a `subject` bar may be a meter or a gauge but never pips.
+
+The active-effects list is titled by a `section`. The penalties are not: `notes`
+is the footer-annotation part and rules itself off from what precedes it, so a
+divider above it would draw the line twice.
 
 Health is exactly one of three parts, because they are three readings of one
 number: a `meter` while standing, `pips` while rolling death saves, a `band`
@@ -225,7 +235,11 @@ A card is a snapshot. `refreshTurnCardHealth()` runs on `updateActor`, on the
 announcing GM alone, and rewrites the stored composition when hit points or
 death saves change — so the bar, the pips and the blood all move on every
 client. It replaces the health part rather than editing it, since a bar becomes
-pips when a character goes down and pips become a band when they die.
+pips when a character goes down and pips become a band when they die — and on a
+Minimal card it rebuilds the whole subject block, whose bar lives inside the
+subject and whose pips do not. Which parts a card is allowed to have is read
+back off the card itself, so turning a setting on mid-combat does not make
+something appear on a card that never had it.
 
 `deliverCard()` is the single post boundary. It throws when a post fails, because
 every caller commits something once it returns — a delivered marker, a round

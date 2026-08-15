@@ -47,7 +47,6 @@ export const CRIER = {
     missedTurnNotification : 'missedTurnNotification',
     portraitStyle: 'portraitStyle',
     hideBloodyPortrait: 'hideBloodyPortrait',
-    hidePlayer: 'hidePlayer',
     hideHealth: 'hideHealth',
     hideAbilities: 'hideAbilities',
     showActiveEffects: 'showActiveEffects',

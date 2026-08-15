@@ -98,8 +98,6 @@
 		"hideBloodyPortrait-Label": "Hide Portrait Blood",
 		"hideBloodyPortrait-Hint": "Do not display a blood splatter overlay on the portrait as the player takes damage. The blood splatter get progressively worse as the combatant takes damage.",
 		
-		"hidePlayer-Label": "Hide Player Name",
-		"hidePlayer-Hint": "Do not include current player name in the turn card.",
 
 		"obfuscateNPCs-Label": "NPC Name Visibility",
 		"obfuscateNPCs-Hint": "Obfuscate names of certain combatants. GM will see names as normal with slightly altered turn card.",
@@ -119,7 +117,6 @@
 		"showTurnPenalties-Label": "Show Turn Penalties",
 		"showTurnPenalties-Hint": "Under the effects, total up what they cost this combatant right now — roll penalties, and how long until they lift.",
 		"TurnPenalties": {
-			"Title": "Penalties and Duration",
 			"TimeRemaining": "{name}: {time} left"
 		},
 		"activeEffectsAudience-Label": "Show Status & Conditions For",

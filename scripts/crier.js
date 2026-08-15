@@ -117,7 +117,6 @@ const TURN_SETTING_KEYS = {
     roundIconStyle: CRIER.roundIconStyle,
     roundCardStyle: CRIER.roundCardStyle,
     portraitStyle: CRIER.portraitStyle,
-    hidePlayer: CRIER.hidePlayer,
     hideAbilities: CRIER.hideAbilities,
     showActiveEffects: CRIER.showActiveEffects,
     showTurnPenalties: CRIER.showTurnPenalties,
@@ -504,7 +503,7 @@ function remainingSeconds(remaining) {
  * disagree with the list the table is looking at.
  * @param {Actor|null|undefined} actor
  * @param {Array<object>} records Blacksmith display records.
- * @returns {{label: string, rows: Array<{icon: string, text: string}>}|null}
+ * @returns {{rows: Array<{icon: string, text: string}>}|null}
  */
 function buildTurnPenaltyReport(actor, records = []) {
 	if (!actor || !records.length) return null;
@@ -568,7 +567,7 @@ function buildTurnPenaltyReport(actor, records = []) {
 		});
 	}
 
-	return { label: game.i18n.localize(`${MODULE.ID}.TurnPenalties.Title`), rows };
+	return { rows };
 }
 
 // ************************************
@@ -766,7 +765,7 @@ async function refreshTurnCardHealth(actor, changed) {
     const parts = card?.parts;
     if (!Array.isArray(parts)) return;
 
-    const info = turnCardHealthContext(message, actor);
+    const info = turnCardHealthContext(message, actor, parts);
     if (!info) return;
 
     let changedCard = false;
@@ -778,14 +777,29 @@ async function refreshTurnCardHealth(actor, changed) {
     // worst a mismatch costs is one redundant update.
     const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-    // The health part is replaced rather than edited, because the three
+    // The health part is REPLACED rather than edited, because the three
     // readings are three different parts: a bar becomes pips when a character
     // goes down, and pips become a band when they die.
+    const subjectAt = parts.findIndex((part) => part.part === 'subject');
     const healthAt = parts.findIndex((part) => ['meter', 'pips', 'band'].includes(part.part));
-    const [health] = turnHealthParts(info);
-    if (healthAt !== -1 && health && !same(parts[healthAt], health)) {
-        parts[healthAt] = health;
-        changedCard = true;
+
+    if (subjectAt !== -1) {
+        // A Minimal card carries its bar INSIDE the subject, so there is no
+        // top-level meter to swap. Rebuild the whole block: it is one part or
+        // two depending on the reading, since pips cannot nest in a subject and
+        // sit beneath it instead.
+        const runLength = healthAt === subjectAt + 1 ? 2 : 1;
+        const rebuilt = turnSubjectParts(info);
+        if (!same(parts.slice(subjectAt, subjectAt + runLength), rebuilt)) {
+            parts.splice(subjectAt, runLength, ...rebuilt);
+            changedCard = true;
+        }
+    } else if (healthAt !== -1) {
+        const [health] = turnHealthParts(info);
+        if (health && !same(parts[healthAt], health)) {
+            parts[healthAt] = health;
+            changedCard = true;
+        }
     }
 
     const imageAt = parts.findIndex((part) => part.part === 'image');
@@ -830,23 +844,40 @@ function findLatestTurnCard(actor) {
  * Enough of a turn context to rebuild the health parts, recovered from a posted
  * card's flags and the live actor.
  *
- * Only the fields `turnHealthParts` and `turnPortraitPart` actually read. The
- * rest of a turn context describes settings and layout, and neither of those
- * changes because somebody took damage.
+ * Only the fields the health and subject builders actually read. The rest of a
+ * turn context describes settings and layout, and neither of those changes
+ * because somebody took damage.
+ *
+ * The two show/hide settings that matter here are read back off the card rather
+ * than out of the settings, because the card is what the world looked like when
+ * it was posted -- and a GM who turns the health bar on mid-combat should not
+ * have it appear on a card that never had one.
+ *
  * @param {ChatMessage} message
  * @param {Actor} actor
+ * @param {Array<object>} parts The stored composition.
  * @returns {object|null}
  */
-function turnCardHealthContext(message, actor) {
+function turnCardHealthContext(message, actor, parts) {
     const health = describeHealth(actor);
     if (!health) return null;
     const flags = message.flags?.[MODULE.ID] ?? {};
     const combatant = game.combats.get(flags.combat)?.combatants.get(flags.combatant);
+
+    const subject = parts.find((part) => part.part === 'subject');
+    const portrait = subject?.img ?? parts.find((part) => part.part === 'image')?.src;
+    const showsHealth = Boolean(subject?.meter)
+        || parts.some((part) => ['meter', 'pips', 'band'].includes(part.part));
+
     return {
         name: message.getFlag(MODULE.ID, 'obfuscated')
             ? game.i18n.localize('coffee-pub-crier.UnidentifiedTurn')
             : (combatant?.token?.name ?? actor.name),
+        actor,
         isNPC: false,
+        hideHealth: !showsHealth,
+        hidePortrait: !portrait,
+        portrait,
         tokenDoc: combatant?.token,
         attributeHP: health.value,
         attributeHPMAX: health.max,
@@ -904,6 +935,43 @@ function describeHealth(actor) {
 	if (isDead) bloody = 101;
 
 	return { value, max, percent, successes, failures, isDead, isDeathSaving, bloody };
+}
+
+// ************************************
+// ** WHAT THE COMBATANT IS
+// ************************************
+
+/**
+ * What to call this combatant's kind: their classes and levels, or for anything
+ * without a class, its creature type.
+ *
+ * @param {Actor|null|undefined} actor
+ * @returns {string|null}
+ */
+function describeClass(actor) {
+	const classes = actor?.itemTypes?.class ?? [];
+	if (classes.length) {
+		return classes
+			.map((cls) => [cls.name, cls.system?.levels].filter(Boolean).join(' '))
+			.join(' / ');
+	}
+	return actor?.system?.details?.type?.label || null;
+}
+
+/**
+ * Walking speed, in whatever units the world is set to. The abbreviation is
+ * dnd5e's own and localized, so a metric table reads "9 m" rather than "9 ft".
+ *
+ * @param {Actor|null|undefined} actor
+ * @returns {string|null}
+ */
+function describeSpeed(actor) {
+	const movement = actor?.system?.attributes?.movement;
+	const walk = Number(movement?.walk);
+	if (!Number.isFinite(walk)) return null;
+	const key = movement.units || 'ft';
+	const abbreviation = CONFIG.DND5E?.movementUnits?.[key]?.abbreviation;
+	return `${walk} ${abbreviation ? game.i18n.localize(abbreviation) : key}`;
 }
 
 // ************************************
@@ -1038,9 +1106,11 @@ function turnEffectParts(info) {
 		});
 	}
 
+	// No section heading over the penalties. `notes` is the footer-annotation
+	// part and rules itself off from what came before, so a divider above it
+	// draws the line twice. The lines say what they are on their own.
 	const penalties = info.turnPenaltyReport;
 	if (penalties?.rows?.length) {
-		parts.push({ part: 'section', icon: 'fa-solid fa-dice-d20', label: penalties.label });
 		parts.push({ part: 'notes', items: penalties.rows.map((row) => ({ icon: row.icon, text: row.text })) });
 	}
 
@@ -1063,23 +1133,48 @@ function buildTurnCardParts(info) {
 	const icon = info.blnHideTurnIcon ? null : cardIcon(info.turnIconStyle);
 	if (icon) header.icon = icon;
 
-	if (info.blnLayoutSmall) {
-		// One part carries the whole minimal card: a small picture beside a
-		// name. `subject` collapses to exactly that shape when it has no bar.
-		const subject = { part: 'subject', title: info.hidePlayer || info.isNPC ? info.name : info.player };
-		const img = info.hidePortrait ? 'icons/svg/combat.svg' : info.portrait;
-		if (img) subject.img = img;
-		return [header, subject, ...turnEffectParts(info)];
-	}
+	// The layouts differ in the SHAPE of the identity block, not in what the
+	// card is allowed to say. Every show/hide setting applies to both.
+	if (info.blnLayoutSmall) return [
+		header,
+		...turnSubjectParts(info),
+		turnAbilityPart(info),
+		...turnEffectParts(info)
+	].filter(Boolean);
 
 	return [
 		header,
 		turnPortraitPart(info),
 		...turnHealthParts(info),
-		(!info.hidePlayer && !info.isNPC) ? { part: 'identity', name: info.player } : null,
 		turnAbilityPart(info),
 		...turnEffectParts(info)
 	].filter(Boolean);
+}
+
+/**
+ * The Minimal card's identity block: a small portrait beside what the combatant
+ * is, how fast they move, and how they are holding up.
+ *
+ * A `subject` carries its own bar, which is what makes this one part rather
+ * than three -- but only a meter or a gauge, never pips. A character rolling
+ * death saves therefore keeps the subject compact and puts the pips below it,
+ * which is also the right emphasis: at that point the saves are the card.
+ *
+ * @returns {Array<object>} the subject, and the health part if it could not go inside it
+ */
+function turnSubjectParts(info) {
+	const subject = { part: 'subject', title: describeClass(info.actor) ?? info.name };
+
+	const speed = describeSpeed(info.actor);
+	if (speed) subject.value = speed;
+	if (!info.hidePortrait && info.portrait) subject.img = info.portrait;
+
+	const [health] = turnHealthParts(info);
+	if (health?.part === 'meter') {
+		subject.meter = { value: health.value, max: health.max };
+		return [subject];
+	}
+	return health ? [subject, health] : [subject];
 }
 
 // ************************************
@@ -1449,8 +1544,6 @@ async function postNewTurnCard(combat, context) {
         tokenDoc,
         get round() { return this.combat?.round; },
         get turn() { return this.combat?.turn; },
-        user: combatant.players[0] ?? game.user,
-        get player() { return this.user?.name; },
         name: null,
         label: null,
         get hidden() { return this.combatant?.hidden ?? false; },
@@ -1468,9 +1561,6 @@ async function postNewTurnCard(combat, context) {
 	info.roundIconStyle = cardSettings.roundIconStyle ?? 'fa-chess-queen';
 	info.roundCardStyle = cardSettings.roundCardStyle ?? 'green-dark';
 	info.portraitStyle = cardSettings.portraitStyle ?? 'portrait';
-    //	Hide the player name if needed
-    if (cardSettings.hidePlayer)
-        info.hidePlayer = true;
     // Hide abilities if needed
     if (cardSettings.hideAbilities)
         info.hideAbilities = true;	
