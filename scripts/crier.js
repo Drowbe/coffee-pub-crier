@@ -925,8 +925,13 @@ function describeHealth(actor) {
 	const successes = Number(death.success) || 0;
 	const failures = Number(death.failure) || 0;
 
+	// A monster at zero hit points is dead, not dying. dnd5e's NPC schema does
+	// carry a `death` field, and `rollDeathSave` would happily roll against it,
+	// but no table plays that way -- and health became something an NPC card can
+	// show, so without this every downed goblin gets a pulsing, clickable skull.
 	const down = percent <= 0;
-	const isDead = down && failures >= 3;
+	const rollsDeathSaves = actor.type === 'character';
+	const isDead = down && (!rollsDeathSaves || failures >= 3);
 	const isDeathSaving = down && !isDead;
 
 	// The blood art comes in 5% steps, so the damage taken rounds up to one.

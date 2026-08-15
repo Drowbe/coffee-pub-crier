@@ -16,8 +16,14 @@ export async function runTurnTimingTest() {
         return;
     }
 
-    const requiredSettings = ['combatStartCycling', 'roundCycling', 'turnCycling', 'combatEndCycling'];
-    const disabled = requiredSettings.filter(key => !game.settings.get(MODULE_ID, key));
+    // The test needs every announcement on, which is now three dropdowns rather
+    // than four checkboxes.
+    const required = [
+        ['Combat Cards (start and end)', game.settings.get(MODULE_ID, 'combatCards') === 'both'],
+        ['Round Cards', game.settings.get(MODULE_ID, 'roundCards') !== 'none'],
+        ['Turn Cards', game.settings.get(MODULE_ID, 'turnCards') !== 'none']
+    ];
+    const disabled = required.filter(([, enabled]) => !enabled).map(([label]) => label);
     if (disabled.length) {
         ui.notifications.error(`Crier timing test: enable these settings first: ${disabled.join(', ')}.`);
         return;

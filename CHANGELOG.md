@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [unreleased]
+
+### Added
+
+- **Clickable death saves**: A character rolling death saves gets a skull between the two rows of pips, and whoever owns that character can roll from the card. The handler checks ownership itself — hiding a control is presentation, not authorization — and a render pass settles in each reader's own browser whether the button is live, so the person who can roll sees a beating skull and everyone else a still one.
+- **Turn cards keep up**: Hit points, death-save pips and the blood over a portrait now follow the actor. When health or death saves change, the announcing GM rewrites the card's stored composition and every client re-renders, so a card stops describing the moment it was posted. A snapshot was tolerable while nothing on the card could be clicked; a death-save button whose own pips never move is not.
+- **Class and speed on small cards**: The Small layout is one `subject` part carrying portrait, classes and levels, walking speed and the health bar. Speed uses dnd5e's own localized unit, so a metric table reads `9 m`.
+- **Audiences for card content**: Health, Ability Scores, Status & Conditions and Turn Penalties each choose who they appear for — Do Not Show, Players, NPCs and Monsters, or Players, NPCs, and Monsters. Health and abilities were previously hard-coded to player characters with no way to say otherwise.
+
+### Changed
+
+- **Cards are composed, not templated**: Every card is now described as data and rendered by Blacksmith's chat cards API. Crier ships no card templates and no card stylesheets — `templates/` and `styles/` are gone, along with the `styles` entry in the manifest. Improving a part in Blacksmith improves cards already sitting in the log, and Foundry's chat markup becomes Blacksmith's problem rather than Crier's.
+- **Themes are stored as ids**: Theme settings held CSS class names and had to be translated on every read. They hold Blacksmith theme ids now, and a world's existing values are migrated on load.
+- **One question per setting**: An enable checkbox paired with a second setting that only mattered when it was ticked has become one choice in each case — the pair made "off" look like a state you had to assemble. `Announce Turns` + `Turn Card Layout` are **Turn Cards** (Do Not Announce / Large / Small); the two combat checkboxes are **Combat Cards** (Do Not Announce / Start Only / End Only / Start and End); `Announce New Rounds` is **Round Cards**; `Show Status & Conditions` + `Show Status & Conditions For` are one audience; and the two missed-turn toggles are **Missed Turn Reminders** (Do Not Remind / Chat Card Only / Chat Card and Notification). Existing choices are carried across on load.
+- **Sections read alike**: Combat, Round and Turn each collapse to one section that opens the same way — whether the card is posted at all, then label, icon, theme and sound. The three `Hide …` toggles became `Show …`.
+- **A player character is `actor.type === 'character'`**: Health and abilities were gated on a check that asked whether a world actor existed with the token's name. Two notions of "player" in one file are now one.
+- **Portrait blood follows health**: It has no audience of its own, because a splattered portrait beside no health bar tells half the story.
+- **Health reads the combatant's own actor**: Statistics came from a world actor looked up by name, which is the wrong document for any unlinked token.
+- **No heading over the penalties**: `notes` rules itself off from what precedes it, so a divider above it drew the line twice.
+- **Text, not markup**: Card text is escaped by Blacksmith and `**bold**` is the only emphasis. A world that had put HTML in its turn-label override will see the tags rather than obey them.
+
+### Fixed
+
+- **Round and combat cards ignored their theme**: The settings dropdown called a Blacksmith method that no longer exists, fell back to three retired `theme-announcement-*` ids, and every round and combat card rendered as Tan whatever the setting said.
+- **Round cards showed a translation key**: The round label asked for `RoundCycling` where the string is `roundCycling`. Foundry's lookup is case-sensitive, so an unlabelled round card rendered `coffee-pub-crier.RoundCycling` instead of `Round 3`.
+- **Monsters no longer roll death saves**: A non-player actor at zero hit points reads as dead. dnd5e's NPC schema carries a `death` field and would happily roll against it, but no table plays that way — and health became something an NPC card can show.
+- **NPC obfuscation survived the render**: The GM's copy of an obfuscated card had its real name restored by a `renderChatMessageHTML` hook. A parts card re-renders from its stored composition a tick after Foundry paints it, and that swap discards anything a hook decorated. It is a registered render pass now.
+- **A failed post no longer counts as delivered**: Blacksmith's `post()` logs and returns null rather than throwing. Crier marks a lifecycle event delivered, advances the round number and plays a sound once delivery returns, so a silent null would have consumed the event and lost the card with it.
+- **Test harness**: Both suites gated on the four announcement settings by name and threw on the first read once those were merged.
+
+### Removed
+
+- **Portrait Background and Portrait Scale**: Both existed because transparent token art dissolved into the card and needed a ground and room to breathe. Blacksmith already sits every card image on a ground pitched at the tile fill, and the two layouts pick appropriate parts rather than scaling one image.
+- **Hide Player Name**: Who is running a character is not what a turn card is for. The setting and the name are both gone.
+- **Dead code**: The unreachable third turn layout, three no-op message-intercept functions, the inline-style workaround that existed only to paint the portrait tile, and a per-card actor lookup whose result was never used.
+
+
 ## [13.1.1]
 
 ### Changed

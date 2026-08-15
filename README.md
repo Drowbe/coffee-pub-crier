@@ -47,11 +47,10 @@ Coffee Pub Crier enhances your Foundry VTT combat experience with rich visual an
 - Optional character stats display including:
   - HP status
   - Ability scores
-  - Armor Class
-  - Movement speed
-  - Death saving throws status
+  - Class and movement speed
+  - Death saving throws, rollable from the card by whoever owns the character
 - Optional read-only Status and Conditions reminders with effect type, context, duration, and rules text on hover
-- Three layout options: full, small, or none
+- Two layouts: large or small
 
 ### Round Management
 - Customizable round announcements
@@ -66,14 +65,11 @@ Coffee Pub Crier enhances your Foundry VTT combat experience with rich visual an
 ### Customization Options
 - Configurable card styles for turns and rounds with dynamic theme loading from Blacksmith
 - Custom icon selections from comprehensive Font Awesome library
-- Toggle visibility of:
-  - Player names
-  - Ability scores
-  - Health status
-  - Bloody portraits (damage indicators)
+- Health, ability scores, status and conditions, and turn penalties each choose
+  their own audience: nobody, players, NPCs and monsters, or everyone
+- Portrait blood (damage indicators) on or off, following the health audience
 - NPC name obfuscation options
 - Customizable sound effects from extensive audio library
-- Dynamic background texture options
 
 ### Health Status Visualization
 - Dynamic health status indicators:
@@ -108,29 +104,35 @@ https://github.com/Drowbe/coffee-pub-crier/releases/latest/download/module.json
 
 ## Module Settings
 
-### Round Announcements
-- **Round Cycling**: Toggle round announcements on/off
-- **Round Card Style**: Choose from multiple styles dynamically loaded from Blacksmith:
-  - Full Cards: Dark Mode, Green, Red, Blue Velvet, Brown Earth, and more
-  - Simple Cards: Default Foundry
-  - Minimal Cards: Plain variants
-- **Round Icon**: Customizable icon from comprehensive Font Awesome selection
-- **Round Sound**: Choose from extensive sound effect library
-- **Round Label**: Customize the round announcement text (default: "Round {round}")
+Every section opens the same way: one choice saying whether the card is posted
+at all, then how it reads.
 
-### Turn Announcements
-- **Turn Cycling**: Toggle turn announcements on/off
-- **Turn Card Layout**: Choose between:
-  - Detailed Cards: Full information display
-  - Minimal Cards: Simplified view
-- **Turn Card Style**: Multiple theme options dynamically loaded from Blacksmith including dark mode and colored variants
-- **Turn Icon**: Customizable icon from comprehensive Font Awesome selection
-- **Turn Sound**: Choose from extensive sound effect library
-- **Turn Label**: Customize the turn announcement text (default: "{name}")
-- **Show Active Effects & Conditions**: Include active injuries, criticals, fumbles, conditions, buffs, and temporary effects on turn cards
-- **Show Active Effects For**: Limit status reminders to Players, NPCs & Monsters, or Both
+### Combat Configuration
+- **Combat Cards**: Do Not Announce Combat, Announce Start Only, Announce End Only, or Announce Start and End
+- **Start Label** / **End Label**: text shown on each announcement
+- **Card Icon** and **Card Theme**: shared by both cards, from Blacksmith
+- **Combat Start Sound** / **Combat End Sound**
 
-All settings are configurable through the module settings menu in Foundry VTT's configuration panel. **Settings automatically update in real-time when new themes, icons, sounds, and backgrounds are added to the Coffee Pub Blacksmith module.**
+### Round Configuration
+- **Round Cards**: Do Not Announce Rounds, or Announce Rounds
+- **Card Label**: the round announcement text (default: "Round {round}")
+- **Card Icon**, **Card Theme**, **Round Start Sound**
+
+### Turn Configuration
+- **Turn Cards**: Do Not Announce Turns, Large Turn Cards, or Small Turn Cards
+- **Card Label**: the turn announcement text (default: "{name}")
+- **Card Icon**, **Card Theme**, **Turn Start Sound**
+
+### Turn Card Content
+- **Portrait Image**: token art, character portrait, or none
+- **Show Portrait Blood**: on or off; appears for whoever Show Health does
+- **Show Health**, **Show Ability Scores**, **Show Status & Conditions**, **Show Turn Penalties**: each chooses an audience — Do Not Show, Players, NPCs and Monsters, or Players, NPCs, and Monsters
+- **NPC Names**: obfuscation options
+
+### Missed Turns
+- **Missed Turn Reminders**: Do Not Remind, Chat Card Only, or Chat Card and Notification
+
+All settings are configurable through the module settings menu in Foundry VTT's configuration panel. **Settings automatically update in real-time when new themes, icons, and sounds are added to the Coffee Pub Blacksmith module.**
 
 
 ## Coffee Pub Ecosystem

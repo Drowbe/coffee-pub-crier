@@ -22,11 +22,14 @@ if (!game.user.isGM) {
         }
     ];
 
+    // Announcements are three dropdowns now, not four checkboxes: combat covers
+    // both ends of a fight in one value.
+    const combat = setting('combatCards');
     const settings = [
-        ['Combat Start', setting('combatStartCycling')],
-        ['Rounds', setting('roundCycling')],
-        ['Turns', setting('turnCycling')],
-        ['Combat End', setting('combatEndCycling')]
+        ['Combat Start', combat === 'both' || combat === 'start'],
+        ['Rounds', setting('roundCards') !== 'none'],
+        ['Turns', setting('turnCards') !== 'none'],
+        ['Combat End', combat === 'both' || combat === 'end']
     ].map(([label, enabled]) => `${label}: <strong>${enabled ? 'ON' : 'off'}</strong>`).join(' · ');
 
     const testButtons = tests.map((test, index) => `
