@@ -244,9 +244,15 @@ swap discards anything a hook decorated.
 ### Keeping a posted card honest
 
 A card is a snapshot. `refreshTurnCardHealth()` runs on `updateActor`, on the
-announcing GM alone, and rewrites the stored composition when hit points or
-death saves change — so the bar, the pips and the blood all move on every
-client. It replaces the health part rather than editing it, since a bar becomes
+announcing GM alone, and rewrites the card when hit points or death saves change
+— so the bar, the pips and the blood all move on every client.
+
+It reads with `chatCards.getCard()` and writes with `chatCards.update()`, never
+by touching Blacksmith's flag directly. A card lives in two places: the
+composition every Blacksmith client re-renders from, and the baked HTML in
+`content`, which is what chat search, an export, and any client without
+Blacksmith actually show. Writing the flag alone leaves `content` frozen at the
+values the card was posted with. It replaces the health part rather than editing it, since a bar becomes
 pips when a character goes down and pips become a band when they die — and on a
 Minimal card it rebuilds the whole subject block, whose bar lives inside the
 subject and whose pips do not. Which parts a card is allowed to have is read

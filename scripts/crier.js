@@ -760,8 +760,12 @@ async function refreshTurnCardHealth(actor, changed) {
     const message = findLatestTurnCard(actor);
     if (!message) return;
 
-    const card = foundry.utils.deepClone(message.flags?.['coffee-pub-blacksmith']?.card);
-    const parts = card?.parts;
+    const chatCards = getChatCardsAPI();
+    if (!chatCards) return;
+
+    // `getCard` deep-clones, and returns null for anything that is not a parts
+    // card, so the guard below covers both.
+    const parts = chatCards.getCard(message)?.parts;
     if (!Array.isArray(parts)) return;
 
     const info = turnCardHealthContext(message, actor, parts);
@@ -810,12 +814,26 @@ async function refreshTurnCardHealth(actor, changed) {
 
     if (!changedCard) return;
 
-    try {
-        await message.update({ 'flags.coffee-pub-blacksmith.card': card });
-        debugLog('REFRESH TURN CARD: Updated', () => ({ message: message.id, actor: actor.id }));
-    } catch (error) {
-        debugLog('REFRESH TURN CARD: Update failed', () => ({ error: error?.message ?? error }));
-    }
+    // Through the API, not by writing Blacksmith's flag directly.
+    //
+    // A card lives in TWO places: the composition every Blacksmith client
+    // re-renders from, and the baked HTML in `content`, which is what chat
+    // search, an export, and any client without Blacksmith actually show.
+    // Rewriting only the flag left `content` frozen at the values the card was
+    // posted with — invisible at a live table because the re-render paints over
+    // it, but there in every export and for a frame on every paint. `update`
+    // rewrites both together.
+    //
+    // It keeps the card's pinned theme, its moduleId, type and schema version,
+    // and merges rather than replaces flags. It also checks `canUserModify` and
+    // returns null rather than throwing, which composes with the authority gate
+    // above rather than duplicating it.
+    const updated = await chatCards.update(message, { parts });
+    debugLog('REFRESH TURN CARD: Updated', () => ({
+        message: message.id,
+        actor: actor.id,
+        applied: Boolean(updated)
+    }));
 }
 
 /**

@@ -5,13 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.2.1]
+
+### Added
+- **Turn cards keep up**: Hit points, death-save pips and the blood over a portrait now follow the actor. When health or death saves change, the announcing GM rewrites the card through `chatCards.update()` and every client re-renders, so a card stops describing the moment it was posted — in its stored HTML as well as on screen, which is what chat search and exports read. A snapshot was tolerable while nothing on the card could be clicked; a death-save button whose own pips never move is not.
 
 ## [13.2.0]
 
 ### Added
 
 - **Clickable death saves**: A character rolling death saves gets a skull between the two rows of pips, and whoever owns that character can roll from the card. The handler checks ownership itself — hiding a control is presentation, not authorization — and a render pass settles in each reader's own browser whether the button is live, so the person who can roll sees a beating skull and everyone else a still one.
-- **Turn cards keep up**: Hit points, death-save pips and the blood over a portrait now follow the actor. When health or death saves change, the announcing GM rewrites the card's stored composition and every client re-renders, so a card stops describing the moment it was posted. A snapshot was tolerable while nothing on the card could be clicked; a death-save button whose own pips never move is not.
+
 - **Class and speed on small cards**: The Small layout is one `subject` part carrying portrait, classes and levels, walking speed and the health bar. Speed uses dnd5e's own localized unit, so a metric table reads `9 m`.
 - **Audiences for card content**: Health, Ability Scores, Status & Conditions and Turn Penalties each choose who they appear for — Do Not Show, Players, NPCs and Monsters, or Players, NPCs, and Monsters. Health and abilities were previously hard-coded to player characters with no way to say otherwise.
 
