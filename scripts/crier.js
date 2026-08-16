@@ -1338,32 +1338,6 @@ function cardIcon(icon) {
 }
 
 // ************************************
-// ** RESOLVE A THEME TO ITS CSS CLASS
-// ************************************
-
-/**
- * The CSS class for a stored theme setting.
- *
- * Settings hold Blacksmith theme IDs. This exists only for the templates that
- * still build their own card markup and therefore still need a class name;
- * `chatCards.post()` takes the id directly and every card that has moved to it
- * calls `normalizeThemeId` alone. It goes when the turn template does.
- *
- * @param {string} themeSetting
- * @returns {Promise<string>} a `theme-*` class name
- */
-async function resolveThemeClass(themeSetting) {
-    const themeId = normalizeThemeId(themeSetting);
-    try {
-        const blacksmith = await BlacksmithAPI.get();
-        return blacksmith?.chatCards?.getThemeClassName(themeId) || 'theme-default';
-    } catch (error) {
-        console.warn('Coffee Pub Crier: Error accessing Chat Cards API, using fallback:', error);
-        return 'theme-default';
-    }
-}
-
-// ************************************
 // ** CREATE NEW ROUND CARD
 // ************************************
 async function createNewRoundCard(combat) {
@@ -1600,7 +1574,6 @@ async function postNewTurnCard(combat, context) {
 	info.turnLayout = cardSettings.turnCards ?? 'full';
 	info.turnIconStyle = cardSettings.turnIconStyle ?? 'fa-shield';
 	info.turnCardStyle = cardSettings.turnCardStyle ?? 'default';
-	info.theme = await resolveThemeClass(info.turnCardStyle);
 	info.roundIconStyle = cardSettings.roundIconStyle ?? 'fa-chess-queen';
 	info.roundCardStyle = cardSettings.roundCardStyle ?? 'green-dark';
 	info.portraitStyle = cardSettings.portraitStyle ?? 'portrait';

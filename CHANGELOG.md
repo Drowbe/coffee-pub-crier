@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.2.2]
+
+### Removed
+
+- **Last class-name theme lookup**: `resolveThemeClass()` and its one caller are gone. It translated a stored theme id into a `theme-*` CSS class for the Handlebars turn template, and outlived that template by two releases — the value it computed was assigned to `info.theme`, which nothing read, while the card itself was already posting `theme: normalizeThemeId(...)` independently. Deleting it also drops an `await BlacksmithAPI.get()` per combatant per turn, on the path that runs every single turn. Crier now holds no reference to Blacksmith's class-name theme accessors, which were the last in the suite, so `getThemeClassName` and its neighbours can be retired there.
+
 ## [13.2.1]
 
 ### Added
