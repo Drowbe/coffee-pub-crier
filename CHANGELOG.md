@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The user guides cover the module, not just its first five minutes**: what was one
+  144-line getting-started page doing four jobs is now eight guides -- getting started, turn cards,
+  combat and round announcements, themes and wording, sounds, settings, and one each for players and
+  GMs. The single page failed the suite standard's coverage bar (a reader must be able to understand,
+  set up, and use every part of the module) and its own table, which owes a settings guide outright
+  and a GM guide wherever GM-only behaviour exists. `home.md` and the README route to all eight.
+- **Documentation carries current screenshots**: eleven captures taken from the current release
+  replace the three January 2025 PNGs. The getting-started guide now illustrates every section it
+  describes -- the announcement cards, all four settings sections, the large and small turn layouts,
+  a card with every content setting off, an NPC card, and the death-save and dead states. `home.md`
+  and the README point at the new captures, and the captures are distributed across the guides that
+  describe them. This closes the two screenshot items in `TODO.md` and supersedes the deletion
+  recorded below. `crier-turn-deathsavel.webp` was renamed to `crier-turn-deathsave.webp` and its
+  three references updated.
+- **The guide's setting names are now verified rather than derived**: every label, option and section
+  heading was read back against the captures, and the on-screen section order matches what the guide
+  describes. The guide's closing note narrows accordingly -- what remains unwalked is behavioural
+  (rolling a death save as an owning player, and what a player sees when NPC names are hidden), not
+  the labels.
+
+
 - **Documentation adopts the suite-wide standard**: `documentation/` now holds the enumerated root
   (`home.md`, `known-issues.md`, `TODO.md`) plus `architecture/`, `userguides/`, `assets/` and the
   existing `plans/`. `architecture-crier.md` moved into `architecture/` and `todo.md` became
@@ -32,12 +53,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **The publisher**: `.gitattributes`, `tools/wiki-sync.mjs`, `tools/check-docs-structure.mjs`,
   `tools/.gitignore` and `.github/workflows/sync-wiki.yml`, copied from Blacksmith unchanged.
-  Verified by comparing staged blob hashes against the hub's **working tree**, not its `HEAD`: the
-  hub is mid-change, with `wiki-sync.mjs`, `check-docs-structure.mjs` and `sync-wiki.yml` ahead of
-  `HEAD` and uncommitted, and a comparison against `HEAD` while that is true reports a difference
-  indistinguishable from local line-ending drift. Four of the five matched the hub's working tree at
-  the time of copying; `check-docs-structure.mjs` has moved again since and is deliberately not
-  chased -- see `TODO.md`. Verified further by `node tools/check-docs-structure.mjs` (clean) and
+  Verified by comparing staged blob hashes against the hub's `HEAD`: four of the five match --
+  `.gitattributes`, `tools/.gitignore`, `tools/wiki-sync.mjs` and `sync-wiki.yml`. The fifth,
+  `check-docs-structure.mjs`, is still uncommitted in the hub and is deliberately not chased, since
+  a comparison against `HEAD` while a hub file is mid-change reports a difference indistinguishable
+  from local line-ending drift -- see `TODO.md`. Verified further by `node tools/check-docs-structure.mjs` (clean) and
   `node tools/wiki-sync.mjs build`, which builds Home, a sidebar and three pages.
 
 ### Removed

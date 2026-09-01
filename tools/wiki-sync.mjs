@@ -277,7 +277,8 @@ Missing documentation/${HOME_SRC} -- the wiki has no front door without it.`);
   if (unique.length) {
     console.log(`\n${unique.length} link(s) downgraded to plain text (target not in round 1):`);
     for (const d of unique) console.log('  ' + d);
-    console.log('These become links again automatically once the target is created or released from HOLD.');
+    console.log('A link to CODE is downgraded permanently and correctly -- that is the common case.');
+    console.log('A link to a DOCUMENT relinks itself once the file exists or leaves HOLD.');
   }
 }
 

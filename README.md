@@ -9,9 +9,11 @@ as each combatant's turn comes up, and when the fight ends -- so nobody has to a
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Drowbe/coffee-pub-crier/release.yml)
 ![GitHub all releases](https://img.shields.io/github/downloads/Drowbe/coffee-pub-crier/total)
 
-<img src="documentation/assets/crier-screen-card-blue.webp" width="400" alt="A Crier turn card with portrait, health bar, class and ability scores">
-<img src="documentation/assets/crier-screen-card-storm-deathsaving.webp" width="400" alt="A Crier turn card for a character rolling death saves">
-<img src="documentation/assets/crier-screen-round.webp" width="400" alt="A Crier round announcement card">
+<img src="documentation/assets/crier-turn-full.webp" width="300" alt="A Crier turn card with portrait, health bar, ability scores, conditions and turn penalties">
+<img src="documentation/assets/crier-turn-deathsave.webp" width="300" alt="A Crier turn card for a downed character, showing death save pips in place of the health bar">
+<img src="documentation/assets/crier-turn-small.webp" width="300" alt="A small Crier turn card, with portrait, class and health folded into one row">
+
+<img src="documentation/assets/crier-combat-turn.webp" width="300" alt="The combat start and round announcement cards">
 
 ## What it does
 
@@ -45,12 +47,15 @@ https://github.com/Drowbe/coffee-pub-crier/releases/latest/download/module.json
 
 The [wiki](https://github.com/Drowbe/coffee-pub-crier/wiki) carries the documentation:
 
-- **[Getting started](https://github.com/Drowbe/coffee-pub-crier/wiki/userguide-getting-started)** --
-  what appears once the module is on, who sees what, and the settings worth changing first.
-- **[Architecture](https://github.com/Drowbe/coffee-pub-crier/wiki/architecture-crier)** -- for
-  anyone working on Crier itself.
-- **[Known issues](https://github.com/Drowbe/coffee-pub-crier/wiki/known-issues)** -- what is broken
-  right now.
+- **[Getting started](https://github.com/Drowbe/coffee-pub-crier/wiki/userguide-getting-started)** -- what appears once the module is on.
+- **[Turn cards](https://github.com/Drowbe/coffee-pub-crier/wiki/userguide-turn-cards)** -- what is on a card and how it changes as a fight goes badly.
+- **[Combat and round announcements](https://github.com/Drowbe/coffee-pub-crier/wiki/userguide-announcements)** -- the cards that mark the shape of a fight.
+- **[Themes, icons and wording](https://github.com/Drowbe/coffee-pub-crier/wiki/userguide-appearance)** -- what the cards look like and what they say.
+- **[Sounds](https://github.com/Drowbe/coffee-pub-crier/wiki/userguide-sounds)** -- the four sounds, and how to silence any of them.
+- **[Settings](https://github.com/Drowbe/coffee-pub-crier/wiki/userguide-settings)** -- every control, by its on-screen name.
+- **[For players](https://github.com/Drowbe/coffee-pub-crier/wiki/userguide-player)** and **[for GMs](https://github.com/Drowbe/coffee-pub-crier/wiki/userguide-gm)** -- what each side sees and can do.
+- **[Architecture](https://github.com/Drowbe/coffee-pub-crier/wiki/architecture-crier)** -- for anyone working on Crier itself.
+- **[Known issues](https://github.com/Drowbe/coffee-pub-crier/wiki/known-issues)** -- what is broken right now.
 
 ## The Coffee Pub suite
 

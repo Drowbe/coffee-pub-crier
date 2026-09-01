@@ -7,20 +7,17 @@ verified. When it is done it is deleted, and lives in the CHANGELOG.
 
 ---
 
-## Re-copy the publisher files once Blacksmith has committed
+## Re-copy check-docs-structure.mjs once Blacksmith has committed it
 
-The five publisher files were copied from Blacksmith's working tree while three of them
-(`tools/wiki-sync.mjs`, `tools/check-docs-structure.mjs`, `.github/workflows/sync-wiki.yml`) were
-uncommitted there, so they were verified against that working tree rather than against `HEAD`.
-`check-docs-structure.mjs` has moved again since; chasing a working tree that is still changing is
-what the hub-commits-first rule exists to stop.
+Four of the five publisher files now match Blacksmith's `HEAD` and are settled. Only
+`tools/check-docs-structure.mjs` is outstanding: it is still uncommitted in the hub and has moved
+several times, so copying it now would mean chasing a working tree.
 
-- **Where to start:** `tools/` and `.github/workflows/`, once Blacksmith's copies are committed.
-- **Verify:** re-copy all five, then compare staged blobs against the hub's `HEAD` --
-  `git show ":<file>" | md5sum` against `git -C ../coffee-pub-blacksmith show "HEAD:<file>" | md5sum`
-  -- and confirm five matches. Then `node tools/check-docs-structure.mjs` and
+- **Where to start:** `tools/check-docs-structure.mjs`.
+- **Verify:** re-copy, then `git show ":tools/check-docs-structure.mjs" | md5sum` against
+  `git -C ../coffee-pub-blacksmith show "HEAD:tools/check-docs-structure.mjs" | md5sum` -- expect a
+  match, giving five of five. Then `node tools/check-docs-structure.mjs` and
   `node tools/wiki-sync.mjs build`.
-
 ## A configured table can get silence
 
 Reported from play on 2026-08-27. Turn and round announcements were enabled and no cards posted for
@@ -40,35 +37,13 @@ Reported from play on 2026-08-27, not yet confirmed against a current build.
 - **Verify:** rename a placed token so it differs from its prototype, run its turn, and confirm the
   card shows the canvas name.
 
-## Recapture the settings screenshots
+## Walk the remaining getting-started claims in a running world
 
-The two settings captures the repository carried were taken before the settings were reorganised and
-named controls that no longer exist -- "Show Combatant Cards", "Card Layout", "Card Style", "Icon
-Style", "New Turn Sound", "Display 'New Round' Cards", "Label Format" -- and one of them rendered an
-unresolved localisation key on screen. They were deleted rather than republished.
+Every setting name, option and section heading in the guide has been checked against the screenshots
+captured on 2026-09-01, and the section order matches. Two behavioural claims have not been walked.
 
-- **Where to start:** capture the Crier section of Foundry's module settings as WebP into
-  `documentation/assets/`, then reference them from
-  `documentation/userguides/userguide-getting-started.md`.
-- **Verify:** every control named in the getting-started guide appears in a capture with the same
-  wording.
-
-## Walk the getting-started guide in a running world
-
-The guide was written from the module's English strings and its source. The setting names are
-accurate; the on-screen order of the sections and the wording Foundry renders around them have not
-been checked by hand.
-
-- **Where to start:** `documentation/userguides/userguide-getting-started.md`.
-- **Verify:** open the settings window and read every quoted label against it, then walk the death
-  save and NPC-name-hiding steps as a player.
-
-## Confirm the three card screenshots still match the current cards
-
-`crier-screen-card-blue.webp`, `crier-screen-card-storm-deathsaving.webp` and
-`crier-screen-round.webp` date from January 2025 and predate the move to Blacksmith parts. They are
-plausible but unverified, and they are what the README and the wiki front door show.
-
-- **Where to start:** `documentation/assets/`.
-- **Verify:** post each card in a running world and compare. Recapture or delete any that no longer
-  match.
+- **Where to start:** `documentation/userguides/userguide-getting-started.md`, the death save and
+  NPC name sections.
+- **Verify:** as a player who owns a downed character, roll a death save from the card and confirm
+  the pips update for everyone; then set **NPC Name Visibility** to something other than *Show names
+  for everyone* and confirm a player sees `???` while the GM sees the real name.
