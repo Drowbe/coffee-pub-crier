@@ -1,8 +1,10 @@
-# Coffee Pub Crier - Architecture Documentation
+# Crier Architecture
 
-## Overview
+**Audience:** anyone changing Crier, and the rest of the suite.
 
-Coffee Pub Crier owns configurable combat-start, round-start, turn-start, and combat-end chat announcements. It integrates with the Blacksmith API for presentation and utilities while keeping announcement lifecycle behavior in Crier.
+How Crier decides what to announce and when, and how it composes the cards it posts. Crier owns
+configurable combat-start, round-start, turn-start, and combat-end chat announcements; it calls the
+Blacksmith API for presentation and utilities and keeps announcement lifecycle behaviour of its own.
 
 ## Core Components
 
@@ -27,7 +29,7 @@ The module uses the Blacksmith External API for:
 ### 1. Initialization
 ```javascript
 Hooks.once('init') → BlacksmithModuleManager.registerModule()
-Hooks.once('ready') → Register hooks, load templates, initialize per-combat state
+Hooks.once('ready') → Register hooks, register settings, initialize per-combat state
 ```
 
 ### 2. Combat Change Detection
@@ -131,7 +133,7 @@ const updateCombatHookId = BlacksmithHookManager.registerHook({
 
 ### 1. Turn Cards
 - Triggered by turn changes (when round is initialized)
-- Uses `postNewTurnCard()` → `generateCards()` → Handlebars template
+- Uses `postNewTurnCard()` → `generateCards()` → `buildTurnCardParts()` → `chatCards.post()`
 - Includes combatant info, token data, and styling
 - Optionally builds a read-only Status and Conditions list from the combatant actor at card-post time
 
@@ -139,7 +141,7 @@ const updateCombatHookId = BlacksmithHookManager.registerHook({
 
 `buildActiveEffectGroups(actor)` includes active Bibliosoph outcomes, temporary effects, effects carrying status IDs, and effects whose localized names match registered dnd5e conditions. Disabled and suppressed effects are excluded.
 
-The template renders all qualifying rows beneath one **Status and Conditions** heading. Each row contains:
+The card renders all qualifying rows beneath one **Status and Conditions** heading. Each row contains:
 
 - A compact effect icon with enriched rules text on hover
 - A single-line effect name
@@ -164,7 +166,7 @@ The block is display-only and applies nothing. Bibliosoph owns applying, ticking
 
 ### 2. Round Cards
 - Triggered by round changes
-- Uses `createNewRoundCard()` → Handlebars template
+- Uses `createNewRoundCard()` → `chatCards.post()`
 - Shows current round number and styling
 
 ## Edge Case Handling
@@ -184,9 +186,8 @@ The block is display-only and applies nothing. Bibliosoph owns applying, ticking
 ## Cards
 
 Crier writes no card HTML and no card CSS. Every card is described as a
-composition of Blacksmith parts and posted through `chatCards.post()`; see
-`plans/plan-cards.md` for the migration and `api-chatcards.md` in Blacksmith for
-the part library. Theme settings hold Blacksmith theme ids.
+composition of Blacksmith parts and posted through `chatCards.post()`; Blacksmith's chat cards API
+reference documents the part library. Theme settings hold Blacksmith theme ids.
 
 | Card | Composition |
 |---|---|
@@ -276,18 +277,10 @@ Settings are registered using Blacksmith's system:
 
 - No fallbacks for Blacksmith API (Blacksmith is required dependency)
 - Comprehensive logging for debugging
-- Graceful handling of missing templates or data
+- Graceful handling of missing actor or combatant data
 
 ## Performance Considerations
 
-- Templates loaded once during initialization
 - Minimal processing during combat updates
 - Efficient state tracking with simple boolean flags
 - Hook priority set to 2 for early execution
-
-## Future Considerations
-
-- The architecture supports easy addition of new card types
-- Template system allows for easy visual customization
-- Hook system allows for easy integration with other modules
-- State management system can be extended for more complex scenarios

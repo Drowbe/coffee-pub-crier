@@ -1,5 +1,9 @@
 # Combat Announcement Ownership and Reliability
 
+**Status:** Implemented. The behaviour below is described as current reality in
+`../architecture/architecture-crier.md`; confirm nothing here is still the only record of a
+decision, then delete this file.
+
 ## Outcome
 
 Coffee Pub Crier is the sole owner of chat announcements for the combat lifecycle:

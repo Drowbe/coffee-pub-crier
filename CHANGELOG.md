@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Documentation adopts the suite-wide standard**: `documentation/` now holds the enumerated root
+  (`home.md`, `known-issues.md`, `TODO.md`) plus `architecture/`, `userguides/`, `assets/` and the
+  existing `plans/`. `architecture-crier.md` moved into `architecture/` and `todo.md` became
+  `TODO.md`; both moved with `git mv`, the second through a temporary name because a case-only
+  rename collides on Windows. New: `home.md`, `known-issues.md`, and
+  `userguides/userguide-getting-started.md`.
+- **README is a product page**: the settings dump moved to the getting-started guide, the sibling
+  descriptions were rewritten from each module's own `module.json` rather than from its name (the
+  entries for Bibliosoph and Monarch were both wrong, and six modules were missing), and the
+  README now carries the suite's canonical AI-assistance disclosure between its markers.
+- **README no longer claims Foundry v12**: it carried a v12 badge and a note saying v13 support was
+  in development, while `module.json` has declared minimum and verified v13 for three releases.
+  Verified by reading `module.json`.
+- **Architecture document corrected**: six references described a Handlebars template layer that
+  `scripts/` does not contain — no `.hbs`, no `loadTemplates`, no `renderTemplate` — and which the
+  document's own component list already contradicted. Its pointer into `plans/` was removed, since
+  plans never publish, and the empty "Future Considerations" roadmap section went with it.
+  Verified by grep over `scripts/`.
+
+### Added
+
+- **The publisher**: `.gitattributes`, `tools/wiki-sync.mjs`, `tools/check-docs-structure.mjs`,
+  `tools/.gitignore` and `.github/workflows/sync-wiki.yml`, copied from Blacksmith unchanged.
+  Verified by comparing staged blob hashes against the hub's **working tree**, not its `HEAD`: the
+  hub is mid-change, with `wiki-sync.mjs`, `check-docs-structure.mjs` and `sync-wiki.yml` ahead of
+  `HEAD` and uncommitted, and a comparison against `HEAD` while that is true reports a difference
+  indistinguishable from local line-ending drift. Four of the five matched the hub's working tree at
+  the time of copying; `check-docs-structure.mjs` has moved again since and is deliberately not
+  chased -- see `TODO.md`. Verified further by `node tools/check-docs-structure.mjs` (clean) and
+  `node tools/wiki-sync.mjs build`, which builds Home, a sidebar and three pages.
+
+### Removed
+
+- **The root `product/` folder**: it is neither of the two homes an image may have, so nothing
+  rendered it on the wiki. The three card captures were converted to WebP into
+  `documentation/assets/` (919 KB of PNG became 82 KB). The two settings captures were deleted
+  rather than moved: they were taken before the settings rework and name controls that no longer
+  exist, and one rendered an unresolved localisation key on screen. Verified by reading both images
+  against the current labels in `lang/en.json`.
+
 ## [13.2.2]
 
 ### Removed

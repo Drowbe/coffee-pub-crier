@@ -1,5 +1,9 @@
 # Migrating Crier's Chat Cards to Blacksmith Parts
 
+**Status:** Implemented. The behaviour below is described as current reality in
+`../architecture/architecture-crier.md`; confirm nothing here is still the only record of a
+decision, then delete this file.
+
 ## Outcome
 
 Crier describes its cards as data and Blacksmith renders them. Crier ships no
