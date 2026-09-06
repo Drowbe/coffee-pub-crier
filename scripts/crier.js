@@ -17,9 +17,29 @@ import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api
 import { registerSettings, normalizeThemeId } from './settings.js';
 
 // -- Set Page variables --
+/**
+ * The combat being played, which is NOT always the world's active one.
+ *
+ * `game.combat` resolves through the tracker to the first ACTIVE combat in the
+ * world, so a fight left deactivated -- which is what activating a combat on
+ * another scene does to it -- makes it null while its turns keep running. That
+ * null is how the speech tracking below went dead: `chatMessageEvent` asked for
+ * the current state, got a throwaway stub, and no combatant was ever recorded
+ * as having spoken. Fall back to a combat owned by the scene in front of us.
+ *
+ * @param {String} [sceneId] scene to fall back to, defaulting to the canvas
+ * @returns {Combat|null}
+ */
+function resolveViewedCombat(sceneId = canvas?.scene?.id) {
+    if (game.combat) return game.combat;
+    if (!sceneId) return null;
+    const forScene = game.combats?.filter((c) => c.scene?.id === sceneId) ?? [];
+    return forScene.find((c) => c.started) ?? forScene[0] ?? null;
+}
+
 // Set the last combatant
 const lastCombatants = new Map();
-function getLastCombatantState(combatOrId = game.combat) {
+function getLastCombatantState(combatOrId = resolveViewedCombat()) {
     const id = typeof combatOrId === 'string' ? combatOrId : combatOrId?.id;
     if (!id) return { combatant: null, tokenId: null, spoke: false };
     if (!lastCombatants.has(id)) {
@@ -198,8 +218,9 @@ Hooks.once('ready', async () => {
         }
 
         // Initialize last combatant
-        getLastCombatantState().combatant = game.combat?.combatant ?? null;
-        if (game.combat?.started) startedCombats.add(game.combat.id);
+        const viewedCombat = resolveViewedCombat();
+        getLastCombatantState(viewedCombat).combatant = viewedCombat?.combatant ?? null;
+        if (viewedCombat?.started) startedCombats.add(viewedCombat.id);
         
         // Register settings now that Blacksmith is ready (await since it's async)
         await registerSettings();
@@ -613,7 +634,15 @@ let lastReported = {};
 async function createMissedTurnCard(data, context) {
     if (data.last?.spoke || data.last == null) return; // They spoke, nothing more to do.
     const preUpdate = context.crier;
-    if (preUpdate?.combat === game.combats.active.id) {
+    // A combat need not be the world's ACTIVE one to be the combat being
+    // played -- the tracker follows the viewed scene, and a fight left
+    // deactivated still runs turns. `game.combats.active` is then undefined,
+    // and reading `.id` off it threw, which took the turn card down with it:
+    // this runs first in `generateCards`, so the throw escaped before any card
+    // was built. No active combat simply means there is nothing to compare
+    // against, so the rollback check does not apply.
+    const activeCombatId = game.combats.active?.id;
+    if (activeCombatId && preUpdate?.combat === activeCombatId) {
         // Rolling back
         if (preUpdate.roundShift < 0 || preUpdate.turnShift < 0 && preUpdate.roundShift <= 0)
             return;
@@ -1229,12 +1258,30 @@ async function generateCards(info, context) {
 	
 	// Noitify of MISSED TURN if the setting is enabled.
 	const msgs = [];
+	// The missed-turn card is a courtesy, and it is built BEFORE the turn card
+	// it accompanies. Letting it throw meant a side note could silence the
+	// announcement everyone actually came for -- and because the failure
+	// repeats on every turn, silence for the rest of the fight. Its failure is
+	// contained to itself.
 	if (await getSettingSafely(MODULE.ID, CRIER.missedTurns, 'notify') !== 'none') {
-		const msg = await createMissedTurnCard(info, context);
-		if (msg) msgs.push(msg);
+		try {
+			const msg = await createMissedTurnCard(info, context);
+			if (msg) msgs.push(msg);
+		} catch (error) {
+			BlacksmithUtils.postConsoleAndNotification(
+				MODULE.NAME,
+				'GENERATE CARDS: Missed-turn card failed, continuing with the turn card',
+				{ error: error?.message ?? error },
+				true,
+				false
+			);
+		}
 	}
 
-	if (getDocData(info.combatant).defeated) {
+	// `isDefeated` rather than the raw `defeated` field: it is true whether the
+	// mark came from a module writing the field or from a GM setting the
+	// DEFEATED status, and it is the same question core's own turn skip asks.
+	if (info.combatant?.isDefeated) {
 		debugLog('GENERATE CARDS: Skipping - combatant defeated');
 		return msgs; // undesired
 	}
@@ -1376,7 +1423,13 @@ async function postNewRound(combat, context) {
 
     // Skip in case turns were rolled back.
     if (combat.crierLastRoundNumber >= combat.round) return;
-    if (context.crier.roundShift <= 0) return;
+    // `context.crier` is attached by the preUpdateCombat hook. Reading through
+    // it unguarded made this the same hazard the missed-turn card was: it is
+    // awaited BEFORE the turn card is built, so a throw here takes both cards,
+    // not just the round's. No shift recorded means nothing says this is a
+    // rollback, which is the case the check exists to catch.
+    const roundShift = context?.crier?.roundShift;
+    if (roundShift !== undefined && roundShift <= 0) return;
     return createNewRoundCard(combat);
 }
 
@@ -1516,8 +1569,7 @@ async function postNewTurnCard(combat, context) {
         return;
     }
 
-    const cData = getDocData(combat.combatant);
-    const defeated = cData?.defeated ?? false;
+    const defeated = combat.combatant?.isDefeated ?? false;
     const combatant = !defeated ? combat.combatant : null;
     const tokenDoc = combatant?.token;
     
@@ -1539,9 +1591,9 @@ async function postNewTurnCard(combat, context) {
     const lastCombatant = getLastCombatantState(combat);
     const previous = {
         combatant: lastCombatant.combatant, // cache
-        get defeated() { return getDocData(this.combatant)?.defeated; },
+        get defeated() { return this.combatant?.isDefeated; },
         get token() { return this.combatant?.token; },
-        spoke: getDocData(lastCombatant.combatant)?.defeated ? false : lastCombatant.spoke, // dead don't speak
+        spoke: lastCombatant.combatant?.isDefeated ? false : lastCombatant.spoke, // dead don't speak
     };
 
     // The state is committed only after every generated message posts.
