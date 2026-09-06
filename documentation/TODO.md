@@ -18,16 +18,6 @@ several times, so copying it now would mean chasing a working tree.
   `git -C ../coffee-pub-blacksmith show "HEAD:tools/check-docs-structure.mjs" | md5sum` -- expect a
   match, giving five of five. Then `node tools/check-docs-structure.mjs` and
   `node tools/wiki-sync.mjs build`.
-## A configured table can get silence
-
-Reported from play on 2026-08-27. Turn and round announcements were enabled and no cards posted for
-the whole session. The conditions are not known.
-
-- **Where to start:** the hold-and-release path in `scripts/crier.js` -- `isOrderSettled()`,
-  `enqueueCombatWork()`, and `flushHeldAnnouncement()`. A silent table is most likely a hold that
-  never released.
-- **Verify:** run a combat in a world where it reproduced, with Crier's debug logging on, and confirm
-  a turn card posts for every combatant.
 
 ## A turn card may name the prototype token rather than the canvas token
 

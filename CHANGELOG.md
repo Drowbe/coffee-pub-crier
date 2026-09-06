@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.2.4]
+
+### Fixed
+
+- **A configured table no longer gets silence**: the cause of the silent table reported from play on
+  2026-08-27 and again on 2026-09-02 has been found, and it was not the hold-and-release path this
+  was filed against. A combat does not have to be the world's ACTIVE one to be the combat being
+  played -- activating a fight on one scene deactivates the fight on another, and the deactivated one
+  keeps running turns normally. `createMissedTurnCard` read `game.combats.active.id` without
+  checking, so with nothing flagged active it threw; it runs first in `generateCards`, so the throw
+  escaped before any card was built and took the announcement with it, every turn, for the life of
+  that combat. Guarded, and the rollback check it guards is simply skipped when no combat is active,
+  which is the honest answer when there is nothing to compare against.
+- **Announcements survive a combat that is not the active one**: `game.combat` resolves to the first
+  ACTIVE combat in the world, so the same deactivated fight made it null. `getLastCombatantState`
+  defaulted to it and returned a throwaway stub rather than refusing, so `spoke = true` was written
+  to an object that was immediately discarded and no combatant was ever recorded as having spoken.
+  That is what turned an intermittent fault into a total one: the speech check is the early return
+  that stood between the card path and the throw above. Combat is now resolved through
+  `resolveViewedCombat()`, which falls back to a combat owned by the scene in front of you.
+- **A missed-turn card can no longer silence the turn card it accompanies**: the missed-turn card is
+  a courtesy and it is built first, so its failure was taking the announcement everyone was waiting
+  for. It is now contained to itself and logged.
+- **The dead are recognised however they were marked**: turn cards now ask `combatant.isDefeated`
+  rather than reading the raw `defeated` field. That is true whether the mark came from a module
+  writing the field or a GM setting the DEFEATED status, and it is the same question core's own turn
+  skip asks, so a combatant core skips is no longer one Crier might still announce.
+- **A round card cannot take the turn card down with it**: `postNewRound` read `context.crier`
+  without checking, and it is awaited before the turn card is built -- the same hazard as the
+  missed-turn card, one layer up, where a throw would have cost both cards rather than one.
+
 ## [13.2.3]
 
 ### Changed
