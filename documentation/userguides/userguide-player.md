@@ -33,8 +33,7 @@ health bar: your successes and failures so far.
 ![A turn card for a downed character: death save pips in place of the health bar, successes and failures marked](../assets/crier-turn-deathsave.webp)
 
 Click the card to roll your death save. The roll goes to chat like any other, and the pips update on
-everyone's screen. This step is described from how Crier is built rather than from someone having
-walked it at a table, so if it does not behave this way, that is worth reporting.
+everyone's screen.
 
 **Only the character's owner can roll it.** If it is not your character, you will see the pips and
 the button will not respond -- that is correct behaviour, not a broken card.

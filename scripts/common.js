@@ -23,8 +23,11 @@ export function wrapNumber(num, min, max) {
 	return (t < 0 ? range + t : t) + min;
 }
 
+// `foundry.CONST` rather than the bare `CONST` global. Both resolve on v13 and
+// v14 — v14 removed 55 globals but not this one — so this is deprecation debt
+// paid early rather than a v14 fix.
 export const getPermissionLevels = () => {
-    return CONST.DOCUMENT_OWNERSHIP_LEVELS;
+    return foundry.CONST.DOCUMENT_OWNERSHIP_LEVELS;
 };
 
 export const getDocData = (doc) => doc;

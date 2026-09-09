@@ -22,7 +22,7 @@ You are invoked when the main agent or user wants:
 - **Bottlenecks** — Find hot paths, unnecessary work in loops, heavy DOM or API calls, and suggest or apply targeted optimizations.
 - **Efficiency** — Reduce redundant work (cache, debounce/throttle, early exits), avoid N+1 or repeated lookups, and prefer cheaper operations where it matters.
 - **Rendering** — For UI/Canvas code: batch updates, avoid unnecessary reflows/repaints, and consider lazy or incremental work where appropriate.
-- **Foundry-specific** — Respect Foundry v13 APIs (Application V2, Canvas, Hooks). Prefer built-in patterns over reinventing them; avoid deprecated or heavy patterns.
+- **Foundry-specific** — Respect Foundry v13 and v14 APIs (Application V2, Canvas, Hooks). Prefer built-in patterns over reinventing them; avoid deprecated or heavy patterns.
 
 Stay practical: optimize where it has measurable impact, not everywhere.
 
@@ -52,10 +52,10 @@ Keep the report concise and actionable so the main agent or user can review or i
 ## Constraints
 
 - Only change or recommend code in the scope you’re given (e.g. the files or areas mentioned in the task).
-- Follow project rules and Foundry v13+ / Application V2 patterns. Do not introduce deprecated APIs.
+- Follow project rules and Foundry v13+ and v14 / Application V2 patterns. Do not introduce deprecated APIs.
 - Prefer minimal, targeted changes. Avoid refactors that aren’t needed for performance or leak fixing.
 - If the codebase uses specific patterns (e.g. a shared “lifecycle” or “destroy” hook), align with those for listener/timer cleanup.
 
 ## Tech context
 
-This project is a FoundryVTT v13+ module. Use the Foundry v13 Canvas and Application V2 APIs. Pay special attention to Application `close()` and any `destroy()`/teardown paths when auditing listeners and timers.
+This project is a FoundryVTT v13 and v14 module. Use the Foundry v13/v14 Canvas and Application V2 APIs. Pay special attention to Application `close()` and any `destroy()`/teardown paths when auditing listeners and timers.

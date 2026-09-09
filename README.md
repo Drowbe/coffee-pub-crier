@@ -3,11 +3,12 @@
 Crier narrates your combats. It posts a card to chat when a fight starts, at the top of every round,
 as each combatant's turn comes up, and when the fight ends -- so nobody has to ask whose turn it is.
 
-![Foundry v13](https://img.shields.io/badge/foundry-v13-green)
 ![Latest Release](https://img.shields.io/github/v/release/Drowbe/coffee-pub-crier)
-![MIT License](https://img.shields.io/badge/license-MIT-blue)
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Drowbe/coffee-pub-crier/release.yml)
 ![GitHub all releases](https://img.shields.io/github/downloads/Drowbe/coffee-pub-crier/total)
+![Foundry v13](https://img.shields.io/badge/foundry-v13-yellow)
+![Foundry v14](https://img.shields.io/badge/foundry-v14-green)
+![MIT License](https://img.shields.io/badge/license-MIT-blue)
 
 <img src="documentation/assets/crier-turn-full.webp" width="300" alt="A Crier turn card with portrait, health bar, ability scores, conditions and turn penalties">
 <img src="documentation/assets/crier-turn-deathsave.webp" width="300" alt="A Crier turn card for a downed character, showing death save pips in place of the health bar">
@@ -30,10 +31,11 @@ as each combatant's turn comes up, and when the fight ends -- so nobody has to a
 
 ## Requirements
 
-- **Foundry VTT v13.** Verified against v13; v14 is declared as the maximum.
+- **Foundry VTT v13 or v14.** Verified against v14; v13 is still supported.
 - **The D&D 5e system.** Health, ability scores, conditions and death saves are read from dnd5e.
-- **[Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith), enabled.** Required.
-  Crier's card themes, icons and sounds all come from it, and Crier does not run without it.
+- **[Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith) 14.1.0 or later,
+  enabled.** Required. Crier's card themes, icons and sounds all come from it, and Crier does not
+  run without it.
 
 ## Install
 

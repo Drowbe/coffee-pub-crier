@@ -26,14 +26,3 @@ Reported from play on 2026-08-27, not yet confirmed against a current build.
 - **Where to start:** the name resolution feeding the turn card in `scripts/crier.js`.
 - **Verify:** rename a placed token so it differs from its prototype, run its turn, and confirm the
   card shows the canvas name.
-
-## Walk the remaining getting-started claims in a running world
-
-Every setting name, option and section heading in the guide has been checked against the screenshots
-captured on 2026-09-01, and the section order matches. Two behavioural claims have not been walked.
-
-- **Where to start:** `documentation/userguides/userguide-getting-started.md`, the death save and
-  NPC name sections.
-- **Verify:** as a player who owns a downed character, roll a death save from the card and confirm
-  the pips update for everyone; then set **NPC Name Visibility** to something other than *Show names
-  for everyone* and confirm a player sees `???` while the GM sees the real name.

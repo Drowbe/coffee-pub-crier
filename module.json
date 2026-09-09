@@ -14,7 +14,7 @@
 
   "compatibility": {
     "minimum": "13",
-    "verified": "13",
+    "verified": "14",
     "maximum": "14"
   },
   "socket": "",
@@ -86,7 +86,10 @@
         {
           "id": "coffee-pub-blacksmith",
           "type": "module",
-          "manifest": "https://github.com/Drowbe/coffee-pub-blacksmith/releases/latest/download/module.json"
+          "manifest": "https://github.com/Drowbe/coffee-pub-blacksmith/releases/latest/download/module.json",
+          "compatibility": {
+            "minimum": "14.1.0"
+          }
         }
     ],
     "conflicts": [],

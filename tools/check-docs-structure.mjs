@@ -17,7 +17,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PUBLISHED_FOLDERS, ROOT_PAGES, HOME_SRC, HOLD, IS_HUB, collect } from './wiki-sync.mjs';
+import { PUBLISHED_FOLDERS, ROOT_PAGES, HOME_SRC, HOLD, IS_HUB, collect, LINK, ASSET_LINK } from './wiki-sync.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DOCS = path.join(ROOT, 'documentation');
@@ -44,13 +44,16 @@ const PREFIX = {
 // documenting other modules, which the boundary rule refuses.
 const ROOT_FILES = ['home.md', 'known-issues.md', 'TODO.md', ...(IS_HUB ? ['TODO-GLOBAL.md'] : [])];
 const VIDEO = /\.(mp4|mov|avi|webm|mkv|m4v)$/i;
-const IMAGE_LINK = /!\[[^\]]*\]\(([^)]+)\)/g;
+// LINK and ASSET_LINK are IMPORTED from the publisher, never restated. A parallel definition is a
+// silent-wiki-breakage generator: the publisher required non-empty alt text while this file
+// accepted empty, so `![](assets/x.webp)` confirmed the file exists, passed green, and shipped an
+// un-rewritten repo-relative path to the wiki. Two regexes for one concept diverge, and the
+// divergence is invisible because each is correct on its own. (Raised by coffee-pub-librarian.)
 const NEWLINE = /\r?\n/;
 const FENCE = /^\s*```/;
 // An <img> tag is the only way to set a width, which is exactly what a product screenshot needs,
 // so a module doing the standard-blessed thing failed the orphan check. (Raised by coffee-pub-crier.)
 const HTML_IMG = /<img\s[^>]*?src=["']([^"']+)["']/gi;
-const ANY_LINK = /\[[^\]]*\]\(([^)]+)\)/g;
 
 function walk(dir) {
   if (!fs.existsSync(dir)) return [];
@@ -139,6 +142,17 @@ const published = new Set([...collect(), HOME_SRC, ...ROOT_PAGES]);
 // one of them, including four in Librarian's published architecture and one in Blacksmith's own.
 // (Raised by coffee-pub-librarian.)
 const NEVER_PUBLISHED = /(^|[^\w-])(TODOs?|TODO\.md|TODO-GLOBAL\.md|plans\/)([^\w-]|$)/;
+// The ambiguous words need their NOUN. "Open" as an adjective heads a backlog ("Open work");
+// "Open" as a verb heads a task ("Open the window"), which is exactly the construction the
+// user-guide rules demand -- task headings, written from the verb. Matching the bare adjective made
+// the check fire hardest on the guides following the standard most literally, the same failure as
+// deduplicating sidebar labels globally. The unambiguous phrases stay as they are: none of them is
+// ever a task heading. (Raised by coffee-pub-bibliosoph.)
+const WORK_HEADING = new RegExp(
+  '^\\s*#{1,6}\\s+(' +
+  '(open|remaining|future|planned|outstanding|unresolved)\\s+(work|items?|issues?|questions?|features?|tasks?|enhancements?)\\b' +
+  '|next steps|in progress|implementation status|roadmap|wishlist|backlog|to ?do\\b' +
+  ')', 'i');
 const KNOWN_ISSUES = /(^|[^\w-])known-issues\.md/;
 
 for (const rel of published) {
@@ -155,8 +169,13 @@ for (const rel of published) {
   if (rel === SELF || rel === 'known-issues.md') continue;
 
   lines.forEach((line, i) => {
-    if (/^\s*#{1,6}\s+(Open|Remaining) work\b/i.test(line)) {
-      fail('transient', `${rel}:${i + 1} -- an "Open work" section belongs in TODO.md`);
+    // A backlog inside a published document usually announces itself in a HEADING rather than the
+    // word TODO. One module carried ~150 lines under "Outstanding Questions to Resolve" and
+    // "Implementation Status / In Progress / Next Steps" without the word appearing once. Prose
+    // work-words have no bounded list; headings do, because a heading is a deliberate structural act.
+    // (Raised by coffee-pub-artificer.)
+    if (WORK_HEADING.test(line)) {
+      fail("transient", `${rel}:${i + 1} -- a work-shaped section heading; that content belongs in TODO.md`);
     }
     if (NEVER_PUBLISHED.test(line)) {
       fail('transient', `${rel}:${i + 1} -- references TODO or a plan; those never publish, so the pointer rots`);
@@ -189,6 +208,46 @@ for (const f of allMd) {
   });
 }
 
+// ---- 4c. The hub must not cite a satellite's internals. ---------------------------------------
+// The boundary rule refuses hub-to-satellite references, and that direction has no natural check:
+// a satellite cannot see the hub's documents, and the hub has no reason to look. Found twice in one
+// night here -- a stylesheet comment citing a sibling's CSS by line number, and an architecture
+// document citing a sibling's script. (Raised by coffee-pub-librarian.)
+// PUBLISHED documents only. Plans and TODO-GLOBAL.md are where cross-module work legitimately lives
+// -- TODO-GLOBAL is defined as the place for it -- and neither ever reaches the wiki. The boundary
+// rule governs what the hub PUBLISHES about a satellite, not what it tracks internally.
+if (IS_HUB) {
+  const SATELLITE_PATH = /coffee-pub-(?!blacksmith)[a-z]+\//;
+  for (const rel of published) {
+    const f = path.join(DOCS, rel);
+    if (rel === SELF || !fs.existsSync(f)) continue;
+    fs.readFileSync(f, 'utf8').split(NEWLINE).forEach((line, i) => {
+      if (SATELLITE_PATH.test(line)) {
+        fail('boundary', `${rel}:${i + 1} -- cites a path inside a satellite; the hub documents its own surface only`);
+      }
+    });
+  }
+}
+
+// ---- 4d. User-guide coverage. -------------------------------------------------------------------
+// Reported, never failed on: no tool can know how many features a module has. But a module with eight
+// architecture documents and one user guide has almost certainly stopped at getting-started, which is
+// the most common failure of that section -- five of the first nine adopters did it. Putting the two
+// counts side by side makes the gap visible without inventing a threshold.
+{
+  const count = (dir) => {
+    const abs = path.join(DOCS, dir);
+    return fs.existsSync(abs) ? fs.readdirSync(abs).filter((f) => f.endsWith('.md')).length : 0;
+  };
+  const guides = count('userguides');
+  const arch = count('architecture');
+  notes.push(`user guides: ${guides} against ${arch} architecture document(s)`);
+  if (guides <= 1) {
+    notes.push('  ^ one guide for a multi-part module is almost always incomplete -- name every feature');
+    notes.push('    aloud and point at the guide that covers it. The standard: complete coverage, not a file count.');
+  }
+}
+
 // ---- 5. No emoji or dingbats, anywhere in the tree. -------------------------------------------
 const isPictographic = (cp) =>
   (cp >= 0x1f300 && cp <= 0x1faff) ||
@@ -217,6 +276,7 @@ for (const f of [...allMd, ...testingDocs, path.join(ROOT, 'README.md'), path.jo
 
 // ---- 6. Assets: every link resolves, and every asset is referenced. ---------------------------
 const referenced = new Set();
+const reportedMissing = new Set();
 // The README lives outside documentation/ but the standard explicitly blesses it drawing on assets/,
 // so an asset used only by the README is not an orphan. Scanning documentation/ alone reported every
 // one of them as unreferenced. (Raised by coffee-pub-crier.)
@@ -229,15 +289,19 @@ const stripCode = (t) => t.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]*`/g, 
 for (const f of assetScanned) {
   const text = stripCode(fs.readFileSync(f, 'utf8'));
   const dir = path.dirname(f);
-  for (const re of [IMAGE_LINK, ANY_LINK, HTML_IMG]) {
+  for (const re of [LINK, HTML_IMG]) {
     re.lastIndex = 0;
     let m;
     while ((m = re.exec(text))) {
-      const target = m[1].split('#')[0].trim();
+      // LINK captures alt text at [1] and the target at [2]; HTML_IMG captures src at [1].
+      const target = (re === LINK ? m[2] : m[1]).split('#')[0].trim();
       if (!target || /^(https?:|mailto:)/i.test(target)) continue;
       if (!/\.(webp|png|jpg|jpeg|gif|svg)$/i.test(target)) continue;
       const abs = path.resolve(dir, target);
       if (!fs.existsSync(abs)) {
+        const seenKey = `${f}|${target}`;
+        if (reportedMissing.has(seenKey)) continue;   // an image link matches two of the three regexes
+        reportedMissing.add(seenKey);
         fail('assets', `${path.relative(ROOT, f)} links ${target}, which is not committed`);
       } else if (abs.startsWith(ASSETS)) {
         referenced.add(path.basename(abs));
@@ -255,8 +319,8 @@ for (const f of allMd) {
   const kind = rel.includes('/') ? rel.split('/')[0] : 'root';
   const folderKind = { api: 'api', architecture: 'architecture', designsystem: 'design',
                        userguides: 'userguide', global: 'global', plans: 'plan' }[kind];
-  for (const m of fs.readFileSync(f, 'utf8').matchAll(ANY_LINK)) {
-    const base = path.basename(m[1].split('#')[0].trim());
+  for (const m of fs.readFileSync(f, 'utf8').matchAll(LINK)) {
+    const base = path.basename(m[2].split('#')[0].trim());
     const claim = KIND_PREFIX.exec(base);
     if (!claim || !/\.(webp|png|jpg|jpeg|gif|svg)$/i.test(base)) continue;
     if (claim[1] !== folderKind) {
@@ -293,7 +357,10 @@ function sliceBlock(text, marker) {
   const a = text.indexOf(`<!-- ${marker} -->`);
   const b = text.indexOf(`<!-- /${marker} -->`);
   if (a === -1 || b === -1 || b < a) return null;
-  return text.slice(a + `<!-- ${marker} -->`.length, b).trim();
+  // Normalise line endings before comparing. A satellite on Windows without .gitattributes yet has
+  // a CRLF README, and a raw byte comparison then reports drift on a block that is character-for-
+  // character identical -- the very defect class this check was added to catch, reappearing inside it.
+  return text.slice(a + `<!-- ${marker} -->`.length, b).replace(/\r\n/g, '\n').trim();
 }
 
 for (const { canon, marker } of MARKED) {

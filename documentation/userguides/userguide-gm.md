@@ -47,9 +47,7 @@ the enemy is fighting at a penalty without telling them how close it is to dropp
 - **Player owned or token name visible** -- either of the two above.
 
 A hidden name reads as `???` on the players' side. You continue to see the real name on your own
-screen, on the same card. That last part is described from how Crier is built rather than from
-someone having checked it with a player logged in, so confirm it before relying on it to keep a
-monster's identity secret.
+screen, on the same card.
 
 ## Catch a missed turn
 

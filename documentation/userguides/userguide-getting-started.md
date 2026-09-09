@@ -8,8 +8,11 @@ the first cards of a fight wait. The settings themselves are in
 
 ## What you need installed
 
-Crier requires **Coffee Pub Blacksmith**, and will not work without it. Blacksmith supplies the card
-themes, icons and sounds that Crier's settings choose from, so install and enable it first.
+Crier requires **Coffee Pub Blacksmith** version 14.1.0 or later, and will not work without it.
+Blacksmith supplies the card themes, icons and sounds that Crier's settings choose from, so install
+and enable it first.
+
+Crier runs on Foundry VTT v13 and v14.
 
 Crier is built for the D&D 5e system; health, ability scores, conditions and death saves all come
 from it.

@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.0.0]
+
+Foundry VTT v14 support. Crier runs on v13 and v14 from this release; `minimum` stays at 13 until
+v13 breaks.
+
+### Changed
+
+- **Compatibility declares v14**: `module.json` moves to `{minimum: "13", verified: "14",
+  maximum: "14"}`, matching the rest of the suite.
+- **Blacksmith is pinned to 14.1.0 or later**: added a `compatibility.minimum` to the required
+  relationship. 14.1.0 is the release whose chat cards, hook manager and constants Crier is verified
+  against, and it is also the release that auto-remaps retired hook names -- so an older Blacksmith
+  under v14 would fail in ways that point at Crier.
+- **Badges are dual**: `foundry-v13` moves to yellow (supported) and `foundry-v14` green (verified)
+  joins it, ordered after downloads and before the licence badge to match the suite.
+- **README, architecture and the getting-started guide state v13 and v14** rather than v13 alone,
+  and name the Blacksmith version floor.
+
+### Fixed
+
+- **`CONST.DOCUMENT_OWNERSHIP_LEVELS` reads through `foundry.CONST`**: `scripts/common.js:30`. The
+  bare `CONST` global still resolves on v14 -- v14 removed 55 globals but not this one -- so this is
+  deprecation debt paid early rather than a v14 break. Stated because the assumption that v14 removed
+  the un-namespaced globals cost the suite hours; it did not. Verified against a live 14.367 client
+  by Blacksmith, which reported the constant present and correctly shaped.
+
+### Notes on what did not change
+
+- **Every other Foundry call Crier makes survives v14 unchanged**, measured on a live 14.367 client:
+  `ChatMessage.getSpeaker`, `ChatMessage.applyRollMode`, `foundry.utils.objectsEqual`,
+  `foundry.utils.fetchJsonWithTimeout`, `actor.rollDeathSave`, `CONFIG.DND5E`, `CONFIG.time`.
+- **`renderChatMessageHTML` survives under that name**, with the `(message, html, options)` signature
+  and `html` a native element. Crier migrated off `renderChatMessage` in 13.1.x, so nothing was owed
+  here.
+- **`deleteCombat` remains the end-of-combat signal.** v14 adds no `endCombat` hook; `Combat#endCombat()`
+  still confirms and deletes the document, so the architecture document's note holds and Crier does
+  not move off the deletion.
+- **None of v14's live removals reach Crier**: no `CONST.CHAT_MESSAGE_TYPES` (the property removed
+  from a surviving global, which no removed-globals scan catches), no `AudioHelper`/`Sound`/
+  `AudioContainer`, and no dice-term family use. Confirmed by grep over `scripts/`.
+- **Blacksmith's API did not change shape for v14**, so Crier's calls into `chatCards`, `api.effects`,
+  `BlacksmithUtils`, `BlacksmithConstants`, `BlacksmithHookManager` and `BlacksmithModuleManager` are
+  untouched.
+
+### Verification
+
+Verified in a running v14 world by the author, who reported all five behavioural checks green: a full
+combat lifecycle (start, round, one turn card per combatant, end); initiative rolled one combatant at
+a time, with cards holding through the rolling and releasing together once the last roll landed; a
+full death save cycle, with an owning player rolling from the card on a second client; NPC name
+hiding seen from a player client; and a missed-turn reminder reaching the GM alone.
+
+The death save cycle and the NPC name check were the two claims the user guides carried with an
+explicit "not walked in a running world" caveat since the guides were written. Both caveats are
+removed in this release, and the guides now state that behaviour plainly.
+
 ## [13.2.4]
 
 ### Fixed

@@ -113,7 +113,7 @@ Turn Change       → roundInitialized = allInitiativesRolled(combat)
 Any Turn Card     → posted only if combat.started && allInitiativesRolled(combat)
 ```
 
-Combat lifecycle cards use `combatStart` and `deleteCombat`. Foundry v13's `Combat#endCombat()` confirms and deletes the Combat document; it does not emit a separate `endCombat` hook. Only the highest-role active GM posts these table-wide events. Deletion clears held round/turn work, and deleting an unstarted setup is silent. Sounds run only after the corresponding chat message is successfully created.
+Combat lifecycle cards use `combatStart` and `deleteCombat`. On both v13 and v14, `Combat#endCombat()` confirms and deletes the Combat document; neither emits a separate `endCombat` hook, so a deletion is the end-of-combat signal. Only the highest-role active GM posts these table-wide events. Deletion clears held round/turn work, and deleting an unstarted setup is silent. Sounds run only after the corresponding chat message is successfully created.
 
 ## Hook Registration
 
